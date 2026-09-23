@@ -88,3 +88,10 @@ Formato: **Contexto → Decisão → Consequências**. Os status possíveis são
 **Contexto.** O usuário pediu empacotamento só para Windows.
 **Decisão.** Distribuir **NSIS x64** na v1, mas não usar APIs exclusivas de Windows sem abstração, e montar caminhos sempre com `path`/`paths.ts`.
 **Consequências.** Linux e macOS ficam viáveis na v2, com targets no `electron-builder.yml`. A `titleBarOverlay` tem comportamento diferente no macOS e deve ser revista na v2.
+
+### ADR-013 — Capa de PDF adiada para depois de M2 (sem `pdf-worker`)
+**Status:** Aceita · **Data:** 2026-09-23
+
+**Contexto.** ADR-008 previu uma `BrowserWindow` oculta com pdf.js para renderizar a capa de PDFs durante a importação (M2, tarefas 2.3/2.4). Construir e validar essa janela exige um Electron rodando de verdade — algo que o ambiente onde M2 foi implementado não conseguia fazer (o binário do Electron não fica disponível nesse sandbox; ver a nota de ambiente no histórico da sessão). Implementar essa peça sem conseguir executá-la nem uma vez seria construir às cegas.
+**Decisão.** M2 entrega a importação de PDF **completa** (RF-01: valida, conta páginas com `pdf-lib`, importa) mas com a **capa em placeholder** (`cover_version = 0`) — um caminho que a própria spec já previa (docs/05-importacao.md §4 passo 7: falha ao gerar capa nunca falha o item). O ponto de extensão fica marcado com um comentário `TODO(M2-follow-up)` em `src/main/services/cover-service.ts`, apontando exatamente onde a chamada ao `pdf-worker` entraria.
+**Consequências.** Toda HQ em PDF na biblioteca mostra o placeholder de capa até esta pendência ser retomada — o ideal é junto de **M4.9** (suporte a PDF no leitor), quando o pdf.js já estará sendo integrado no renderer de qualquer forma, reduzindo trabalho duplicado. Nenhuma mudança de assinatura é esperada em `CoverService.generateComicCover` além de passar a receber um `firstPageBuffer` não nulo para PDFs.

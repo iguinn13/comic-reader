@@ -43,12 +43,14 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 |---|---|---|
 | 2.1 | Criar as fixtures de teste ([09 §3](09-testes-e-qualidade.md#3-fixtures)) | — |
 | 2.2 | `archive/`: `detect.ts` (magic bytes), `ZipArchive` (yauzl), `RarArchive` (node-unrar-js) e `natural-sort`/filtro de páginas, com testes | RF-03, RF-06 |
-| 2.3 | PDF: `pdf-lib` (contagem) + janela oculta `pdf-worker` com pdf.js que renderiza a página 1 em JPEG | RF-01 |
-| 2.4 | `CoverService` para capas de HQ (nativeImage) | RF-06 |
+| 2.3 | PDF: `pdf-lib` (contagem). ⚠️ **A janela oculta `pdf-worker`/render da capa não foi feita ainda** — ver ADR-013 | RF-01 |
+| 2.4 | `CoverService` para capas de HQ (nativeImage) — zip/rar completo; PDF fica com capa placeholder (`TODO(M2-follow-up)` em `cover-service.ts`, ver ADR-013) | RF-06 |
 | 2.5 | `ImportService`: expansão (incl. inspeção de ZIP), pipeline de 8 passos, rollback, fila única, cancelamento e eventos, com testes dos 12 casos de [05 §9](05-importacao.md#9-casos-de-teste-obrigatórios) | RF-03..06 |
 | 2.6 | IPC `import:*` + evento `import:progress`/`library:changed` | RF-01, RF-04 |
 | 2.7 | UI: botão Importar (diálogo), overlay de drag & drop, `ImportPanel`, diálogo de duplicata e resumo | RF-01, 02, 04, 05 |
 | 2.8 | `MaintenanceService`: limpeza de `tmp` e órfãos no boot | RNF-05 |
+
+**Pendência aberta por M2 para M4** (registrada em [ADR-013](10-decisoes.md#adr-013)): a capa de PDF (render da página 1 numa `BrowserWindow` oculta com pdf.js, ADR-008) ainda não existe — HQs em PDF importam normalmente, só ficam com capa placeholder até isso ser retomado, idealmente junto de M4.9 (suporte a PDF no leitor), quando pdf.js já está sendo integrado de qualquer forma.
 
 ## M3 — Shell e biblioteca
 **Objetivo:** navegar e encontrar as HQs importadas.
