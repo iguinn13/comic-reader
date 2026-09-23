@@ -1,6 +1,8 @@
 import { randomUUID } from 'crypto'
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createDb, type Db } from '../client'
+import { readingProgress } from '../schema'
 import { insertComic, type InsertComicInput } from './comics'
 import {
   getContinueReading,
@@ -8,6 +10,7 @@ import {
   getRecentlyAdded,
   markRead,
   markUnread,
+  resetAllReaderPrefs,
   setCurrentPage,
 } from './progress'
 
@@ -149,5 +152,27 @@ describe('getRecentlyAdded', () => {
 
     const result = getRecentlyAdded(db, 20)
     expect(result.map((c) => c.id)).toEqual([second.id, first.id])
+  })
+})
+
+describe('resetAllReaderPrefs', () => {
+  it('limpa reader_prefs de todas as HQs (RF-50 "Aplicar a todas")', () => {
+    const a = makeInput()
+    const b = makeInput()
+    insertComic(db, a)
+    insertComic(db, b)
+    db.update(readingProgress)
+      .set({ readerPrefs: '{"mode":"vertical"}' })
+      .where(eq(readingProgress.comicId, a.id))
+      .run()
+    db.update(readingProgress)
+      .set({ readerPrefs: '{"mode":"double"}' })
+      .where(eq(readingProgress.comicId, b.id))
+      .run()
+
+    resetAllReaderPrefs(db)
+
+    expect(getProgress(db, a.id)?.readerPrefs).toBeNull()
+    expect(getProgress(db, b.id)?.readerPrefs).toBeNull()
   })
 })

@@ -1,10 +1,12 @@
 import { app, BrowserWindow } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { mkdir } from 'fs/promises'
-import { createAppPaths } from './utils/paths'
-import { initLogger, logger } from './utils/logger'
-import { createMainWindow } from './window'
+import { closeDb, createDb, type Db } from './db/client'
 import { registerAllIpc } from './ipc/register'
+import { SettingsService } from './services/settings-service'
+import { initLogger, logger } from './utils/logger'
+import { createAppPaths } from './utils/paths'
+import { createMainWindow } from './window'
 
 // Trava de instância única (docs/02-arquitetura.md §6): uma segunda instância
 // apenas foca a janela existente, em vez de abrir um segundo processo com
@@ -22,6 +24,7 @@ if (!gotSingleInstanceLock) {
   })
 
   const paths = createAppPaths(app.getPath('userData'))
+  let db: Db | null = null
 
   async function bootstrap(): Promise<void> {
     initLogger(paths)
@@ -30,22 +33,30 @@ if (!gotSingleInstanceLock) {
 
     electronApp.setAppUserModelId('com.comicreader.app')
 
-    // O banco (M1.1) e os serviços ainda não existem neste milestone, então
-    // `registerAllIpc()` por enquanto não registra nenhum domínio (ver
-    // src/main/ipc/register.ts). A chamada já fica aqui para os próximos
-    // milestones só precisarem editar aquele arquivo.
-    registerAllIpc()
+    db = createDb(paths.dbFile)
+    const settingsService = new SettingsService(db)
+
+    // Os demais domínios (library, importer, collections, reader, app)
+    // chegam a partir de M2 — ver src/main/ipc/register.ts.
+    registerAllIpc({ settingsService })
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
     })
 
-    createMainWindow()
+    const openWindow = (): void => {
+      createMainWindow({
+        initialBounds: settingsService.get()['window.bounds'],
+        onBoundsChange: (bounds) => settingsService.update({ 'window.bounds': bounds }),
+      })
+    }
+
+    openWindow()
 
     app.on('activate', () => {
       // No Windows/Linux o app fecha com a última janela (ver window-all-closed
       // abaixo), então isto só é relevante se algo recriar o app sem sair.
-      if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+      if (BrowserWindow.getAllWindows().length === 0) openWindow()
     })
   }
 
@@ -62,5 +73,11 @@ if (!gotSingleInstanceLock) {
   app.on('window-all-closed', () => {
     // A v1 tem como alvo só o Windows (ADR-012): sempre sai com a última janela.
     app.quit()
+  })
+
+  app.on('before-quit', () => {
+    // O ReaderService (M4) vai precisar dar flush no progresso pendente aqui
+    // também; por enquanto só fecha a conexão com o banco de forma limpa.
+    if (db) closeDb(db)
   })
 }

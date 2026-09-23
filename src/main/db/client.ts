@@ -1,20 +1,22 @@
 import { join } from 'path'
 import Database from 'better-sqlite3'
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
 
-export type Db = BetterSQLite3Database<typeof schema>
+export type Db = ReturnType<typeof drizzle<typeof schema>>
 
 /** Tipo do parâmetro recebido por `db.transaction(tx => ...)`, para tipar helpers internos das transações. */
 export type DbTransaction = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 /**
  * Pasta das migrations geradas pelo `drizzle-kit generate` (docs/03 §4).
- * Resolvida a partir de `__dirname` (e não de `process.cwd()`) para funcionar
- * tanto em dev quanto no build empacotado, onde ela é copiada ao lado deste
- * arquivo via `extraResources` do electron-builder (fora do escopo desta
- * tarefa: a fiação do boot fica para o milestone seguinte).
+ * Resolvida a partir de `__dirname`, e não de `process.cwd()`, para funcionar
+ * tanto em dev quanto no build empacotado: `electron.vite.config.ts` copia
+ * `src/main/db/migrations` para dentro de `out/main/` (via
+ * `vite-plugin-static-copy`) precisamente para esta pasta existir ao lado do
+ * `index.js` bundlado nos dois casos, sem precisar de `extraResources` no
+ * electron-builder (SQL não é código: o esbuild não a enxergaria sozinho).
  */
 const MIGRATIONS_FOLDER = join(__dirname, 'migrations')
 
@@ -39,4 +41,9 @@ export function createDb(dbFilePath: string): Db {
   migrate(db, { migrationsFolder: MIGRATIONS_FOLDER })
 
   return db
+}
+
+/** Fecha a conexão SQLite (docs/02-arquitetura.md §7: chamado no `before-quit`). */
+export function closeDb(db: Db): void {
+  db.$client.close()
 }

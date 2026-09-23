@@ -67,3 +67,8 @@ export function getRecentlyAdded(db: Db, limit: number): ComicRow[] {
     .limit(limit)
     .all()
 }
+
+/** RF-50 "Aplicar a todas as HQs": limpa as preferências de leitura salvas por HQ. */
+export function resetAllReaderPrefs(db: Db): void {
+  db.update(readingProgress).set({ readerPrefs: null }).run()
+}

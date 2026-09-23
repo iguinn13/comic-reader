@@ -17,7 +17,9 @@
     "postinstall": "electron-builder install-app-deps",
     "test": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/vitest/vitest.mjs run",
     "test:watch": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/vitest/vitest.mjs",
-    "dist": "npm run build && electron-builder --win"
+    "dist": "npm run build && electron-builder --win",
+    "db:generate": "drizzle-kit generate",
+    "seed:dev": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/tsx/dist/cli.mjs scripts/seed-dev.ts"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
@@ -46,6 +48,7 @@
     "@vitejs/plugin-react": "^5.1.1",
     "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.5",
+    "tsx": "^4.23.15",
     "electron": "^39.2.6",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",
@@ -60,6 +63,7 @@
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
+    "vite-plugin-static-copy": "^4.1.1",
     "vitest": "^3.2.4"
   }
 }
