@@ -1,3 +1,5 @@
+import type { ComicReaderApi } from '@shared/api'
+
 export interface AppVersions {
   chrome: string
   electron: string
@@ -6,8 +8,7 @@ export interface AppVersions {
 
 declare global {
   interface Window {
-    // Preenchido no milestone M1 com o contrato completo de src/shared/api.ts.
-    api: Record<string, never>
+    api: ComicReaderApi
     versions: AppVersions
   }
 }
