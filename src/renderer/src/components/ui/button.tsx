@@ -1,0 +1,51 @@
+import * as React from 'react'
+import { Slot } from '@radix-ui/react-slot'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from '@renderer/lib/utils'
+
+/**
+ * Componente na convenção shadcn/ui (código copiado para o repo, não uma
+ * dependência), já temado com os tokens escuros de docs/07-ui-ux.md em vez da
+ * paleta neutra padrão do shadcn. Outros componentes (Input, Dialog, Menu…)
+ * seguem o mesmo padrão à medida que os milestones de UI precisarem deles.
+ */
+const buttonVariants = cva(
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-150 ease-out disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  {
+    variants: {
+      variant: {
+        default: 'bg-accent text-accent-fg hover:bg-accent/90',
+        secondary: 'bg-surface-2 text-text hover:bg-surface-2/80',
+        outline: 'border border-border bg-transparent text-text hover:bg-surface-2',
+        ghost: 'bg-transparent text-text hover:bg-surface-2',
+        danger: 'bg-danger text-text hover:bg-danger/90',
+        link: 'bg-transparent text-accent underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-9 px-4 py-2',
+        sm: 'h-8 rounded-md px-3 text-xs',
+        lg: 'h-10 rounded-md px-6',
+        icon: 'size-9',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  },
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'button'
+    return (
+      <Comp ref={ref} className={cn(buttonVariants({ variant, size, className }))} {...props} />
+    )
+  },
+)
+Button.displayName = 'Button'

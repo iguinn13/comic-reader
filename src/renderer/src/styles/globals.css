@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+
+/* Inter empacotada localmente via @fontsource-variable (sem requisições de
+   rede — RNF-07). Substitui a ideia original de "assets/fonts" manuais por um
+   pacote npm que entrega o mesmo resultado (fonte local, offline). */
+@import '@fontsource-variable/inter';
+
+/*
+ * Tokens do design system (docs/07-ui-ux.md §2). O app é só escuro por
+ * decisão do produto — não existe bloco "light" nem @media
+ * (prefers-color-scheme): os tokens abaixo já são o único tema.
+ */
+@theme {
+  --color-bg: #0c0c0f;
+  --color-surface: #14141a;
+  --color-surface-2: #1c1c22;
+  --color-border: #26262e;
+  --color-text: #ececef;
+  --color-text-muted: #9a9aa6;
+  --color-text-subtle: #6b6b78;
+  --color-accent: #f2a93b;
+  --color-accent-fg: #1a1203;
+  --color-success: #4cc38a;
+  --color-danger: #ef5b5b;
+  --color-reader-bg: #08080a;
+
+  --font-sans: 'Inter Variable', 'Inter', system-ui, 'Segoe UI', sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

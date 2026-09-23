@@ -1,0 +1,31 @@
+# v1 tem como alvo só o Windows (ADR-012 em docs/10-decisoes.md). O código em
+# si evita APIs exclusivas de plataforma, então adicionar mac/linux aqui numa
+# v2 é só configuração, sem mudar src/.
+appId: com.comicreader.app
+productName: Comic Reader
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,CHANGELOG.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,vitest.config.ts,components.json}'
+  - '!docs/*'
+asarUnpack:
+  - resources/**
+win:
+  executableName: comic-reader
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+npmRebuild: false
