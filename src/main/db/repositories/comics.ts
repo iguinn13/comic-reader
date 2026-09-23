@@ -48,6 +48,8 @@ export interface InsertComicInput {
   updatedAt: number
   /** Vazio para PDF: o pdf.js fornece as páginas (docs/03 §2.2). */
   pages: InsertComicPageInput[]
+  /** 0 (default da coluna) quando a capa ainda não foi gerada (docs/03 §2.1). */
+  coverVersion?: number
 }
 
 /** Expressão SQL do status derivado, reaproveitada em SELECT e WHERE. */
@@ -97,6 +99,7 @@ export function insertComic(db: Db, input: InsertComicInput): void {
         fileSize: input.fileSize,
         fileHash: input.fileHash,
         pageCount: input.pageCount,
+        coverVersion: input.coverVersion ?? 0,
         createdAt: input.createdAt,
         updatedAt: input.updatedAt,
       })
@@ -249,4 +252,13 @@ export function getComicsByHash(db: Db, hash: string): Array<{ id: string; title
     .from(comics)
     .where(eq(comics.fileHash, hash))
     .all()
+}
+
+/** Todos os ids existentes, usados pelo `MaintenanceService` para achar órfãos em disco (RNF-05). */
+export function listComicIds(db: Db): string[] {
+  return db
+    .select({ id: comics.id })
+    .from(comics)
+    .all()
+    .map((row) => row.id)
 }
