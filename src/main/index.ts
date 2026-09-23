@@ -1,10 +1,15 @@
 import { app, BrowserWindow } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { mkdir } from 'fs/promises'
+import { CH } from '@shared/channels'
 import { closeDb, createDb, type Db } from './db/client'
 import { registerAllIpc } from './ipc/register'
+import { CoverService } from './services/cover-service'
+import { ImportService } from './services/import-service'
+import { MaintenanceService } from './services/maintenance-service'
 import { SettingsService } from './services/settings-service'
 import { initLogger, logger } from './utils/logger'
+import { resizeToJpeg } from './utils/native-image-adapter'
 import { createAppPaths } from './utils/paths'
 import { createMainWindow } from './window'
 
@@ -36,16 +41,34 @@ if (!gotSingleInstanceLock) {
     db = createDb(paths.dbFile)
     const settingsService = new SettingsService(db)
 
-    // Os demais domínios (library, importer, collections, reader, app)
-    // chegam a partir de M2 — ver src/main/ipc/register.ts.
-    registerAllIpc({ settingsService })
+    let mainWindow: BrowserWindow | null = null
+
+    const coverService = new CoverService(paths, resizeToJpeg)
+    const importService = new ImportService(db, paths, coverService, (state) => {
+      // `ImportService` não conhece `BrowserWindow` (injeção, docs/02 §3): é
+      // este callback do bootstrap que manda o evento pro renderer, e que
+      // deriva `library:changed` sempre que algum item terminar em `done`
+      // (docs/05 §4: "após cada item concluído, emite library:changed").
+      if (!mainWindow || mainWindow.isDestroyed()) return
+      mainWindow.webContents.send(CH.importer.onProgress, state)
+      if (state.items.some((item) => item.status === 'done')) {
+        mainWindow.webContents.send(CH.importer.onLibraryChanged, 'import')
+      }
+    })
+
+    // Boot passo 3 (docs/02-arquitetura.md §7): limpa cache/tmp e órfãos
+    // antes de registrar o IPC e abrir a janela.
+    const maintenanceService = new MaintenanceService(db, paths)
+    await maintenanceService.run()
+
+    registerAllIpc({ settingsService, importService })
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
     })
 
     const openWindow = (): void => {
-      createMainWindow({
+      mainWindow = createMainWindow({
         initialBounds: settingsService.get()['window.bounds'],
         onBoundsChange: (bounds) => settingsService.update({ 'window.bounds': bounds }),
       })

@@ -1,4 +1,6 @@
+import type { ImportService } from '../services/import-service'
 import type { SettingsService } from '../services/settings-service'
+import { registerImporterIpc } from './importer'
 import { registerSettingsIpc } from './settings'
 
 /**
@@ -11,13 +13,15 @@ import { registerSettingsIpc } from './settings'
  * `src/main/ipc/handle.ts` para cada canal do domínio. Essa função é
  * importada e chamada aqui.
  *
- * Os demais domínios (library, importer, collections, reader, app) chegam
- * a partir de M2, quando os serviços correspondentes existirem.
+ * Os demais domínios (library, collections, reader, app) chegam a partir de
+ * M3+, quando os serviços correspondentes existirem.
  */
 export interface AppServices {
   settingsService: SettingsService
+  importService: ImportService
 }
 
 export function registerAllIpc(services: AppServices): void {
   registerSettingsIpc(services.settingsService)
+  registerImporterIpc(services.importService)
 }
