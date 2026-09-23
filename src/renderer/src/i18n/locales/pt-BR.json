@@ -5,5 +5,35 @@
   },
   "common": {
     "comingSoon": "Em construção"
+  },
+  "import": {
+    "button": "Importar",
+    "dropOverlay": "Solte para importar suas HQs",
+    "panel": {
+      "title": "Importando {{done}} de {{total}}",
+      "finishedTitle": "Importação concluída",
+      "pill": "Importando {{done}}/{{total}}",
+      "minimize": "Minimizar",
+      "cancel": "Cancelar",
+      "close": "Fechar"
+    },
+    "summary": {
+      "text": "{{done}} importadas, {{skipped}} duplicadas ignoradas, {{failed}} com erro"
+    },
+    "duplicate": {
+      "title": "HQ já está na biblioteca",
+      "description": "\"{{sourceName}}\" já está na biblioteca (como \"{{existingTitle}}\")",
+      "applyToAll": "Aplicar aos próximos duplicados desta importação",
+      "skip": "Pular",
+      "importAnyway": "Importar mesmo assim"
+    }
+  },
+  "errors": {
+    "unsupportedFormat": "Formato não suportado",
+    "corruptedFile": "Arquivo corrompido",
+    "io": "Erro ao acessar o arquivo",
+    "validation": "Dados inválidos",
+    "cancelled": "Cancelado",
+    "internal": "Erro inesperado"
   }
 }
