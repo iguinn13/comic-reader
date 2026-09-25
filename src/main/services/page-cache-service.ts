@@ -91,6 +91,20 @@ export class PageCacheService {
       return { path: cacheFile, contentType: contentTypeFor(extension) }
     }
 
+    // Uma extração em segundo plano (`ensure`) já pode estar descompactando
+    // este mesmo arquivo — abrir e descompactar de novo aqui dobraria o
+    // trabalho (e o tempo) toda vez que o leitor é aberto. Como a extração em
+    // segundo plano grava cada página assim que a decodifica, só espera o
+    // arquivo aparecer em vez de competir por outra leitura do zip/rar.
+    const backgroundTask = this.backgroundExtractions.get(comicId)
+    if (backgroundTask) {
+      await waitForFile(cacheFile, backgroundTask)
+      if (existsSync(cacheFile)) {
+        this.touchAccess(comicId)
+        return { path: cacheFile, contentType: contentTypeFor(extension) }
+      }
+    }
+
     const meta = getComicFileMeta(this.db, comicId)
     if (!meta) throw new Error(`HQ ${comicId} não encontrada`)
 
@@ -255,6 +269,26 @@ export function buildExtractionOrder(startPage: number, total: number): number[]
   for (let i = startPage; i < total; i++) order.push(i)
   for (let i = startPage - 1; i >= 0; i--) order.push(i)
   return order
+}
+
+/** Intervalo do polling em `waitForFile` — a extração grava uma página por vez, não há evento pra assinar. */
+const WAIT_FOR_FILE_POLL_MS = 60
+
+/**
+ * Espera `path` aparecer no disco, mas nunca além do fim de `until` (a
+ * extração em segundo plano pode terminar sem ter chegado nesta página, por
+ * exemplo se a HQ mudou de página muito rápido). Nunca lança: uma falha em
+ * `until` só termina a espera, e quem chamou decide o que fazer se o arquivo
+ * ainda não existir.
+ */
+async function waitForFile(path: string, until: Promise<void>): Promise<void> {
+  let settled = false
+  void until.finally(() => {
+    settled = true
+  })
+  while (!settled && !existsSync(path)) {
+    await new Promise((resolve) => setTimeout(resolve, WAIT_FOR_FILE_POLL_MS))
+  }
 }
 
 async function directorySize(dir: string): Promise<number> {

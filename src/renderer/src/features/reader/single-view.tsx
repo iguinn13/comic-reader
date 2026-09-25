@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@renderer/lib/utils'
 import { useReaderStore, useShowChrome } from '@renderer/stores/reader-store'
 import type { ReaderSource } from '@shared/types'
@@ -37,6 +38,15 @@ export function SingleView({
 
   const pdfDoc = usePdfDocument(source.kind === 'pdf' ? source.fileUrl : null)
   const page = source.kind === 'images' ? source.pages[currentPage] : undefined
+
+  // A extração da página sob demanda (page-cache-service) pode levar um
+  // tempo perceptível na primeira leitura de uma HQ — sem isso, a tela fica
+  // em branco parecendo travada (docs/06-leitor.md §3.1). Guarda a última URL
+  // carregada em vez de um booleano resetado por efeito: comparar com
+  // `page.url` já reflete "ainda não carregou esta página" na primeira
+  // renderização após trocar de página, sem precisar de um Effect.
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null)
+  const imageLoaded = page !== undefined && loadedUrl === page.url
 
   // docs §3.1: ao trocar de página, a rolagem volta ao topo — o fit/zoom se mantém.
   useEffect(() => {
@@ -146,15 +156,24 @@ export function SingleView({
       )}
     >
       {page ? (
-        <img
-          key={page.index}
-          src={page.url}
-          alt=""
-          draggable={false}
-          decoding="async"
-          style={pageStyle}
-          className={pageClassName}
-        />
+        <>
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="size-6 animate-spin text-text-muted" />
+            </div>
+          )}
+          <img
+            key={page.index}
+            src={page.url}
+            alt=""
+            draggable={false}
+            decoding="async"
+            style={pageStyle}
+            className={cn(pageClassName, !imageLoaded && 'invisible')}
+            onLoad={() => setLoadedUrl(page.url)}
+            onError={() => setLoadedUrl(page.url)}
+          />
+        </>
       ) : (
         <PdfPage
           key={currentPage}

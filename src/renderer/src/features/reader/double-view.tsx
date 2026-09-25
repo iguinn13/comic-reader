@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@renderer/lib/utils'
 import { useReaderStore, useShowChrome } from '@renderer/stores/reader-store'
 import type { ReaderSource } from '@shared/types'
@@ -56,6 +57,16 @@ export function DoubleView({
   const spreads = computeSpreads(dims, doubleOffset)
   const spreadIndex = spreads.findIndex((spread) => spread.includes(currentPage))
   const spread = spreads[spreadIndex] ?? spreads[0]
+
+  // Mesma ideia de single-view.tsx: sem isso, a extração sob demanda deixa a
+  // tela em branco por um tempo sem indicar que algo está acontecendo. A
+  // chave inclui o spread pra não precisar de um Effect só pra "zerar" o
+  // carregado ao trocar de spread — uma página com o mesmo índice num spread
+  // diferente não existe aqui, mas a chave deixa a intenção explícita.
+  const [loadedKeys, setLoadedKeys] = useState<Set<string>>(new Set())
+  const isLoaded = (pageIndex: number): boolean => loadedKeys.has(`${spreadIndex}:${pageIndex}`)
+  const markLoaded = (pageIndex: number): void =>
+    setLoadedKeys((prev) => new Set(prev).add(`${spreadIndex}:${pageIndex}`))
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, left: 0 })
@@ -143,6 +154,11 @@ export function DoubleView({
         !showChrome && 'scrollbar-hidden',
       )}
     >
+      {source.kind === 'images' && spread.some((pageIndex) => !isLoaded(pageIndex)) && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 className="size-6 animate-spin text-text-muted" />
+        </div>
+      )}
       <div
         className="flex h-full w-full justify-center"
         style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
@@ -156,7 +172,9 @@ export function DoubleView({
               draggable={false}
               decoding="async"
               style={imageStyle}
-              className="select-none"
+              className={cn('select-none', !isLoaded(pageIndex) && 'invisible')}
+              onLoad={() => markLoaded(pageIndex)}
+              onError={() => markLoaded(pageIndex)}
             />
           ) : (
             <PdfPage
