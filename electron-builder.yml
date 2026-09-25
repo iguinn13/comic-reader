@@ -28,4 +28,9 @@ nsis:
   createDesktopShortcut: always
   oneClick: false
   allowToChangeInstallationDirectory: true
+  perMachine: false
+  createStartMenuShortcut: true
+  # Pergunta se remove os dados do usuário (build/installer.nsh); nunca apaga sem perguntar.
+  include: build/installer.nsh
+  deleteAppDataOnUninstall: false
 npmRebuild: false
