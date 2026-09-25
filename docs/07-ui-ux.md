@@ -95,7 +95,7 @@ Adicionadas recentemente                          Ver tudo →
 - **Contador:** "248 HQs" (ou "12 resultados para 'batman'"), sempre o total da biblioteca inteira, mesmo em "Pastas".
 - Em **"Todas as HQs"**:
   - **Toolbar:** busca (com atalho `Ctrl+F` e botão ✕ para limpar), segmented control de status (**Todas · Não lidas · Em andamento · Lidas**), toggle ☆ Favoritas e dropdown de ordenação (Adicionadas recentemente, Lidas recentemente, Título A–Z, Título Z–A).
-  - **Grade virtualizada:** colunas `auto-fill` com largura mínima de 150 px, gap de 20 px e proporção da capa 2:3 (`object-fit: cover`).
+  - **Grade virtualizada:** colunas `auto-fill` com largura mínima de 190 px, gap de 20 px e proporção da capa 2:3 (`object-fit: cover`).
   - **Barra de seleção** (quando há seleção): substitui a toolbar com "3 selecionadas · Marcar como lida · Marcar como não lida · Favoritar · Excluir · ✕".
 
 #### 4.2.1 Pastas (dentro da Biblioteca) — RF-64
@@ -108,7 +108,7 @@ Biblioteca › DC › Ano Um                    ← breadcrumb, cada segmento cl
 └─────────┘ └─────────┘ └─────────┘ └─────────┘
   8 HQs        12 HQs     p. 3 de 22   Não lida
 ```
-- Mesma grade `auto-fill`/150 px/gap 20 px da lista única — as subpastas entram como cards na frente das HQs, sem uma coluna lateral dedicada (estilo do app "Cover": clicar entra na pasta, o breadcrumb volta).
+- Mesma grade `auto-fill`/190 px/gap 20 px da lista única — as subpastas entram como cards na frente das HQs, sem uma coluna lateral dedicada (estilo do app "Cover": clicar entra na pasta, o breadcrumb volta).
 - Card de subpasta: ícone de pasta + nome (2 linhas máx.) + contagem de HQs (recursiva); sem menu de contexto (é só navegação, criar/mover pastas é feito fora do app).
 - Nível-topo (antes de entrar em qualquer pasta): uma "pasta" por pasta-raiz configurada (RF-01/03), nomeada pelo nome real da pasta no disco.
 - Pasta sem subpastas nem HQs: estado vazio simples ("Esta pasta não tem HQs nem subpastas"), sem ação — a pasta existe no disco, só está vazia.

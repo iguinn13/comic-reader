@@ -55,6 +55,10 @@ export const api = {
     onChanged: (callback: (reason: 'scan' | 'delete' | 'cover') => void): (() => void) =>
       window.api.library.onChanged(callback),
     browseFolder: (location: FolderLocation) => unwrap(window.api.library.browseFolder(location)),
+    setFolderCover: (location: FolderLocation) =>
+      unwrap(window.api.library.setFolderCover(location)),
+    clearFolderCover: (location: FolderLocation) =>
+      unwrap(window.api.library.clearFolderCover(location)),
   },
 
   libraryFolders: {
@@ -85,7 +89,7 @@ export const api = {
     info: () => unwrap(window.api.app.info()),
     openDataFolder: () => unwrap(window.api.app.openDataFolder()),
     clearCache: () => unwrap(window.api.app.clearCache()),
-    toggleFullscreen: () => unwrap(window.api.app.toggleFullscreen()),
+    toggleFullscreen: (force?: boolean) => unwrap(window.api.app.toggleFullscreen(force)),
     onFullscreenChanged: (callback: (isFullscreen: boolean) => void): (() => void) =>
       window.api.app.onFullscreenChanged(callback),
   },

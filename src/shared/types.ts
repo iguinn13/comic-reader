@@ -153,6 +153,8 @@ export interface FolderEntry {
   comicCount: number
   /** Capa da 1ª HQ (ordem natural) que está direto na pasta; `null` se a pasta só tem subpastas. */
   coverUrl: string | null
+  /** Tem HQs direto nela; só pastas sem HQs aceitam imagem de capa personalizada. */
+  hasDirectComics: boolean
 }
 
 export interface FolderContents {

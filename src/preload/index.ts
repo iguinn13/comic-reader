@@ -45,6 +45,8 @@ const api: ComicReaderApi = {
     onScanProgress: (callback) => on(CH.library.onScanProgress, callback),
     onChanged: (callback) => on(CH.library.onChanged, callback),
     browseFolder: (location) => invoke(CH.library.browseFolder, location),
+    setFolderCover: (location) => invoke(CH.library.setFolderCover, location),
+    clearFolderCover: (location) => invoke(CH.library.clearFolderCover, location),
   },
 
   libraryFolders: {
@@ -74,7 +76,7 @@ const api: ComicReaderApi = {
     info: () => invoke(CH.app.info),
     openDataFolder: () => invoke(CH.app.openDataFolder),
     clearCache: () => invoke(CH.app.clearCache),
-    toggleFullscreen: () => invoke(CH.app.toggleFullscreen),
+    toggleFullscreen: (force) => invoke(CH.app.toggleFullscreen, force),
     onFullscreenChanged: (callback) => on(CH.app.onFullscreenChanged, callback),
   },
 }

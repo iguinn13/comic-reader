@@ -14,6 +14,8 @@ export const CH = {
     onScanProgress: 'library:scanProgress',
     onChanged: 'library:changed',
     browseFolder: 'library:browseFolder',
+    setFolderCover: 'library:setFolderCover',
+    clearFolderCover: 'library:clearFolderCover',
   },
   libraryFolders: {
     list: 'libraryFolders:list',

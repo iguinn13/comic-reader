@@ -184,6 +184,7 @@ E tratado com `protocol.handle('comic', handler)`:
 | `comic://page/{comicId}/{pageIndex}` | Imagem da página (do cache; se ausente, extrai sob demanda) | `<img>` no leitor (CBZ/CBR) |
 | `comic://file/{comicId}` | Bytes do arquivo da HQ (suporta `Range`) | pdf.js carrega PDFs |
 | `comic://cover/comic/{comicId}?v={coverVersion}` | JPEG da capa | Cards |
+| `comic://cover/folder/{key}?v={mtime}` | JPEG da capa escolhida para uma pasta (`key` = sha1 hex validado) | Cards de pasta |
 
 Regras do handler:
 - Ele só aceita IDs no formato esperado (UUID) e `pageIndex` inteiro dentro do intervalo. **Nunca** usa trechos da URL como caminho. O caminho é sempre resolvido a partir do registro no banco (`comics.file_path`) e de `paths.ts` (para cache/capas) — nunca a partir de nada vindo do renderer.

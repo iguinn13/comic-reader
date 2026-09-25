@@ -43,6 +43,9 @@ export interface ComicReaderApi {
     onChanged(callback: (reason: 'scan' | 'delete' | 'cover') => void): () => void
     /** RF-64: subpastas e HQs de um nível da navegação por pastas. */
     browseFolder(location: FolderLocation): Promise<Result<FolderContents>>
+    /** Abre o seletor de imagem e define a capa da pasta; `false` se o usuário cancelou. */
+    setFolderCover(location: FolderLocation): Promise<Result<boolean>>
+    clearFolderCover(location: FolderLocation): Promise<Result<void>>
   }
 
   libraryFolders: {
@@ -73,7 +76,8 @@ export interface ComicReaderApi {
     info(): Promise<Result<{ version: string; userDataPath: string }>>
     openDataFolder(): Promise<Result<void>>
     clearCache(): Promise<Result<{ freedBytes: number }>>
-    toggleFullscreen(): Promise<Result<boolean>>
+    /** Sem `force` alterna; com `force` define o estado (idempotente). */
+    toggleFullscreen(force?: boolean): Promise<Result<boolean>>
     onFullscreenChanged(callback: (isFullscreen: boolean) => void): () => void
   }
 }

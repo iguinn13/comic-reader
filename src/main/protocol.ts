@@ -32,6 +32,9 @@ export function registerComicProtocolAsPrivileged(): void {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/** Chave (sha1 hex) da capa de pasta escolhida pelo usuário — nunca vira caminho sem validar. */
+const SHA1_RE = /^[0-9a-f]{40}$/
+
 function notFound(): Response {
   return new Response(null, { status: 404 })
 }
@@ -120,10 +123,11 @@ export function registerComicProtocolHandler(
 
 async function handleCover(paths: AppPaths, segments: string[]): Promise<Response> {
   const [target, id] = segments
-  if (!id || !UUID_RE.test(id)) return notFound()
-  if (target !== 'comic') return notFound()
+  let filePath: string
+  if (target === 'comic' && id && UUID_RE.test(id)) filePath = paths.comicCoverFile(id)
+  else if (target === 'folder' && id && SHA1_RE.test(id)) filePath = paths.folderCoverFile(id)
+  else return notFound()
 
-  const filePath = paths.comicCoverFile(id)
   const data = await readFile(filePath)
   return new Response(new Uint8Array(data), {
     status: 200,

@@ -3,8 +3,8 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComicSummary } from '@shared/types'
 import { ComicCard } from './comic-card'
 
-/** docs/07-ui-ux.md §4.2: colunas auto-fill, mínimo 150 px, gap 20 px. */
-const MIN_CARD_WIDTH = 150
+/** docs/07-ui-ux.md §4.2: colunas auto-fill, mínimo 190 px, gap 20 px. */
+const MIN_CARD_WIDTH = 190
 const GRID_GAP = 20
 const CARD_ASPECT_HEIGHT_RATIO = 1.5 // capa 2:3
 const CARD_META_HEIGHT = 44 // título (2 linhas) + status

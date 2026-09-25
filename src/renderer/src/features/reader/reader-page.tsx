@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DEFAULT_READER_PREFS } from '@shared/constants'
 import { AppError } from '@shared/errors'
@@ -22,8 +22,8 @@ import { VerticalView } from './vertical-view'
 import { SingleView } from './single-view'
 import { stepVerticalWidth, stepZoom } from './zoom'
 
-/** docs/06-leitor.md §2: as barras somem depois de 2,5 s sem movimento do mouse. */
-const CHROME_AUTO_HIDE_MS = 2500
+/** docs/06-leitor.md §2: as barras somem depois de 1,5 s sem movimento do mouse. */
+const CHROME_AUTO_HIDE_MS = 1500
 
 /** RF-30..44: monta a sessão de leitura e a tela real do leitor (docs/06-leitor.md). */
 export function ReaderPage(): React.JSX.Element | null {
@@ -69,17 +69,14 @@ export function ReaderPage(): React.JSX.Element | null {
     if (data) loadSession(data)
   }, [data, loadSession])
 
-  const isFullscreenRef = useRef(isFullscreen)
+  // Entra no leitor já em tela cheia (com as barras em modo ocioso). Ao sair da
+  // tela: fecha a sessão no main (flush do progresso), sai da tela cheia (ela é
+  // exclusiva do leitor; `force` evita alternar errado, ex.: StrictMode) e limpa o estado local.
   useEffect(() => {
-    isFullscreenRef.current = isFullscreen
-  }, [isFullscreen])
-
-  // Sai da tela: fecha a sessão no main (flush do progresso), sai da tela cheia
-  // se estava nela (a tela cheia é exclusiva do leitor) e limpa o estado local.
-  useEffect(() => {
+    void api.app.toggleFullscreen(true)
     return () => {
       if (comicId) void api.reader.close(comicId)
-      if (isFullscreenRef.current) void api.app.toggleFullscreen()
+      void api.app.toggleFullscreen(false)
       reset()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só deve rodar na desmontagem, com o comicId da última sessão
@@ -89,7 +86,7 @@ export function ReaderPage(): React.JSX.Element | null {
     return api.app.onFullscreenChanged(setFullscreen)
   }, [setFullscreen])
 
-  // Auto-ocultar as barras (docs §2): só em tela cheia, após 2,5 s parado.
+  // Auto-ocultar as barras (docs §2): só em tela cheia, após 1,5 s parado.
   useEffect(() => {
     if (!isFullscreen) {
       setChromeVisible(true)

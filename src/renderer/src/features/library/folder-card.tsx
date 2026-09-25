@@ -1,11 +1,21 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { Folder } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@renderer/components/ui/context-menu'
+import { api } from '@renderer/lib/api'
+import { queryKeys } from '@renderer/lib/query-keys'
 import type { FolderEntry } from '@shared/types'
 
 /**
  * Card de subpasta na navegação por pastas (RF-64, docs/07-ui-ux.md §4.2):
  * mesma proporção 2:3 do `ComicCard`, pra ficar na mesma grade sem quebrar o
- * layout, mas sem capa/menu — só entra na pasta ao clicar.
+ * layout. Clicar entra na pasta. Pastas sem HQs diretas ganham um menu de
+ * contexto para escolher/remover uma imagem de capa (ADR-020).
  */
 export function FolderCard({
   entry,
@@ -15,8 +25,15 @@ export function FolderCard({
   onOpen: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
 
-  return (
+  const location = { folderId: entry.folderId, relativePath: entry.relativePath }
+
+  function refresh(): void {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
+  }
+
+  const card = (
     <div className="flex flex-col gap-2">
       <button
         type="button"
@@ -47,5 +64,31 @@ export function FolderCard({
         {t('library.folders.comicCount', { count: entry.comicCount })}
       </p>
     </div>
+  )
+
+  if (entry.hasDirectComics) return card
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{card}</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem
+          onSelect={() =>
+            void api.library.setFolderCover(location).then((changed) => {
+              if (changed) refresh()
+            })
+          }
+        >
+          {t('library.folders.setCover')}
+        </ContextMenuItem>
+        {entry.coverUrl && (
+          <ContextMenuItem
+            onSelect={() => void api.library.clearFolderCover(location).then(refresh)}
+          >
+            {t('library.folders.removeCover')}
+          </ContextMenuItem>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }

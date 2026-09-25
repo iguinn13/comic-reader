@@ -162,3 +162,10 @@ Formato: **Contexto → Decisão → Consequências**. Os status possíveis são
 **Contexto.** O modo foco ("desligar a luz") se sobrepunha à tela cheia: as barras já se auto-ocultam em tela cheia, e o fundo do leitor já é quase preto.
 **Decisão.** Remover o modo foco: botão, atalho `L`, setting `reader.focusMode` e o estado no store. A tela cheia (RF-37) mantém o auto-ocultar das barras.
 **Consequências.** Valores antigos de `reader.focusMode` que existam no banco ficam órfãos e são ignorados.
+
+### ADR-020 — Capa personalizada para pastas sem HQs
+**Status:** Aceita · **Data:** 2026-09-25
+
+**Contexto.** Pastas sem HQs diretas (só subpastas) aparecem com um ícone genérico na navegação por pastas (RF-64), e não há tabela de pastas intermediárias (ADR-018).
+**Decisão.** O usuário pode escolher uma imagem para essas pastas (menu de contexto do card). A imagem é reduzida para 400 px (JPEG q=82) e salva em `covers/folders/{key}.jpg`, com `key = sha1(folderId + ":" + relativePath)`. A existência do arquivo é o único estado — sem tabela nova nem migração — e é servida por `comic://cover/folder/{key}`. Se a pasta passar a ter HQs diretas, vale a capa da 1ª HQ.
+**Consequências.** Renomear/mover a pasta no disco muda o `relativePath` e, portanto, a chave: a capa escolhida deixa de ser encontrada (arquivo órfão fica em `covers/folders/`, sem limpeza automática por ora).

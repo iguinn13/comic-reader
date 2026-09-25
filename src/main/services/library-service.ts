@@ -34,7 +34,8 @@ import {
 import { logger } from '../utils/logger'
 import type { AppPaths } from '../utils/paths'
 import { normalizeText } from '../utils/normalize'
-import { comicCoverUrl, toComicDetail, toComicSummary } from './comic-dto'
+import type { FolderCoverService } from './folder-cover-service'
+import { comicCoverUrl,toComicDetail, toComicSummary } from './comic-dto'
 
 const HOME_LIST_LIMIT = 20
 
@@ -67,6 +68,9 @@ export class LibraryService {
   constructor(
     private readonly db: Db,
     private readonly paths: AppPaths,
+    private readonly folderCovers: Pick<FolderCoverService, 'coverUrl'> = {
+      coverUrl: () => null,
+    },
   ) {}
 
   list(query: LibraryQuery): Page<ComicSummary> {
@@ -169,12 +173,16 @@ export class LibraryService {
           comics.push(...inside.comics)
           continue
         }
+        const hasDirectComics = inside.comics.length > 0
         subfolders.push({
           name: basename(folder.path),
           folderId: folder.id,
           relativePath: '',
           comicCount: inside.comics.length,
-          coverUrl: inside.comics.find((comic) => comic.coverUrl)?.coverUrl ?? null,
+          coverUrl: hasDirectComics
+            ? (inside.comics.find((comic) => comic.coverUrl)?.coverUrl ?? null)
+            : this.folderCovers.coverUrl({ folderId: folder.id, relativePath: '' }),
+          hasDirectComics,
         })
       }
       return { subfolders, comics }
@@ -207,13 +215,22 @@ export class LibraryService {
     }
 
     const sortedNames = naturalSort([...subfolderCounts.keys()])
-    const subfolders = sortedNames.map((name) => ({
-      name,
-      folderId: location.folderId!,
-      relativePath: location.relativePath ? `${location.relativePath}/${name}` : name,
-      comicCount: subfolderCounts.get(name)!,
-      coverUrl: firstCoverUrl(subfolderDirectRows.get(name) ?? []),
-    }))
+    const subfolders = sortedNames.map((name) => {
+      const relativePath = location.relativePath ? `${location.relativePath}/${name}` : name
+      const directComics = subfolderDirectRows.get(name) ?? []
+      const hasDirectComics = directComics.length > 0
+      return {
+        name,
+        folderId: location.folderId!,
+        relativePath,
+        comicCount: subfolderCounts.get(name)!,
+        // Sem HQs direto: vale a imagem escolhida pelo usuário (ADR-020), se houver.
+        coverUrl: hasDirectComics
+          ? firstCoverUrl(directComics)
+          : this.folderCovers.coverUrl({ folderId: location.folderId!, relativePath }),
+        hasDirectComics,
+      }
+    })
 
     const sortedPaths = naturalSort(directRows.map((row) => row.filePath))
     const byPath = new Map(directRows.map((row) => [row.filePath, row]))

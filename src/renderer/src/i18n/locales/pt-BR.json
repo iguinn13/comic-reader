@@ -86,6 +86,8 @@
       "breadcrumb": "Caminho da pasta",
       "root": "Biblioteca",
       "emptyFolder": "Esta pasta não tem HQs nem subpastas",
+      "setCover": "Escolher imagem de capa…",
+      "removeCover": "Remover imagem de capa",
       "comicCount_one": "{{count}} HQ",
       "comicCount_other": "{{count}} HQs"
     }

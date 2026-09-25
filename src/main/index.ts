@@ -8,6 +8,7 @@ import { registerAllIpc } from './ipc/register'
 import { registerComicProtocolAsPrivileged, registerComicProtocolHandler } from './protocol'
 import { CoverService } from './services/cover-service'
 import { LibraryScanService } from './services/library-scan-service'
+import { FolderCoverService } from './services/folder-cover-service'
 import { LibraryService } from './services/library-service'
 import { MaintenanceService } from './services/maintenance-service'
 import { PageCacheService } from './services/page-cache-service'
@@ -68,7 +69,8 @@ if (!gotSingleInstanceLock) {
 
     db = createDb(paths.dbFile)
     const settingsService = new SettingsService(db, () => void pageCacheService.enforceLru(null))
-    const libraryService = new LibraryService(db, paths)
+    const folderCoverService = new FolderCoverService(paths, resizeToJpeg)
+    const libraryService = new LibraryService(db, paths, folderCoverService)
     const pageCacheService = new PageCacheService(db, paths)
     const readerService = new ReaderService(db, pageCacheService)
     readerServiceRef = readerService
@@ -99,6 +101,7 @@ if (!gotSingleInstanceLock) {
       db,
       settingsService,
       libraryService,
+      folderCoverService,
       libraryScanService,
       readerService,
     })

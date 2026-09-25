@@ -169,7 +169,8 @@ Raiz: `app.getPath('userData')` (Windows: `%APPDATA%\Comic Reader\`). Todos os c
 userData/
 ├─ comic-reader.db            # SQLite (+ -wal, -shm)
 ├─ covers/
-│  └─ comics/{comicId}.jpg    # 400 px de largura, JPEG q=82
+│  ├─ comics/{comicId}.jpg    # 400 px de largura, JPEG q=82
+│  └─ folders/{key}.jpg       # capa escolhida pelo usuário p/ pasta sem HQs; key = sha1(folderId:relativePath)
 ├─ cache/
 │  └─ pages/{comicId}/
 │     ├─ 0000.jpg|png|webp|gif      # índice com 4+ dígitos, extensão original

@@ -21,10 +21,11 @@ export function registerAppIpc(
     await shell.openPath(info.userDataPath)
   })
 
-  handle(CH.app.toggleFullscreen, z.tuple([]), () => {
+  // `force` torna a chamada idempotente (ex.: entrar em tela cheia ao abrir o leitor).
+  handle(CH.app.toggleFullscreen, z.tuple([z.boolean().optional()]), ([force]) => {
     const win = getWindow()
     if (!win) return false
-    const next = !win.isFullScreen()
+    const next = force ?? !win.isFullScreen()
     win.setFullScreen(next)
     return next
   })

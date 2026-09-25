@@ -27,7 +27,7 @@ Cobre RF-30 a RF-44. O leitor é a tela mais importante do app e deve ser rápid
 - **Barra superior:** voltar; título (clicável → renomear); seletor de modo (`single` / `double` / `vertical`); controles de ajuste/zoom (dependem do modo); favoritar (RF-44); menu `⋯` (Marcar como não lida, Restaurar padrões de leitura); tela cheia (⛶).
 - **Barra inferior:** slider de páginas (arrastar mostra o preview "página N"), indicador `N / total` (clicável → campo "Ir para página") e setas de navegação.
 - **Área de leitura:** fundo `--reader-bg` (quase preto).
-- **Auto-ocultar:** em **tela cheia**, as barras somem após 2,5 s sem movimento do mouse e reaparecem ao mover o mouse ou aproximá-lo das bordas. A transição de opacidade/posição das barras é suave (`150ms ease-out`, `transition-[opacity,transform]`), não um corte abrupto. A scrollbar da área de leitura também some junto (`scrollbar-width: none` / `::-webkit-scrollbar`), e o cursor some quando as barras estão ocultas. Fora da tela cheia, as barras ficam sempre visíveis.
+- **Auto-ocultar:** em **tela cheia**, as barras somem após 1,5 s sem movimento do mouse e reaparecem ao mover o mouse ou aproximá-lo das bordas. A transição de opacidade/posição das barras é suave (`150ms ease-out`, `transition-[opacity,transform]`), não um corte abrupto. A scrollbar da área de leitura também some junto (`scrollbar-width: none` / `::-webkit-scrollbar`), e o cursor some quando as barras estão ocultas. Fora da tela cheia, as barras ficam sempre visíveis.
 
 ## 3. Modos de leitura
 
@@ -115,7 +115,7 @@ A tabela de atalhos também aparece num diálogo (`?`) e em Configurações.
 
 ## 6. Tela cheia — RF-37
 
-`BrowserWindow.setFullScreen(true)` (via `app.toggleFullscreen`), com a janela acima da barra de tarefas do Windows. Não persiste (sempre abre em janela). O modo foco (RF-38) foi removido (ADR em `10`).
+`BrowserWindow.setFullScreen(true)` (via `app.toggleFullscreen`), com a janela acima da barra de tarefas do Windows. O leitor entra em tela cheia automaticamente ao abrir uma HQ (com as barras já em modo ocioso, auto-ocultando após 1,5 s) e sai dela ao sair do leitor. O modo foco (RF-38) foi removido (ADR em `10`).
 
 O renderer escuta `onFullscreenChanged`, porque o usuário pode sair da tela cheia por meios do SO.
 
@@ -184,7 +184,7 @@ Os componentes de modo (`SingleView`, `DoubleView`, `VerticalView`, e `PdfPage` 
 - [ ] `←`/`→` funcionam nos 3 modos. Clique nas zonas funciona em single/double.
 - [ ] Página larga aparece sozinha no modo duplo. "Deslocar pares" altera o pareamento.
 - [ ] No vertical, `+`/`-` muda a largura e a página visível não "pula".
-- [ ] Tela cheia: barras somem em 2,5 s e voltam com o mouse; a barra de tarefas do Windows também some.
+- [ ] Tela cheia: barras somem em 1,5 s e voltam com o mouse; a barra de tarefas do Windows também some.
 - [ ] Chegar à última página marca como lida, e avançar mostra o painel com o próximo arquivo da pasta (quando existir).
 - [ ] Sair do leitor em tela cheia devolve a janela ao estado normal.
 - [ ] HQ de 300 páginas no vertical: uso de memória dentro do RNF-03.

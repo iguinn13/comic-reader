@@ -83,7 +83,8 @@ export interface FolderEntry {
   folderId: string;
   relativePath: string;
   comicCount: number;                                 // recursivo
-  coverUrl: string | null;                            // capa da 1ª HQ direto na pasta; null se só tem subpastas
+  coverUrl: string | null;                            // capa da 1ª HQ direto na pasta; sem HQs diretas, a imagem escolhida pelo usuário (ADR-020) ou null
+  hasDirectComics: boolean;                           // só pastas sem HQs diretas aceitam capa própria
 }
 
 export interface FolderContents {
@@ -150,6 +151,8 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppErrorPayl
 | `stats()` | `library:stats` | — | `{ comicCount; libraryBytes; cacheBytes }` | RF-51, 52 |
 | `scan()` | `library:scan` | — | `void` | RF-04 ("Atualizar biblioteca") |
 | `browseFolder(location)` | `library:browseFolder` | `FolderLocation` | `FolderContents` | RF-64 |
+| `setFolderCover(location)` | `library:setFolderCover` | `FolderLocation` (`folderId` ≠ null) | `boolean` (false = cancelou o seletor de imagem) | RF-64 |
+| `clearFolderCover(location)` | `library:clearFolderCover` | `FolderLocation` (`folderId` ≠ null) | `void` | RF-64 |
 
 `delete` com `deleteFile: true` só apaga o arquivo do disco se ele ainda estiver dentro de alguma pasta-raiz configurada (checagem de segurança no `LibraryService`); fora disso, o arquivo é preservado e só o registro é removido, silenciosamente.
 
@@ -198,7 +201,7 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppErrorPayl
 | `info()` | `app:info` | `{ version; userDataPath }` |
 | `openDataFolder()` | `app:openDataFolder` | `void` (`shell.openPath`) |
 | `clearCache()` | `app:clearCache` | `{ freedBytes }` |
-| `toggleFullscreen()` | `app:toggleFullscreen` | `boolean` (novo estado) |
+| `toggleFullscreen(force?: boolean)` | `app:toggleFullscreen` | `boolean` (novo estado; com `force` define o estado em vez de alternar) |
 | `onFullscreenChanged(cb)` | evento | `boolean` |
 
 ## 5. Exemplo de implementação (padrão a seguir)

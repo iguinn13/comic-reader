@@ -70,6 +70,25 @@ img {
   -webkit-app-region: no-drag;
 }
 
+/* Scrollbar global: fina, polegar na cor de destaque (igual à barra de progresso) e trilho no fundo padrão. */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-bg);
+}
+
 /* Esconde a scrollbar do leitor junto com as barras (docs/06-leitor.md §2). */
 .scrollbar-hidden {
   scrollbar-width: none;

@@ -21,6 +21,9 @@ export interface AppPaths {
   readonly coversDir: string
   readonly coversComicsDir: string
   comicCoverFile(comicId: string): string
+  /** Capas escolhidas pelo usuário para pastas (docs/03 §3); `key` é o hash de `folderCoverKey`. */
+  readonly coversFoldersDir: string
+  folderCoverFile(key: string): string
 
   /** Cache descartável de páginas extraídas. */
   readonly cacheDir: string
@@ -39,6 +42,7 @@ export interface AppPaths {
 export function createAppPaths(userDataRoot: string): AppPaths {
   const coversDir = join(userDataRoot, 'covers')
   const coversComicsDir = join(coversDir, 'comics')
+  const coversFoldersDir = join(coversDir, 'folders')
   const cacheDir = join(userDataRoot, 'cache')
   const cachePagesDir = join(cacheDir, 'pages')
   const logsDir = join(userDataRoot, 'logs')
@@ -50,6 +54,8 @@ export function createAppPaths(userDataRoot: string): AppPaths {
     coversDir,
     coversComicsDir,
     comicCoverFile: (comicId) => join(coversComicsDir, `${comicId}.jpg`),
+    coversFoldersDir,
+    folderCoverFile: (key) => join(coversFoldersDir, `${key}.jpg`),
 
     cacheDir,
     cachePagesDir,
@@ -60,7 +66,7 @@ export function createAppPaths(userDataRoot: string): AppPaths {
 
     logsDir,
 
-    allDirectories: [coversComicsDir, cachePagesDir, logsDir],
+    allDirectories: [coversComicsDir, coversFoldersDir, cachePagesDir, logsDir],
   }
 
   return paths

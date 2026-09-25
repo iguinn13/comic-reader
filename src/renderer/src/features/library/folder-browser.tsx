@@ -85,7 +85,7 @@ export function FolderBrowser(): React.JSX.Element {
         ) : (
           <div
             className="grid gap-5"
-            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }}
           >
             {subfolders.map((entry) => (
               <FolderCard
