@@ -160,7 +160,7 @@ export function VerticalView({
       onWheel={handleWheel}
       onClick={handleClick}
       className={cn(
-        'absolute inset-0 overflow-auto bg-reader-bg',
+        'absolute inset-0 overflow-auto scrollbar-hidden bg-reader-bg',
         !showChrome && 'scrollbar-hidden',
       )}
     >
