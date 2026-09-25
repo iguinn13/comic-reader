@@ -1,17 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DEFAULT_READER_PREFS } from '@shared/constants'
 import { AppError } from '@shared/errors'
 import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/button'
-import { AddToCollectionDialog } from '@renderer/features/collections/add-to-collection-dialog'
 import { ConfirmDeleteDialog } from '@renderer/features/library/confirm-delete-dialog'
 import { api } from '@renderer/lib/api'
 import { cn } from '@renderer/lib/utils'
 import { queryKeys } from '@renderer/lib/query-keys'
-import { useReaderStore } from '@renderer/stores/reader-store'
+import { useReaderStore, useShowChrome } from '@renderer/stores/reader-store'
 import { EndPanel } from './end-panel'
 import { ShortcutsDialog } from './shortcuts'
 import { GoToPageDialog } from './go-to-page-dialog'
@@ -32,13 +31,11 @@ export function ReaderPage(): React.JSX.Element | null {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { comicId } = useParams<{ comicId: string }>()
-  const [searchParams] = useSearchParams()
-  const fromCollectionId = searchParams.get('from') ?? undefined
 
   const session = useReaderStore((s) => s.session)
   const currentPage = useReaderStore((s) => s.currentPage)
   const prefs = useReaderStore((s) => s.prefs)
-  const chromeVisible = useReaderStore((s) => s.chromeVisible)
+  const showChrome = useShowChrome()
   const isFullscreen = useReaderStore((s) => s.isFullscreen)
   const focusMode = useReaderStore((s) => s.focusMode)
   const endPanelOpen = useReaderStore((s) => s.endPanelOpen)
@@ -56,12 +53,11 @@ export function ReaderPage(): React.JSX.Element | null {
 
   const [goToPageOpen, setGoToPageOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [addToOpen, setAddToOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.reader.session(comicId ?? ''),
-    queryFn: () => api.reader.open(comicId!, fromCollectionId),
+    queryFn: () => api.reader.open(comicId!),
     enabled: !!comicId,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -79,10 +75,17 @@ export function ReaderPage(): React.JSX.Element | null {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- roda só uma vez, na entrada do leitor
   }, [])
 
-  // Sai da tela: fecha a sessão no main (flush do progresso) e limpa o estado local.
+  const isFullscreenRef = useRef(isFullscreen)
+  useEffect(() => {
+    isFullscreenRef.current = isFullscreen
+  }, [isFullscreen])
+
+  // Sai da tela: fecha a sessão no main (flush do progresso), sai da tela cheia
+  // se estava nela (a tela cheia é exclusiva do leitor) e limpa o estado local.
   useEffect(() => {
     return () => {
       if (comicId) void api.reader.close(comicId)
+      if (isFullscreenRef.current) void api.app.toggleFullscreen()
       reset()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só deve rodar na desmontagem, com o comicId da última sessão
@@ -252,23 +255,16 @@ export function ReaderPage(): React.JSX.Element | null {
 
   if (!session) return null
 
-  const originSaga = session.sagaContext.find((saga) => saga.sagaId === fromCollectionId)
-  const sagaBadge = originSaga
-    ? t('reader.sagaBadge', {
-        name: originSaga.sagaName,
-        current: originSaga.position + 1,
-        total: originSaga.total,
-      })
-    : undefined
-
-  const showChrome = chromeVisible || (!isFullscreen && !focusMode)
-
   return (
     <div className={cn('flex size-full flex-col bg-reader-bg', !showChrome && 'cursor-none')}>
-      {showChrome && (
+      <div
+        className={cn(
+          'shrink-0 transition-[opacity,transform] duration-150 ease-out',
+          showChrome ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
+        )}
+      >
         <ReaderTopBar
           title={session.comic.title}
-          sagaBadge={sagaBadge}
           mode={prefs.mode}
           fit={prefs.fit}
           zoom={prefs.zoom}
@@ -287,10 +283,9 @@ export function ReaderPage(): React.JSX.Element | null {
           onToggleFullscreen={() => void api.app.toggleFullscreen()}
           onToggleFocusMode={toggleFocusMode}
           onMarkUnread={() => void api.library.setReadStatus([session.comic.id], 'unread')}
-          onAddToCollection={() => setAddToOpen(true)}
           onResetPrefs={handleResetPrefs}
         />
-      )}
+      </div>
 
       <div className="min-h-0 flex-1">
         {prefs.mode === 'double' ? (
@@ -302,7 +297,12 @@ export function ReaderPage(): React.JSX.Element | null {
         )}
       </div>
 
-      {showChrome && (
+      <div
+        className={cn(
+          'shrink-0 transition-[opacity,transform] duration-150 ease-out',
+          showChrome ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0',
+        )}
+      >
         <ReaderBottomBar
           currentPage={currentPage}
           totalPages={session.comic.pageCount}
@@ -311,13 +311,7 @@ export function ReaderPage(): React.JSX.Element | null {
           onNext={next}
           onOpenGoToPage={() => setGoToPageOpen(true)}
         />
-      )}
-
-      <AddToCollectionDialog
-        comicIds={[session.comic.id]}
-        open={addToOpen}
-        onOpenChange={setAddToOpen}
-      />
+      </div>
 
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
 
@@ -334,10 +328,10 @@ export function ReaderPage(): React.JSX.Element | null {
         open={endPanelOpen}
         onOpenChange={setEndPanelOpen}
         comicTitle={session.comic.title}
-        sagaContext={session.sagaContext}
-        onReadNext={(nextId, sagaId) => {
+        nextInFolder={session.nextInFolder}
+        onReadNext={(nextId) => {
           setEndPanelOpen(false)
-          void navigate(`/read/${nextId}?from=${sagaId}`, { replace: true })
+          void navigate(`/read/${nextId}`, { replace: true })
         }}
         onBackToLibrary={() => void navigate('/library')}
       />

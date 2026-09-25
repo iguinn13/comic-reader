@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Heart, ListPlus, Pencil, Play, Trash2 } from 'lucide-react'
+import { Heart, Pencil, Play, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Checkbox } from '@renderer/components/ui/checkbox'
@@ -17,7 +17,6 @@ import { queryKeys } from '@renderer/lib/query-keys'
 import { toast } from '@renderer/stores/toast-store'
 import { useSelectionStore } from '@renderer/stores/selection-store'
 import type { ComicSummary } from '@shared/types'
-import { AddToCollectionDialog } from '@renderer/features/collections/add-to-collection-dialog'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 import { RenameDialog } from './rename-dialog'
 
@@ -37,12 +36,9 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
 
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [addToOpen, setAddToOpen] = useState(false)
 
   const invalidateLibrary = (): void => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
-    // Grades de coleção (lista/saga) mostram o mesmo resumo da HQ.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.collections.all() })
   }
 
   const { mutate: toggleFavorite, isPending: isTogglingFavorite } = useMutation({
@@ -183,10 +179,6 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
                 : 'library.contextMenu.markRead',
             )}
           </ContextMenuItem>
-          <ContextMenuItem onSelect={() => setAddToOpen(true)}>
-            <ListPlus className="size-4" />
-            {t('library.contextMenu.addTo')}
-          </ContextMenuItem>
           <ContextMenuItem onSelect={() => setRenameOpen(true)}>
             <Pencil className="size-4" />
             {t('library.contextMenu.rename')}
@@ -214,7 +206,6 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
         open={renameOpen}
         onOpenChange={setRenameOpen}
       />
-      <AddToCollectionDialog comicIds={[comic.id]} open={addToOpen} onOpenChange={setAddToOpen} />
       <ConfirmDeleteDialog comicIds={[comic.id]} open={deleteOpen} onOpenChange={setDeleteOpen} />
     </div>
   )

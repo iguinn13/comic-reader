@@ -1,121 +1,101 @@
-# 05 — Pipeline de importação
+# 05 — Biblioteca em pastas (scan)
 
 Cobre RF-01 a RF-06 e RNF-05.
+
+> **Nota (docs/10-decisoes.md):** este documento descrevia originalmente um pipeline de *importação* — o usuário escolhia arquivos um a um (ou soltava-os na janela) e o app **copiava** cada um para uma pasta interna gerenciada (`library/`). Esse modelo foi substituído: o usuário aponta para uma ou mais pastas onde já organiza suas HQs, e o app as escaneia recursivamente e as lê **in-place**, sem copiar nada. Ver ADR correspondente em `docs/10-decisoes.md`.
 
 ## 1. Visão geral
 
 ```mermaid
 flowchart TD
-  A[Caminhos recebidos<br/>diálogo ou drag & drop] --> B[Expandir entradas]
-  B -->|.cbz/.cbr/.pdf| Q[Fila de itens]
-  B -->|.zip| C{Conteúdo do ZIP}
-  C -->|contém .cbz/.cbr/.pdf| D[Um item por HQ interna<br/>origem = entrada do ZIP]
-  C -->|só imagens| E[Um item = o próprio ZIP como CBZ]
-  C -->|nada utilizável| F[Item falho: UNSUPPORTED_FORMAT]
-  D --> Q
-  E --> Q
-  B -->|outra extensão| F
-  Q --> P[Processar item<br/>1 por vez]
-  P --> S1[1. Materializar em cache/tmp]
-  S1 --> S2[2. Detectar formato real]
-  S2 --> S3[3. Validar e listar páginas]
-  S3 --> S4[4. Hash SHA-1]
-  S4 --> S5{Duplicado?}
-  S5 -->|sim| S5a[Pausa: pergunta ao usuário]
-  S5a -->|pular| X[skipped-duplicate]
-  S5a -->|importar| S6
-  S5 -->|não| S6[5. Mover para library/]
-  S6 --> S7[6. Gerar capa]
-  S7 --> S8[7. Transação no banco]
-  S8 --> OK[done + evento library:changed]
+  A[Pastas-raiz configuradas<br/>library_folders] --> B[Percorrer recursivamente<br/>cada pasta-raiz]
+  B --> C{Extensão reconhecida?<br/>.cbz .cbr .pdf .zip}
+  C -->|não| Z1[Ignorado]
+  C -->|sim| D{Já indexado<br/>por file_path?}
+  D -->|sim| Z2[Pulado: já está no índice]
+  D -->|não| E[1. Detectar formato real]
+  E --> F[2. Validar e listar páginas]
+  F --> G[3. Hash SHA-1]
+  G --> H{Duplicado por hash?}
+  H -->|sim| Z3[Ignorado silenciosamente<br/>fica a 1ª ocorrência indexada]
+  H -->|não| I[4. Gerar capa]
+  I --> J[5. Transação no banco<br/>insertComic]
+  J --> OK[HQ indexada]
+  B --> K[Ao fim de cada pasta:<br/>HQs indexadas cujo arquivo sumiu]
+  K --> L[Removidas do índice<br/>silenciosamente]
 ```
 
-## 2. Expansão das entradas
+O scan é feito pelo `LibraryScanService` (`src/main/services/library-scan-service.ts`), disparado (a) automaticamente no boot do app, e (b) sob demanda pelo botão "Atualizar biblioteca" da sidebar ou ao adicionar uma pasta nova. Não há file-watcher em tempo real (v2) — o scan é sempre um evento pontual, do início ao fim.
 
-Entrada: `string[]` de caminhos absolutos.
+## 2. Percorrendo as pastas-raiz (RF-02, RF-03)
 
-1. Descartar os caminhos inexistentes ou que não sejam arquivos (item `failed`, `IO`).
-2. Classificar pela extensão (minúscula):
-   - `.cbz`, `.cbr`, `.pdf` → **item simples**.
-   - `.zip` → **inspecionar** (seção 3).
-   - Qualquer outra → item `failed` com `UNSUPPORTED_FORMAT` (aparece no resumo, RF-02).
-3. Ordenar os itens resultantes por natural sort do nome, para que as HQs de um pacote entrem em ordem ("Batman 01", "Batman 02", …, "Batman 10").
+`walkDirectory()` (`src/main/utils/walk-directory.ts`) é um gerador assíncrono recursivo:
 
-## 3. Inspeção de ZIP (RF-03)
+1. Lista o conteúdo da pasta com `readdir(..., { withFileTypes: true })`.
+2. Ignora dotfiles/dot-pastas e nomes conhecidos de lixo (`.git`, `__MACOSX`, `node_modules`).
+3. Não segue links simbólicos para subpastas (evita ciclos).
+4. Para cada arquivo, filtra pela extensão (minúscula): `.cbz`, `.cbr`, `.pdf`, `.zip` (`IMPORTABLE_EXTENSIONS`, `src/shared/constants.ts`). Qualquer outra extensão é ignorada silenciosamente — não há "resumo de erros" como no antigo pipeline, porque o scan roda sozinho, sem um usuário esperando um diálogo.
+5. "Pode estar em cadeia" (RF-02): a recursão não tem limite de profundidade — subpastas dentro de subpastas são todas percorridas.
 
-Lista as entradas do ZIP (só o diretório central, sem descompactar):
+Cada pasta-raiz é uma linha de `library_folders` (docs/03 §2.1); o `LibraryScanService.scan()` itera todas elas.
 
-| Conteúdo (ignorando lixo, ver §5) | Resultado |
-|---|---|
-| ≥ 1 entrada `.cbz`/`.cbr`/`.pdf` (em qualquer subpasta) | Um item para **cada** HQ interna, com `source = { zip, entryName }`. Imagens soltas são ignoradas com aviso "N imagens soltas ignoradas em pack.zip". |
-| Nenhuma HQ interna, ≥ 1 imagem | Um item: o ZIP inteiro tratado como CBZ. |
-| Entradas `.zip` internas | Não expandidas (1 nível só). Item `failed` com `UNSUPPORTED_FORMAT` e nome "pack.zip › inner.zip". |
-| Vazio / sem nada utilizável | Item `failed` com `CORRUPTED_FILE`. |
+## 3. HQ dentro de um `.zip` (RF-02)
 
-O título de uma HQ interna vem do nome da entrada (sem pastas e sem extensão). O `sourceName` exibido é `pack.zip › Batman 01.cbz`.
+Diferente do antigo pipeline (que também inspecionava ZIPs em busca de HQs *internas*, ex.: um `pack.zip` contendo vários `.cbz`), o scan de pastas trata cada `.zip` encontrado como **uma única HQ candidata** — igual a um `.cbz`. Se o ZIP contém só imagens, vira uma HQ com essas imagens como páginas (mesma lógica de validação do passo 2 abaixo). Um `.zip` que na prática é um "pacote" de várias HQs deve ser desempacotado pelo próprio usuário na pasta (é organização de arquivos, fora do escopo do app — ver `docs/10-decisoes.md`).
 
-## 4. Processamento de um item
+## 4. Processando um arquivo encontrado (`LibraryScanService.importFile`)
 
-Os itens são processados **sequencialmente**: é I/O pesado e evita disputa de disco. Cada item tem um `AbortController`, e o cancelamento aborta o passo atual.
-
-| # | Passo | Detalhes | Erros |
+| # | Passo | Detalhes | Resultado se falhar |
 |---|---|---|---|
-| 1 | **Materializar** | Item simples: copia o arquivo para `cache/tmp/{itemId}.part` em stream. Item de ZIP: extrai a entrada interna para o mesmo destino. | `IO` (sem espaço, permissão, arquivo em uso) |
-| 2 | **Detectar formato** | Lê os 8 primeiros bytes: `PK\x03\x04` → zip, `Rar!\x1A\x07` → rar, `%PDF-` → pdf. A extensão errada é tolerada (ex.: `.cbr` que é ZIP). | Assinatura desconhecida → `UNSUPPORTED_FORMAT` |
-| 3 | **Validar e listar páginas** | zip/rar: `listPages()` → filtra imagens (§5) e ordena com natural sort. Exige ≥ 1 página. RAR com senha → erro. pdf: `pdf-lib` → `getPageCount()` ≥ 1 (PDF criptografado → erro). | `CORRUPTED_FILE` |
-| 4 | **Hash** | SHA-1 em stream do arquivo materializado. | `IO` |
-| 5 | **Duplicata** | `SELECT id, title FROM comics WHERE file_hash = ?`. Se existe e não há decisão "aplicar a todos", o item vai para `awaiting-duplicate-decision` e o job para `paused-for-decision`; o processamento aguarda `resolveDuplicate`. | — |
-| 6 | **Mover para a biblioteca** | Gera `comicId`, faz `rename` de `tmp/{itemId}.part` → `library/{comicId}.{cbz\|cbr\|pdf}` (mesmo volume, atômico). | `IO` |
-| 7 | **Capa** | zip/rar: lê a página 0 → `nativeImage.createFromBuffer` → resize para 400 px de largura → JPEG q82 → `covers/comics/{id}.jpg`. pdf: pede ao PDF worker (render da página 1 em 400 px). Se a capa falhar, **não** falha o item (`cover_version = 0`, placeholder) e o erro é logado. | — (só log) |
-| 8 | **Banco** | Em uma transação: `INSERT comics`, `INSERT comic_pages` (zip/rar), `INSERT reading_progress`. | `INTERNAL` |
+| 1 | **Detectar formato** | Lê os bytes do arquivo (in-place, sem copiar) e a assinatura: `PK\x03\x04` → zip, `Rar!\x1A\x07` → rar, `%PDF-` → pdf. A extensão errada é tolerada (ex.: `.cbr` que é ZIP). | Assinatura desconhecida → arquivo ignorado, aviso no log |
+| 2 | **Validar e listar páginas** | zip/rar: `listPages()` → filtra imagens (§5) e ordena com natural sort. Exige ≥ 1 página. pdf: `pdf-lib` → `getPageCount()` ≥ 1. | Sem páginas/corrompido → ignorado, aviso no log |
+| 3 | **Hash** | SHA-1 do conteúdo do arquivo. | — |
+| 4 | **Duplicata** | `SELECT id, title FROM comics WHERE file_hash = ?` (mesma HQ alcançável por duas pastas-raiz sobrepostas, ou um arquivo duplicado de fato). Se já existe, o arquivo é ignorado — sem diálogo: o scan é automático e não interativo (RF-05). | Ignorado, aviso no log |
+| 5 | **Capa** | zip/rar: lê a página 0 → `resizeToJpeg` → 400 px de largura, JPEG q82 → `covers/comics/{id}.jpg`. pdf: placeholder (`cover_version = 0`) até o suporte a render de PDF chegar (ver TODO em `cover-service.ts`). Uma falha na capa **nunca** impede a indexação. | — (só log) |
+| 6 | **Banco** | Em uma transação (`insertComic`): `INSERT comics` (com `file_path`, `dir_path`, `folder_id`), `INSERT comic_pages` (zip/rar), `INSERT reading_progress`. | Arquivo ignorado, erro logado |
 
-**Rollback:** se o passo N falhar ou o item for cancelado, desfaz o que foi feito: apaga o `.part`, o arquivo em `library/` e a capa. A transação do banco é atômica. O item fica `failed` ou `cancelled` e a fila segue para o próximo.
-
-**Após cada item concluído:** emite `library:changed` (com throttle de 500 ms durante a fila), para que a biblioteca vá mostrando as HQs à medida que entram.
+Como não há mais "materializar em tmp" nem "mover para `library/`" (a HQ é lida direto do caminho onde está), o pipeline ficou mais curto — e mais robusto: cada arquivo processado só toca o banco na etapa final, numa única transação atômica, então uma queda do app no meio do scan nunca deixa um registro parcial (só HQs ainda não escaneadas, que o próximo scan retoma).
 
 ## 5. Regras de páginas
 
+Inalteradas em relação ao pipeline anterior:
+
 - **Extensões de imagem aceitas:** `.jpg .jpeg .png .webp .gif .bmp .avif` (sem diferenciar maiúsculas).
 - **Ignorar:** entradas de diretório, `__MACOSX/`, arquivos começando com `.` (ex.: `._001.jpg`), `Thumbs.db`, `desktop.ini`, `ComicInfo.xml` (reservado para v2), `.txt`, `.nfo`, `.xml`, `.url`.
-- **Ordem:** natural sort sobre o **caminho completo** da entrada (`Intl.Collator('en', { numeric: true, sensitivity: 'base' })`), para que `pasta1/10.jpg` fique depois de `pasta1/2.jpg` e as subpastas sejam respeitadas.
+- **Ordem:** natural sort sobre o **caminho completo** da entrada (`Intl.Collator('en', { numeric: true, sensitivity: 'base' })`, `src/main/archive/natural-sort.ts`), para que `pasta1/10.jpg` fique depois de `pasta1/2.jpg` e as subpastas sejam respeitadas.
 - `page_index` é 0-based e contínuo após o filtro.
 
-## 6. Fila, eventos e UI
+## 6. "Próximo arquivo da pasta" (RF-42)
 
-- Existe uma única fila global (`ImportService`). Chamar `start()` durante uma execução adiciona itens ao job corrente.
-- O job termina quando todos os itens estão em um estado final. Então `status = 'finished'`, com um último evento de progresso.
-- **Painel de importação** (renderer, [07](07-ui-ux.md#46-painel-de-importação)):
-  - Aparece no canto inferior direito ao iniciar e pode ser minimizado.
-  - Mostra a barra geral (`done+skipped+failed / total`), a lista rolável de itens com ícone de estado e o botão **Cancelar**.
-  - Com `paused-for-decision`, abre o diálogo de duplicata: "*Batman 01* já está na biblioteca (como *Batman #1*)". Botões: **Pular** / **Importar mesmo assim**, checkbox **Aplicar aos próximos duplicados**.
-  - Ao terminar, exibe o resumo (RF-04) com a lista de erros legíveis (mensagem i18n por `errorCode`) e o botão **Fechar**. Sem erros e sem duplicatas, fecha sozinho após 4 s.
-- **Cancelar:** marca como `cancelled` todos os `queued`, aborta o `processing` (com rollback) e mantém os `done`.
+O mesmo utilitário de ordenação natural (`naturalSort()`) resolve a navegação "próxima HQ" no fim da leitura: ao abrir uma HQ, o `ReaderService` busca todas as HQs com o mesmo `dir_path` (docs/03 §2.2), ordena os `file_path` com `naturalSort()` e devolve a que vem logo depois da atual (`null` se for a última ou a única do diretório). Isso substitui inteiramente a antiga navegação por "próxima da saga" — não depende de nenhuma organização manual, só da ordem alfanumérica dos nomes de arquivo dentro da pasta.
 
-## 7. Drag & drop (RF-02)
+## 7. Arquivos que somem (RF-04)
 
-- `dragenter` com `dataTransfer.types` incluindo `Files` na janela → mostra o overlay em tela cheia "Solte para importar suas HQs" (exceto dentro do leitor).
-- `drop` → `window.api.importer.pathsForFiles(files)` → `start(paths)`. Pastas soltas são ignoradas na v1 (item `failed` "pastas não são suportadas").
-- O `dragover`/`drop` padrão do navegador fica bloqueado globalmente, para que soltar um arquivo nunca navegue a janela.
+Ao final de cada pasta-raiz, o scan compara as HQs já indexadas sob ela (`listComicsInFolder`) contra o disco (`existsSync`). As que não existem mais são removidas do índice pela mesma rotina de exclusão do `LibraryService` (`delete(ids, { deleteFile: false })`), que também limpa capa e cache — nunca tenta apagar um arquivo que já não existe. Isso cobre tanto arquivos apagados de fato quanto movidos/renomeados fora do app: um novo scan reencontra o arquivo no caminho novo como uma HQ "nova" (novo id, progresso zerado — não há como saber que é "a mesma" HQ sem olhar o conteúdo, e o hash sozinho não basta para decidir isso automaticamente sem arriscar reaproveitar progresso da HQ errada).
 
-## 8. Limites e desempenho
+## 8. Adicionar/remover pastas-raiz (RF-01, RF-03)
 
-- Sem limite de tamanho de arquivo, mas a cópia é sempre em stream (sem carregar o arquivo em memória). A exceção é o `node-unrar-js`, que precisa do arquivo em memória para RAR: arquivos RAR > 1 GB geram um aviso no log e são processados assim mesmo.
-- **Espaço em disco:** antes de materializar, verifica o espaço livre (`fs.statfs`) ≥ 2× o tamanho do arquivo, senão `IO` com a mensagem "Espaço em disco insuficiente".
-- A importação de 100 CBZ de 50 MB deve concluir sem travar a UI (o main não bloqueia: hash e cópia em stream, `image-size` só em buffers pequenos).
+- **Adicionar:** `libraryFolders.add()` abre `dialog.showOpenDialog({ properties: ['openDirectory'] })`. Ao confirmar, a pasta é salva (`insertLibraryFolder`) e um scan roda antes do IPC resolver, para a UI já poder listar as HQs novas.
+- **Remover:** `libraryFolders.remove(id)` apaga a linha de `library_folders`; a cascata do banco remove as HQs indexadas sob ela (nunca os arquivos, docs/03 §2.1).
+- Pasta já configurada (mesmo caminho) → `CONFLICT`.
 
-## 9. Casos de teste obrigatórios
+## 9. Limites e desempenho
+
+- Sem limite de tamanho de arquivo. A exceção é o `node-unrar-js`, que precisa do arquivo em memória para RAR: arquivos RAR muito grandes geram maior uso de memória durante o scan — aceitável porque o scan roda em segundo plano, um arquivo por vez.
+- Escanear 5.000 arquivos não deve travar a UI: o `LibraryScanService` roda inteiramente no main, e cada arquivo é uma operação assíncrona isolada (RNF-02).
+
+## 10. Casos de teste obrigatórios
 
 Ver fixtures em [09](09-testes-e-qualidade.md#3-fixtures).
 
-1. CBZ válido → 1 HQ, páginas em ordem natural, capa gerada.
+1. CBZ válido numa pasta-raiz → 1 HQ, páginas em ordem natural, capa gerada.
 2. CBR válido (RAR4 e RAR5) → 1 HQ.
 3. `.cbr` que na verdade é ZIP → importado como zip.
-4. PDF válido → 1 HQ com `page_count` correto e capa via worker.
-5. ZIP com 3 CBZ + 1 CBR + imagens soltas → 4 HQs + aviso.
-6. ZIP só com imagens → 1 HQ.
-7. ZIP dentro de ZIP → falha controlada.
-8. Arquivo corrompido/truncado → `CORRUPTED_FILE`, sem lixo em `library/` nem `cache/tmp/`.
-9. CBZ sem imagens → `CORRUPTED_FILE`.
-10. Duplicata → pausa; "pular" não cria registro; "importar" cria um segundo registro.
-11. Cancelar no meio → itens concluídos permanecem, sem arquivos órfãos.
-12. Extensão `.epub` → `UNSUPPORTED_FORMAT`.
+4. PDF válido → 1 HQ com `page_count` correto.
+5. ZIP só com imagens → 1 HQ.
+6. Subpasta dentro de subpasta (2+ níveis) → arquivos encontrados e indexados.
+7. Arquivo corrompido/truncado → ignorado, sem interromper o scan das demais.
+8. Mesmo arquivo alcançável por duas pastas-raiz (ou hash duplicado) → só a primeira ocorrência é indexada.
+9. Arquivo removido/renomeado externamente → some do índice no próximo scan.
+10. Extensão `.epub` → ignorada.
+11. Scan interrompido no meio (kill do processo) → ao reabrir, o próximo scan automático completa o trabalho sem duplicar HQs já indexadas.

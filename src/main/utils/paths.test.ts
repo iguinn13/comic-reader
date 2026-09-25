@@ -10,16 +10,8 @@ describe('createAppPaths', () => {
     expect(paths.dbFile).toBe(join(root, 'comic-reader.db'))
   })
 
-  it('monta o caminho de arquivo de uma HQ pelo id e formato real', () => {
-    expect(paths.comicFile('abc-123', 'cbz')).toBe(join(root, 'library', 'abc-123.cbz'))
-    expect(paths.comicFile('abc-123', 'pdf')).toBe(join(root, 'library', 'abc-123.pdf'))
-  })
-
-  it('monta a capa de uma HQ e de uma coleção em subpastas separadas', () => {
+  it('monta a capa de uma HQ', () => {
     expect(paths.comicCoverFile('abc-123')).toBe(join(root, 'covers', 'comics', 'abc-123.jpg'))
-    expect(paths.collectionCoverFile('col-9')).toBe(
-      join(root, 'covers', 'collections', 'col-9.jpg'),
-    )
   })
 
   it('monta o nome do arquivo de página de cache com 4 dígitos', () => {
@@ -39,11 +31,8 @@ describe('createAppPaths', () => {
 
   it('lista todos os diretórios que precisam existir antes do boot', () => {
     expect(paths.allDirectories).toEqual([
-      paths.libraryDir,
       paths.coversComicsDir,
-      paths.coversCollectionsDir,
       paths.cachePagesDir,
-      paths.cacheTmpDir,
       paths.logsDir,
     ])
   })

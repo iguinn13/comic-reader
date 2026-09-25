@@ -32,25 +32,28 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 | 1.1 | better-sqlite3 + Drizzle, `schema.ts` completo ([03](03-modelo-de-dados.md)), primeira migration, pragmas e migration no boot (incluindo em build empacotado) | — |
 | 1.2 | `src/shared`: `types.ts`, `errors.ts` (`Result`, `AppError`), `channels.ts`, `schemas.ts`, `api.ts` (interface completa, mesmo que os handlers ainda não existam) | — |
 | 1.3 | Helper `handle()` do main + preload expondo `window.api` + wrapper `lib/api.ts` + TanStack Query provider | — |
-| 1.4 | Repositórios: comics, progress, collections, items e settings, com testes Vitest usando SQLite em memória | — |
+| 1.4 | Repositórios: comics, progress, library_folders e settings, com testes Vitest usando SQLite em memória | — |
 | 1.5 | `SettingsService` + IPC `settings:*` + restauração de bounds da janela | RF-61 |
 | 1.6 | Script `scripts/seed-dev.ts` (N HQs falsas com capas geradas) | RNF-02 |
 
-## M2 — Importação
-**Objetivo:** colocar HQs reais dentro do app ([05](05-importacao.md)).
+## M2 — Biblioteca em pastas (scan)
+**Objetivo:** colocar HQs reais dentro do app, lendo direto das pastas do usuário, sem copiar ([05](05-importacao.md)).
+
+> **Revisão pós-v1** (ver [ADR em 10-decisoes.md](10-decisoes.md)): este milestone originalmente implementava um pipeline de *importação* (diálogo de arquivos/drag & drop, cópia para `library/`, fila com resolução interativa de duplicata). Esse modelo foi substituído por escaneamento de pastas-raiz configuradas pelo usuário, in-place. As tarefas abaixo já refletem o modelo atual.
 
 | # | Tarefa | RFs |
 |---|---|---|
 | 2.1 | Criar as fixtures de teste ([09 §3](09-testes-e-qualidade.md#3-fixtures)) | — |
-| 2.2 | `archive/`: `detect.ts` (magic bytes), `ZipArchive` (yauzl), `RarArchive` (node-unrar-js) e `natural-sort`/filtro de páginas, com testes | RF-03, RF-06 |
-| 2.3 | PDF: `pdf-lib` (contagem). ⚠️ **A janela oculta `pdf-worker`/render da capa não foi feita ainda** — ver ADR-013 | RF-01 |
+| 2.2 | `archive/`: `detect.ts` (magic bytes), `ZipArchive` (yauzl), `RarArchive` (node-unrar-js) e `natural-sort`/filtro de páginas, com testes | RF-06 |
+| 2.3 | PDF: `pdf-lib` (contagem). ⚠️ **A janela oculta `pdf-worker`/render da capa não foi feita ainda** — ver ADR-013 | RF-06 |
 | 2.4 | `CoverService` para capas de HQ (nativeImage) — zip/rar completo; PDF fica com capa placeholder (`TODO(M2-follow-up)` em `cover-service.ts`, ver ADR-013) | RF-06 |
-| 2.5 | `ImportService`: expansão (incl. inspeção de ZIP), pipeline de 8 passos, rollback, fila única, cancelamento e eventos, com testes dos 12 casos de [05 §9](05-importacao.md#9-casos-de-teste-obrigatórios) | RF-03..06 |
-| 2.6 | IPC `import:*` + evento `import:progress`/`library:changed` | RF-01, RF-04 |
-| 2.7 | UI: botão Importar (diálogo), overlay de drag & drop, `ImportPanel`, diálogo de duplicata e resumo | RF-01, 02, 04, 05 |
-| 2.8 | `MaintenanceService`: limpeza de `tmp` e órfãos no boot | RNF-05 |
+| 2.5 | `library_folders`: repositório e IPC `libraryFolders:*` (diálogo de pasta, listar, remover) | RF-01, RF-03 |
+| 2.6 | `walk-directory.ts` (percurso recursivo) + `LibraryScanService` (detectar, validar, hash, dedup, capa, inserir, limpar arquivos ausentes), com testes dos casos de [05 §10](05-importacao.md#10-casos-de-teste-obrigatórios) | RF-02, RF-04, RF-05, RF-06 |
+| 2.7 | IPC `library:scan` + eventos `library:scanProgress`/`library:changed`; scan automático no boot | RF-04 |
+| 2.8 | UI: seção "Pastas da biblioteca" em Configurações (adicionar/remover), botão "Atualizar biblioteca" na sidebar | RF-01, 03, 04 |
+| 2.9 | `MaintenanceService`: limpeza de capas órfãs no boot | RNF-05 |
 
-**Pendência aberta por M2 para M4** (registrada em [ADR-013](10-decisoes.md#adr-013)): a capa de PDF (render da página 1 numa `BrowserWindow` oculta com pdf.js, ADR-008) ainda não existe — HQs em PDF importam normalmente, só ficam com capa placeholder até isso ser retomado, idealmente junto de M4.9 (suporte a PDF no leitor), quando pdf.js já está sendo integrado de qualquer forma.
+**Pendência aberta por M2 para M4** (registrada em [ADR-013](10-decisoes.md#adr-013)): a capa de PDF (render da página 1 numa `BrowserWindow` oculta com pdf.js, ADR-008) ainda não existe — HQs em PDF são indexadas normalmente, só ficam com capa placeholder até isso ser retomado, idealmente junto de M4.9 (suporte a PDF no leitor), quando pdf.js já está sendo integrado de qualquer forma.
 
 ## M3 — Shell e biblioteca
 **Objetivo:** navegar e encontrar as HQs importadas.
@@ -72,7 +75,7 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 | # | Tarefa | RFs |
 |---|---|---|
 | 4.1 | `PageCacheService` (ensure, extração priorizada, dimensões, LRU) + `comic://page` e `comic://file` (com Range) | RF-43, RF-51 |
-| 4.2 | `ReaderService`: `open` (sessão, prefs mescladas, contexto de saga), `setPage` com debounce e flush (`close`, `before-quit`, `render-process-gone`), `savePrefs`/`resetPrefs`, `complete` | RF-30, 40, 41, 42 |
+| 4.2 | `ReaderService`: `open` (sessão, prefs mescladas, próximo arquivo da pasta), `setPage` com debounce e flush (`close`, `before-quit`, `render-process-gone`), `savePrefs`/`resetPrefs`, `complete` | RF-30, 40, 41, 42 |
 | 4.3 | Rota do leitor, `reader-store`, barras superior/inferior, slider e "Ir para página" | RF-30, 39 |
 | 4.4 | Modo **página única** com fit, zoom ancorado, pan e pré-carregamento | RF-31, 34, 43 |
 | 4.5 | Navegação por teclado (tabela completa) e mouse (zonas, roda com cooldown, botões laterais) | RF-35, 36 |
@@ -80,21 +83,12 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 | 4.7 | Modo **vertical** virtualizado com largura ajustável e cálculo da página atual | RF-33 |
 | 4.8 | Modo **página dupla** (`computeSpreads` com testes, deslocamento) | RF-32 |
 | 4.9 | Suporte a **PDF** nos 3 modos (canvas pdf.js, descarte fora da janela) | RF-01 |
-| 4.10 | Conclusão automática + painel de fim (sem saga por enquanto) + estado de erro da HQ | RF-42, 62 |
+| 4.10 | Conclusão automática + painel de fim (sugestão do próximo arquivo da pasta, RF-42) + estado de erro da HQ | RF-42, 62 |
 | 4.11 | Tela **Início** com "Continuar lendo" e "Adicionadas recentemente" | RF-11, 63 |
 
-## M5 — Listas e sagas
-**Objetivo:** organizar a coleção.
+## M5 — (removido na revisão pós-v1)
 
-| # | Tarefa | RFs |
-|---|---|---|
-| 5.1 | `CollectionService`: CRUD, itens, reorder (permutação), resolução de capa, progresso, `nextToRead`, `membership` + IPC + testes | RF-20..25 |
-| 5.2 | Telas Sagas/Listas com `CollectionCard` e diálogo Nova/Editar | RF-20, 21, 26 |
-| 5.3 | Detalhe da coleção: saga (lista numerada + dnd-kit) e lista (grade) | RF-23, 24 |
-| 5.4 | Submenu "Adicionar a…" (card, seleção, leitor) com criação inline + diálogo "Adicionar HQs" | RF-19, 20, 23, 44 |
-| 5.5 | Capa de coleção: diálogo de 3 modos, upload de imagem com resize e fallback automático | RF-25 |
-| 5.6 | Excluir coleção + converter lista ↔ saga | RF-21, 22 |
-| 5.7 | Integração com o leitor: badge da saga, "Próxima da saga" no painel de fim, "Continuar saga", seção "Sagas em andamento" no Início | RF-24, 42, 63 |
+Este milestone implementava Listas e Sagas (coleções manuais: criar/editar/excluir, adicionar/remover HQs, reordenar saga, capa de coleção, badge e "Próxima da saga" no leitor). A funcionalidade inteira foi removida em favor da organização por pastas do próprio usuário — ver [ADR em 10-decisoes.md](10-decisoes.md) e RF-01 a RF-06. Nada deste milestone permanece no código; "próximo arquivo da pasta" (o substituto funcional de "Próxima da saga") está em M4.10.
 
 ## M6 — Configurações e acabamento
 | # | Tarefa | RFs |
@@ -113,7 +107,7 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 | 7.2 | HQ de 300 páginas no vertical para medir a memória e ajustar a janela de virtualização | RNF-03 |
 | 7.3 | Medição da troca de página e da primeira abertura (log de tempos em dev) | RNF-01 |
 | 7.4 | Playwright-Electron: smoke E2E ([09 §2.3](09-testes-e-qualidade.md#23-e2e-playwright--electron)) | — |
-| 7.5 | Testes de robustez: matar o app durante a leitura e durante a importação, e verificar a consistência ao reabrir | RNF-05, 12 |
+| 7.5 | Testes de robustez: matar o app durante a leitura e durante o scan de pastas, e verificar a consistência ao reabrir | RNF-05, 12 |
 
 ## M8 — Release v1.0
 | # | Tarefa |
@@ -129,7 +123,7 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 
 | RF | Milestone | RF | Milestone |
 |---|---|---|---|
-| RF-01 | M2, M4.9 | RF-30 | M4 |
+| RF-01 | M2 | RF-30 | M4 |
 | RF-02 | M2 | RF-31 | M4 |
 | RF-03 | M2 | RF-32 | M4 |
 | RF-04 | M2 | RF-33 | M4 |
@@ -141,11 +135,11 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 | RF-13 | M3 | RF-39 | M4 |
 | RF-14 | M3 | RF-40 | M4 |
 | RF-15 | M3 | RF-41 | M4 |
-| RF-16 | M3 | RF-42 | M4, M5 |
+| RF-16 | M3 | RF-42 | M4 |
 | RF-17 | M3 | RF-43 | M4 |
-| RF-18 | M3 | RF-44 | M5 |
-| RF-19 | M3, M5 | RF-50..53 | M6 |
-| RF-20..26 | M5 | RF-60 | M3 |
+| RF-18 | M3 | RF-44 | M4 |
+| RF-19 | M3 | RF-50..53 | M6 |
+| | | RF-60 | M3 |
 | | | RF-61 | M1 |
 | | | RF-62 | M3, M4, M6 |
-| | | RF-63 | M4, M5 |
+| | | RF-63 | M4 |

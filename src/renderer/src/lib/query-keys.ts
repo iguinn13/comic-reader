@@ -1,4 +1,4 @@
-import type { CollectionId, CollectionType, ComicId, LibraryQuery } from '@shared/types'
+import type { ComicId, LibraryQuery } from '@shared/types'
 
 /**
  * Fábrica central de chaves do TanStack Query (docs/02-arquitetura.md §8),
@@ -20,15 +20,6 @@ export const queryKeys = {
     stats: () => ['library', 'stats'] as const,
   },
 
-  collections: {
-    all: () => ['collections'] as const,
-    list: (type: CollectionType, sort: 'name' | 'updatedAt') =>
-      ['collections', 'list', type, sort] as const,
-    detail: (id: CollectionId) => ['collections', 'detail', id] as const,
-    membership: (comicIds: ComicId[]) => ['collections', 'membership', comicIds] as const,
-    nextToRead: (sagaId: CollectionId) => ['collections', sagaId, 'nextToRead'] as const,
-  },
-
   settings: {
     all: () => ['settings'] as const,
   },
@@ -37,8 +28,8 @@ export const queryKeys = {
     session: (id: ComicId) => ['reader', id] as const,
   },
 
-  importJob: {
-    current: () => ['importJob'] as const,
+  libraryFolders: {
+    all: () => ['libraryFolders'] as const,
   },
 
   app: {

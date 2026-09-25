@@ -1,7 +1,5 @@
 import { createHashRouter } from 'react-router-dom'
 import { AppShell } from './components/app-shell'
-import { CollectionDetailPage } from './features/collections/collection-detail-page'
-import { CollectionsPage } from './features/collections/collections-page'
 import { FavoritesPage } from './features/favorites/favorites-page'
 import { HomePage } from './features/home/home-page'
 import { LibraryPage } from './features/library/library-page'
@@ -23,9 +21,6 @@ export const router = createHashRouter([
       { path: '/', element: <HomePage /> },
       { path: '/library', element: <LibraryPage /> },
       { path: '/favorites', element: <FavoritesPage /> },
-      { path: '/sagas', element: <CollectionsPage type="saga" /> },
-      { path: '/collections/:collectionId', element: <CollectionDetailPage /> },
-      { path: '/lists', element: <CollectionsPage type="list" /> },
       { path: '/settings', element: <SettingsPage /> },
     ],
   },

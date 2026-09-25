@@ -6,9 +6,8 @@ import { closeDb, createDb, type Db } from './db/client'
 import { registerAppIpc, watchFullscreenChanges } from './ipc/app'
 import { registerAllIpc } from './ipc/register'
 import { registerComicProtocolAsPrivileged, registerComicProtocolHandler } from './protocol'
-import { CollectionService } from './services/collection-service'
 import { CoverService } from './services/cover-service'
-import { ImportService } from './services/import-service'
+import { LibraryScanService } from './services/library-scan-service'
 import { LibraryService } from './services/library-service'
 import { MaintenanceService } from './services/maintenance-service'
 import { PageCacheService } from './services/page-cache-service'
@@ -71,47 +70,48 @@ if (!gotSingleInstanceLock) {
     const settingsService = new SettingsService(db, () => void pageCacheService.enforceLru(null))
     const libraryService = new LibraryService(db, paths)
     const pageCacheService = new PageCacheService(db, paths)
-    const readerService = new ReaderService(db, paths, pageCacheService)
+    const readerService = new ReaderService(db, pageCacheService)
     readerServiceRef = readerService
 
     let mainWindow: BrowserWindow | null = null
 
     const coverService = new CoverService(paths, resizeToJpeg)
-    const collectionService = new CollectionService(db, coverService)
-    const importService = new ImportService(db, paths, coverService, (state) => {
-      // `ImportService` não conhece `BrowserWindow` (injeção, docs/02 §3): é
-      // este callback do bootstrap que manda o evento pro renderer, e que
-      // deriva `library:changed` sempre que algum item terminar em `done`
-      // (docs/05 §4: "após cada item concluído, emite library:changed").
-      if (!mainWindow || mainWindow.isDestroyed()) return
-      mainWindow.webContents.send(CH.importer.onProgress, state)
-      if (state.items.some((item) => item.status === 'done')) {
-        mainWindow.webContents.send(CH.importer.onLibraryChanged, 'import')
-      }
+    const libraryScanService = new LibraryScanService(db, coverService, libraryService, {
+      // `LibraryScanService` não conhece `BrowserWindow` (injeção, docs/02 §3):
+      // é este callback do bootstrap que manda os eventos pro renderer.
+      onProgress: (state) => {
+        if (!mainWindow || mainWindow.isDestroyed()) return
+        mainWindow.webContents.send(CH.library.onScanProgress, state)
+      },
+      onChanged: (reason) => {
+        if (!mainWindow || mainWindow.isDestroyed()) return
+        mainWindow.webContents.send(CH.library.onChanged, reason)
+      },
     })
 
-    // Boot passo 3 (docs/02-arquitetura.md §7): limpa cache/tmp e órfãos
-    // antes de registrar o IPC e abrir a janela.
+    // Boot passo 3 (docs/02-arquitetura.md §7): limpa capas órfãs antes de
+    // registrar o IPC e abrir a janela.
     const maintenanceService = new MaintenanceService(db, paths)
     await maintenanceService.run()
 
     registerComicProtocolHandler(paths, db, pageCacheService)
     registerAllIpc({
+      db,
       settingsService,
-      importService,
       libraryService,
+      libraryScanService,
       readerService,
-      collectionService,
     })
     registerAppIpc(() => mainWindow, new StorageService(db, pageCacheService), {
       version: app.getVersion(),
       userDataPath: paths.root,
     })
 
-    // Boot passo 4 (docs/02-arquitetura.md §7): libera espaço de cache em
-    // segundo plano, sem atrasar a abertura da janela. Nada está aberto no
-    // leitor ainda nesse momento, então não há HQ a preservar.
+    // Boot passo 4 (docs/02-arquitetura.md §7): libera espaço de cache e
+    // re-escaneia as pastas-raiz em segundo plano, sem atrasar a abertura da
+    // janela. Nada está aberto no leitor ainda nesse momento.
     void pageCacheService.enforceLru(null)
+    void libraryScanService.scan()
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)

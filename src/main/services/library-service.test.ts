@@ -5,15 +5,16 @@ import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AppError } from '@shared/errors'
 import { createDb, type Db } from '../db/client'
-import { addItems, createCollection } from '../db/repositories/collections'
 import { insertComic, type InsertComicInput } from '../db/repositories/comics'
-import { markRead, setCurrentPage } from '../db/repositories/progress'
+import { insertLibraryFolder } from '../db/repositories/library-folders'
+import { setCurrentPage } from '../db/repositories/progress'
 import { createAppPaths, type AppPaths } from '../utils/paths'
 import { LibraryService } from './library-service'
 
 let db: Db
 let service: LibraryService
 let root: string
+let folderId: string
 let paths: AppPaths
 
 function makeInput(overrides: Partial<InsertComicInput> = {}): InsertComicInput {
@@ -23,7 +24,9 @@ function makeInput(overrides: Partial<InsertComicInput> = {}): InsertComicInput 
     title: 'Batman - Ano Um 01',
     titleNormalized: 'batman - ano um 01',
     format: 'zip',
-    fileName: `${id}.cbz`,
+    filePath: join(root, `Batman_-_Ano_Um_01-${id}.cbz`),
+    dirPath: root,
+    folderId,
     originalFileName: 'Batman_-_Ano_Um_01.cbz',
     fileSize: 1024,
     fileHash: `hash-${id}`,
@@ -39,6 +42,8 @@ beforeEach(() => {
   db = createDb(':memory:')
   root = mkdtempSync(join(tmpdir(), 'comic-reader-library-'))
   paths = createAppPaths(root)
+  folderId = randomUUID()
+  insertLibraryFolder(db, { id: folderId, path: root })
   service = new LibraryService(db, paths)
 })
 
@@ -118,24 +123,50 @@ describe('LibraryService.setFavorite/setReadStatus/delete', () => {
     const input = makeInput()
     insertComic(db, input)
 
-    expect(await service.delete([input.id])).toEqual({ deleted: 1 })
+    expect(await service.delete([input.id], { deleteFile: false })).toEqual({ deleted: 1 })
     expect(() => service.get(input.id)).toThrowError(AppError)
   })
 
-  it('apaga também o arquivo, a capa e o cache da HQ (RF-17)', async () => {
+  it('sem deleteFile: apaga a capa e o cache, mas nunca o arquivo original', async () => {
     const input = makeInput()
     insertComic(db, input)
-    mkdirSync(paths.libraryDir, { recursive: true })
     mkdirSync(paths.coversComicsDir, { recursive: true })
     mkdirSync(paths.comicPagesCacheDir(input.id), { recursive: true })
-    writeFileSync(paths.comicFile(input.id, 'cbz'), 'x')
+    writeFileSync(input.filePath, 'x')
     writeFileSync(paths.comicCoverFile(input.id), 'x')
 
-    await service.delete([input.id])
+    await service.delete([input.id], { deleteFile: false })
 
-    expect(existsSync(paths.comicFile(input.id, 'cbz'))).toBe(false)
+    expect(existsSync(input.filePath)).toBe(true)
     expect(existsSync(paths.comicCoverFile(input.id))).toBe(false)
     expect(existsSync(paths.comicPagesCacheDir(input.id))).toBe(false)
+  })
+
+  it('com deleteFile: apaga também o arquivo, pois ele está numa pasta configurada', async () => {
+    const input = makeInput()
+    insertComic(db, input)
+    writeFileSync(input.filePath, 'x')
+
+    await service.delete([input.id], { deleteFile: true })
+
+    expect(existsSync(input.filePath)).toBe(false)
+  })
+
+  it('com deleteFile: nunca apaga um arquivo fora de qualquer pasta configurada', async () => {
+    const outsideDir = mkdtempSync(join(tmpdir(), 'comic-reader-outside-'))
+    const input = makeInput({
+      filePath: join(outsideDir, 'fora.cbz'),
+      dirPath: outsideDir,
+    })
+    insertComic(db, input)
+    writeFileSync(input.filePath, 'x')
+
+    try {
+      await service.delete([input.id], { deleteFile: true })
+      expect(existsSync(input.filePath)).toBe(true)
+    } finally {
+      rmSync(outsideDir, { recursive: true, force: true })
+    }
   })
 })
 
@@ -150,30 +181,5 @@ describe('LibraryService.home', () => {
     const home = service.home()
     expect(home.continueReading.map((c) => c.id)).toEqual([reading.id])
     expect(home.recentlyAdded.map((c) => c.id).sort()).toEqual([reading.id, untouched.id].sort())
-    expect(home.sagasInProgress).toEqual([])
-  })
-})
-
-describe('LibraryService.home — sagasInProgress (RF-63)', () => {
-  it('só inclui sagas com ao menos 1 lida e 1 não lida', () => {
-    const [a, b, c] = [makeInput(), makeInput(), makeInput()]
-    for (const comic of [a, b, c]) insertComic(db, comic)
-    const now = Date.now()
-    const saga = (id: string, name: string, comics: string[]): void => {
-      createCollection(db, {
-        id,
-        type: 'saga',
-        name,
-        nameNormalized: name,
-        createdAt: now,
-        updatedAt: now,
-      })
-      addItems(db, id, comics)
-    }
-    saga('em-andamento', 'a', [a.id, b.id])
-    saga('nao-iniciada', 'b', [c.id])
-    markRead(db, a.id)
-
-    expect(service.home().sagasInProgress.map((s) => s.id)).toEqual(['em-andamento'])
   })
 })

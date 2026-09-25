@@ -4,7 +4,6 @@ import { Readable } from 'stream'
 import { protocol } from 'electron'
 import type { Db } from './db/client'
 import { getComicFileMeta } from './db/repositories/comics'
-import { FORMAT_TO_FILE_EXT } from './utils/comic-format'
 import { logger } from './utils/logger'
 import { withTiming } from './utils/perf'
 import type { AppPaths } from './utils/paths'
@@ -109,7 +108,7 @@ export function registerComicProtocolHandler(
           handlePage(pageCache, segments),
         )
       }
-      if (kind === 'file') return await handleFile(paths, db, segments, request)
+      if (kind === 'file') return await handleFile(db, segments, request)
       return notFound()
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return notFound()
@@ -122,9 +121,9 @@ export function registerComicProtocolHandler(
 async function handleCover(paths: AppPaths, segments: string[]): Promise<Response> {
   const [target, id] = segments
   if (!id || !UUID_RE.test(id)) return notFound()
-  if (target !== 'comic' && target !== 'collection') return notFound()
+  if (target !== 'comic') return notFound()
 
-  const filePath = target === 'comic' ? paths.comicCoverFile(id) : paths.collectionCoverFile(id)
+  const filePath = paths.comicCoverFile(id)
   const data = await readFile(filePath)
   return new Response(new Uint8Array(data), {
     status: 200,
@@ -153,18 +152,12 @@ async function handlePage(pageCache: PageCacheService, segments: string[]): Prom
   })
 }
 
-async function handleFile(
-  paths: AppPaths,
-  db: Db,
-  segments: string[],
-  request: Request,
-): Promise<Response> {
+async function handleFile(db: Db, segments: string[], request: Request): Promise<Response> {
   const [comicId] = segments
   if (!comicId || !UUID_RE.test(comicId)) return notFound()
 
   const meta = getComicFileMeta(db, comicId)
   if (!meta) return notFound()
 
-  const filePath = paths.comicFile(comicId, FORMAT_TO_FILE_EXT[meta.format])
-  return serveFile(filePath, FILE_CONTENT_TYPE[meta.format], request.headers.get('Range'))
+  return serveFile(meta.filePath, FILE_CONTENT_TYPE[meta.format], request.headers.get('Range'))
 }

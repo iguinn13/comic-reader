@@ -25,7 +25,7 @@ Definidos em `src/renderer/src/styles/globals.css` via `@theme` do Tailwind v4 e
 | `--color-text-subtle` | `#8A8A97` | Placeholders, desabilitado (≥ 4,5:1 sobre `bg`, RNF-10) |
 | `--color-accent` | `#F2A93B` | Âmbar "papel velho": item ativo, progresso, botão primário, foco |
 | `--color-accent-fg` | `#1A1203` | Texto sobre o accent |
-| `--color-success` | `#4CC38A` | Selo "Lida", importação ok |
+| `--color-success` | `#4CC38A` | Selo "Lida", scan concluído |
 | `--color-danger` | `#EF5B5B` | Excluir, erros |
 | `--color-reader-bg` | `#08080A` | Fundo do leitor |
 | (modo foco) | `#000000` | Fundo do leitor em modo foco |
@@ -54,22 +54,22 @@ O contraste de `--color-text-muted` sobre `--color-bg` deve ser ≥ 4.5:1 (RNF-1
 │ ⌂ Início   │  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐            │
 │ ▦ Bibliot. │  │capa│ │capa│ │capa│ │capa│ │capa│ │capa│            │
 │ ♡ Favoritas│  │    │ │    │ │    │ │    │ │    │ │    │            │
-│ ⧉ Sagas    │  └────┘ └────┘ └────┘ └────┘ └────┘ └────┘            │
-│ ☰ Listas   │  Título   Título  Título  ...                         │
+│            │  └────┘ └────┘ └────┘ └────┘ └────┘ └────┘            │
+│            │  Título   Título  Título  ...                         │
 │            │  ▬▬▬──                                                │
 │            │                                                      │
-│ [+ Importar]│                                                     │
+│ [↻ Atualizar]│                                                    │
 │            │                                                      │
-│ ⚙ Config.  │                                    ┌───────────────┐ │
-│ «          │                                    │ Importando 3/7│ │
-└────────────┴────────────────────────────────────┴───────────────┴─┘
+│ ⚙ Config.  │                                                      │
+│ «          │                                                      │
+└────────────┴──────────────────────────────────────────────────────┘
 ```
 
 **Sidebar (RF-60)**
 - Largura de 232 px expandida e 64 px recolhida (só ícones, com tooltip ao passar). O botão `«` e `Ctrl+B` alternam, e abaixo de 1100 px de largura ela recolhe automaticamente (sem sobrescrever a preferência salva).
-- Itens: Início, Biblioteca, Favoritas, Sagas, Listas. O botão primário **+ Importar** fica em destaque (accent) e **Configurações** no rodapé.
+- Itens: Início, Biblioteca, Favoritas. O botão **↻ Atualizar biblioteca** (re-escaneia as pastas-raiz) e **Configurações** no rodapé, onde ficam as pastas-raiz (§4.8).
 - Item ativo: fundo `surface-2`, texto `text` e barra de 3 px accent à esquerda.
-- Contadores discretos à direita de Biblioteca, Favoritas, Sagas e Listas (`text-subtle`, só no modo expandido).
+- Contadores discretos à direita de Biblioteca e Favoritas (`text-subtle`, só no modo expandido).
 
 **Barra de título:** usa a moldura nativa do Windows com `titleBarStyle: 'hidden'` + `titleBarOverlay` na cor `--color-bg`, para que a área superior se funda ao app. Os controles nativos (min/max/fechar) ficam visíveis.
 
@@ -85,9 +85,6 @@ Continuar lendo                                  Ver tudo →
 │▬▬▬───│ │▬───── │ │▬▬▬▬──│ │      │ │      │     barra de progresso e "p. 12/48"
 └──────┘ └──────┘ └──────┘ └──────┘ └──────┘
 
-Sagas em andamento
-[ capa  Guerra Civil   ▬▬▬▬──── 3 de 7   Continuar → ]  (cards horizontais)
-
 Adicionadas recentemente                          Ver tudo →
 (faixa de cards)
 ```
@@ -98,7 +95,7 @@ Adicionadas recentemente                          Ver tudo →
 - **Toolbar:** busca (com atalho `Ctrl+F` e botão ✕ para limpar), segmented control de status (**Todas · Não lidas · Em andamento · Lidas**), toggle ☆ Favoritas e dropdown de ordenação (Adicionadas recentemente, Lidas recentemente, Título A–Z, Título Z–A).
 - **Contador:** "248 HQs" (ou "12 resultados para 'batman'").
 - **Grade virtualizada:** colunas `auto-fill` com largura mínima de 150 px, gap de 20 px e proporção da capa 2:3 (`object-fit: cover`).
-- **Barra de seleção** (quando há seleção): substitui a toolbar com "3 selecionadas · Adicionar a… · Marcar como lida · Marcar como não lida · Favoritar · Excluir · ✕".
+- **Barra de seleção** (quando há seleção): substitui a toolbar com "3 selecionadas · Marcar como lida · Marcar como não lida · Favoritar · Excluir · ✕".
 
 ### 4.3 Card de HQ (componente `ComicCard`)
 ```
@@ -117,59 +114,47 @@ p. 12 de 48 · CBZ          ← 12px muted (ou "Não lida" / "Lida")
 - A capa ainda não gerada mostra um placeholder com o título sobre um gradiente de `surface`.
 - Imagem com `loading="lazy"`, e o fade-in só acontece depois de carregada.
 
-### 4.4 Sagas / Listas (`#/sagas`, `#/lists`) — RF-26
-- Cabeçalho "Sagas" + botão **+ Nova saga** + ordenação (Nome, Atualizadas recentemente).
-- **Card de coleção:** a capa ganha um efeito "pilha" (2 bordas deslocadas atrás, sugerindo várias revistas), com o nome embaixo e "12 HQs". Na saga, soma-se a barra "5 de 12 lidas".
-
-### 4.5 Detalhe de coleção (`#/collections/:id`) — RF-21..25
+### 4.4 Pastas da biblioteca (Configurações) — RF-01, RF-03
+Seção "Pastas da biblioteca" no topo de Configurações (§4.6):
 ```
-┌────────┐  SAGA                                        ⋯
-│  capa  │  Guerra Civil                                 (Editar, Trocar capa,
-│        │  Descrição curta da saga em até 3 linhas…      Converter em lista,
-└────────┘  12 HQs · ▬▬▬▬▬────── 5 de 12 lidas            Excluir saga)
-            [ ▶ Continuar saga ]  [ + Adicionar HQs ]
+Pastas da biblioteca
 
-  1  ┌────┐ Civil War #1                     Lida     ⠿   ⋯
-  2  ┌────┐ Civil War #2                  p. 10/32    ⠿   ⋯
-  3  ┌────┐ Front Line #1               Não lida     ⠿   ⋯
+┌──────────────────────────────────────────────────┐
+│ C:\Users\ana\HQs                              🗑  │
+│ D:\Backup\Gibis                               🗑  │
+└──────────────────────────────────────────────────┘
+[ + Adicionar pasta ]
 ```
-- **Saga:** exibida em **lista** (linhas com número, miniatura, título e status), com a alça `⠿` de drag & drop (`@dnd-kit`, também acessível por teclado: espaço para pegar e setas para mover). O menu `⋯` da linha tem Mover para o início/fim, Remover da saga e as ações do card.
-- **Lista:** exibida em **grade** de cards (igual à Biblioteca, com os mesmos filtros e ordenação), sem numeração.
-- **Adicionar HQs:** diálogo com busca e grade compacta com checkboxes. As HQs já presentes aparecem marcadas e desabilitadas. O botão diz "Adicionar (N)".
-- **Editar:** diálogo com Nome, Descrição e Tipo (Lista/Saga) (RF-21).
-- **Trocar capa:** diálogo com 3 opções em cards selecionáveis: *Automática*, *Escolher imagem…* (diálogo nativo) e *Usar capa de uma HQ* (grade das HQs da coleção) (RF-25).
+- **Adicionar pasta:** abre o diálogo nativo de escolha de pasta (`openDirectory`). Ao confirmar, a pasta entra na lista e um scan roda imediatamente.
+- **Remover** (🗑 por linha): tira a pasta da lista; as HQs indexadas sob ela somem da biblioteca (nunca os arquivos).
+- Sem nenhuma pasta configurada, a Biblioteca e o Início mostram o estado vazio principal (§6) com a mesma ação de adicionar pasta.
+- O botão **↻ Atualizar biblioteca** da sidebar dispara um novo scan de todas as pastas a qualquer momento; o ícone gira enquanto o scan está em andamento (`library:scanProgress`).
 
-### 4.6 Painel de importação
-- Um cartão flutuante no canto inferior direito (360 px), acima do conteúdo, com o cabeçalho "Importando 3 de 7", botão minimizar e **Cancelar**.
-- A lista de itens mostra ícone de estado (relógio · spinner · ✓ · ⊘ duplicado · ⚠ erro), o nome e a mensagem curta de erro.
-- Minimizado, vira uma pílula "Importando 3/7" com progresso circular. Um clique expande.
-- O resumo final e o diálogo de duplicata estão descritos em [05 §6](05-importacao.md#6-fila-eventos-e-ui).
-
-### 4.7 Leitor (`#/read/:id`)
+### 4.5 Leitor (`#/read/:id`)
 Especificado em [06-leitor.md](06-leitor.md). Visualmente, as barras usam `surface` com 85% de opacidade e `backdrop-blur`, os ícones têm 20 px e a altura é de 48 px (superior) e 44 px (inferior).
 
-### 4.8 Configurações (`#/settings`)
+### 4.6 Configurações (`#/settings`)
 Seções em coluna única (máx. 720 px):
-1. **Leitura:** modo padrão (segmented), ajuste padrão, largura padrão do vertical (slider com preview) e botão "Aplicar padrões a todas as HQs" (com confirmação).
-2. **Armazenamento:** "Biblioteca: 248 HQs · 12,4 GB", "Cache: 1,1 GB de 2 GB" (barra), slider de limite, botão **Limpar cache** e botão **Abrir pasta de dados**.
-3. **Atalhos:** a tabela de [06 §5](06-leitor.md#5-atalhos-de-teclado) (somente leitura na v1).
-4. **Sobre:** versão e caminho da pasta de dados.
+1. **Pastas da biblioteca:** lista de pastas-raiz com remoção e botão "Adicionar pasta" (§4.4).
+2. **Leitura:** modo padrão (segmented), ajuste padrão, largura padrão do vertical (slider com preview) e botão "Aplicar padrões a todas as HQs" (com confirmação).
+3. **Armazenamento:** "Biblioteca: 248 HQs · 12,4 GB", "Cache: 1,1 GB de 2 GB" (barra), slider de limite, botão **Limpar cache** e botão **Abrir pasta de dados**.
+4. **Atalhos:** a tabela de [06 §5](06-leitor.md#5-atalhos-de-teclado) (somente leitura na v1).
+5. **Sobre:** versão e caminho da pasta de dados.
 
 ## 5. Diálogos e feedback
 
-- **Confirmação destrutiva** (excluir HQs/coleção): título claro ("Excluir 3 HQs?"), texto explicando a consequência e o botão de confirmar em `danger`. O foco inicial fica em **Cancelar**.
-- **Toasts** (canto inferior esquerdo, 4 s): "Adicionada a *Guerra Civil*", "3 HQs marcadas como lidas". Ações reversíveis simples (remover da coleção, marcar como lida) oferecem **Desfazer** no toast. A exclusão de HQ não tem desfazer, por isso a confirmação.
-- **Menus:** Radix `DropdownMenu`/`ContextMenu`, com submenu "Adicionar a…" mostrando checkboxes (estado vindo de `collections.membership`), separador e "Nova lista…" / "Nova saga…".
+- **Confirmação destrutiva** (excluir HQs): título claro ("Excluir 3 HQs?"), texto explicando a consequência, um checkbox opcional "Apagar também o arquivo do disco" (desmarcado por padrão) e o botão de confirmar em `danger`. O foco inicial fica em **Cancelar**.
+- **Toasts** (canto inferior esquerdo, 4 s): "3 HQs marcadas como lidas". Ações reversíveis simples (marcar como lida) oferecem **Desfazer** no toast. A exclusão de HQ não tem desfazer, por isso a confirmação.
+- **Menus:** Radix `DropdownMenu`/`ContextMenu` para as ações de HQ (favoritar, marcar lida/não lida, renomear, excluir).
 
 ## 6. Estados vazios e de erro (RF-62)
 
 | Onde | Mensagem | Ação |
 |---|---|---|
-| Biblioteca vazia (e Início) | Ilustração minimalista (linha) + "Sua estante está vazia" / "Arraste arquivos CBZ, CBR, PDF ou ZIP para cá, ou importe pelo botão." | **Importar HQs** |
+| Biblioteca vazia (e Início) | Ilustração minimalista (linha) + "Sua estante está vazia" / "Aponte para uma pasta onde já ficam suas HQs (CBZ, CBR, PDF ou ZIP) — o app escaneia as subpastas automaticamente." | **Adicionar pasta** |
 | Busca sem resultado | "Nada encontrado para '…'" | Limpar busca/filtros |
 | Favoritas vazia | "Toque no ♡ de uma HQ para ela aparecer aqui." | — |
-| Sagas / Listas vazias | "Crie uma saga para organizar uma ordem de leitura." / "Crie listas para agrupar HQs como quiser." | **+ Nova saga** / **+ Nova lista** |
-| Coleção vazia | "Esta saga ainda não tem HQs." | **+ Adicionar HQs** |
+| Nenhuma pasta configurada | Mesma mensagem da Biblioteca vazia | **Adicionar pasta** |
 | HQ com arquivo ausente/corrompido | "Não foi possível abrir esta HQ. O arquivo pode ter sido removido ou estar corrompido." | Voltar · Excluir da biblioteca |
 
 ## 7. Responsividade (RNF-08)

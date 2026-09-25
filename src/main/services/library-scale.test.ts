@@ -3,6 +3,7 @@ import { tmpdir } from 'os'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createDb, type Db } from '../db/client'
 import { insertComic } from '../db/repositories/comics'
+import { insertLibraryFolder } from '../db/repositories/library-folders'
 import { markRead, setCurrentPage } from '../db/repositories/progress'
 import { createAppPaths } from '../utils/paths'
 import { LibraryService } from './library-service'
@@ -29,6 +30,8 @@ function timed<T>(fn: () => T): { result: T; ms: number } {
 beforeAll(() => {
   db = createDb(':memory:')
   service = new LibraryService(db, createAppPaths(tmpdir()))
+  const folderId = randomUUID()
+  insertLibraryFolder(db, { id: folderId, path: '/comics' })
   const now = Date.now()
   for (let i = 0; i < COUNT; i++) {
     const id = randomUUID()
@@ -41,7 +44,9 @@ beforeAll(() => {
         .replace(/\p{Diacritic}/gu, '')
         .toLowerCase(),
       format: 'zip',
-      fileName: `${id}.cbz`,
+      filePath: `/comics/${title}-${id}.cbz`,
+      dirPath: '/comics',
+      folderId,
       originalFileName: `${title}.cbz`,
       fileSize: 1000,
       fileHash: `hash-${id}`,

@@ -1,6 +1,6 @@
 # Comic Reader — Documentação (SDD)
 
-Esta pasta contém a especificação do **Comic Reader**, um aplicativo desktop (Electron) para importar, ler e organizar HQs localmente, sem login e sem rede.
+Esta pasta contém a especificação do **Comic Reader**, um aplicativo desktop (Electron) para ler HQs localmente a partir de pastas escolhidas pelo usuário, sem login e sem rede.
 
 A documentação segue a abordagem **Spec-Driven Development (SDD)**: a especificação vem antes do código e é a fonte da verdade. Toda funcionalidade implementada deve apontar para um requisito (`RF-xx` / `RNF-xx`). Qualquer mudança de comportamento começa por aqui.
 
@@ -13,7 +13,7 @@ A documentação segue a abordagem **Spec-Driven Development (SDD)**: a especifi
 | 02 | [02-arquitetura.md](02-arquitetura.md) | Processos Electron, camadas, estrutura de pastas, protocolo `comic://`, segurança |
 | 03 | [03-modelo-de-dados.md](03-modelo-de-dados.md) | Schema SQLite, regras de integridade, layout de arquivos em disco |
 | 04 | [04-contratos-ipc.md](04-contratos-ipc.md) | API tipada exposta ao renderer (`window.api`), eventos e erros |
-| 05 | [05-importacao.md](05-importacao.md) | Pipeline de importação de CBZ/CBR/ZIP/PDF |
+| 05 | [05-importacao.md](05-importacao.md) | Scan de pastas-raiz e indexação de CBZ/CBR/ZIP/PDF |
 | 06 | [06-leitor.md](06-leitor.md) | Especificação do leitor: modos, zoom, navegação, atalhos, progresso |
 | 07 | [07-ui-ux.md](07-ui-ux.md) | Design system escuro, telas, componentes, estados |
 | 08 | [08-plano-de-implementacao.md](08-plano-de-implementacao.md) | Milestones e tarefas ordenadas, com definição de pronto |
@@ -39,11 +39,9 @@ A documentação segue a abordagem **Spec-Driven Development (SDD)**: a especifi
 
 | Termo | Significado |
 |---|---|
-| **HQ** | Uma revista/edição importada: um arquivo CBZ, CBR ou PDF. Entidade `comic` no código. |
-| **Biblioteca** | O conjunto de todas as HQs importadas, armazenadas em pasta gerenciada pelo app. |
-| **Coleção** | Agrupamento de HQs com nome e capa. Existe em dois tipos: *lista* e *saga*. Entidade `collection`. |
-| **Lista** | Coleção livre, sem ordem de leitura significativa (ex.: "Favoritas do Batman", "Para ler"). |
-| **Saga** | Coleção **ordenada** que representa uma ordem de leitura (ex.: "Guerra Civil"), com progresso "x de y lidas". |
+| **HQ** | Uma revista/edição indexada: um arquivo CBZ, CBR, ZIP ou PDF. Entidade `comic` no código. |
+| **Biblioteca** | O conjunto de todas as HQs indexadas, lidas in-place a partir das pastas-raiz configuradas pelo usuário (nunca copiadas para dentro do app). |
+| **Pasta-raiz** | Pasta escolhida pelo usuário nas Configurações, escaneada recursivamente em busca de HQs. Entidade `library_folders`. |
 | **Progresso** | Página atual de uma HQ + status (não lida / em andamento / lida). |
 | **Modo de leitura** | Forma de exibir as páginas: *página única*, *página dupla* ou *vertical contínuo*. |
 | **Vertical contínuo** | Modo estilo webtoon ("portrait com zoom"): páginas empilhadas verticalmente, largura da coluna ajustável. |

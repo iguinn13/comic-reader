@@ -4,7 +4,6 @@ import { EmptyState } from '@renderer/components/empty-state'
 import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
-import { CollectionCard } from '@renderer/features/collections/collection-card'
 import { ComicRail } from './comic-rail'
 
 /**
@@ -19,16 +18,11 @@ export function HomePage(): React.JSX.Element {
   })
 
   const isEmpty =
-    !isLoading &&
-    data &&
-    data.continueReading.length === 0 &&
-    data.recentlyAdded.length === 0 &&
-    data.sagasInProgress.length === 0
+    !isLoading && data && data.continueReading.length === 0 && data.recentlyAdded.length === 0
 
-  async function handleImport(): Promise<void> {
-    const paths = await api.importer.pickFiles()
-    if (paths.length === 0) return
-    await api.importer.start(paths)
+  async function handleAddFolder(): Promise<void> {
+    const folder = await api.libraryFolders.add()
+    if (folder) await api.library.scan()
   }
 
   if (isLoading || !data) return <div className="h-full p-8" />
@@ -40,7 +34,7 @@ export function HomePage(): React.JSX.Element {
           title={t('emptyState.library.title')}
           description={t('emptyState.library.description')}
           action={
-            <Button onClick={() => void handleImport()}>{t('emptyState.library.action')}</Button>
+            <Button onClick={() => void handleAddFolder()}>{t('emptyState.library.action')}</Button>
           }
         />
       </div>
@@ -56,19 +50,6 @@ export function HomePage(): React.JSX.Element {
         viewAllHref="/library?status=reading&sort=lastReadAt"
         comics={data.continueReading}
       />
-
-      {data.sagasInProgress.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold text-text">{t('home.sagasInProgress')}</h2>
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {data.sagasInProgress.map((saga) => (
-              <div key={saga.id} className="w-40 shrink-0">
-                <CollectionCard collection={saga} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <ComicRail
         title={t('home.recentlyAdded')}

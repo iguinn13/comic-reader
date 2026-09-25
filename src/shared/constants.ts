@@ -1,6 +1,6 @@
 import type { ReaderPrefs } from './types'
 
-/** Extensões de arquivo aceitas na importação (RF-01, RF-03). */
+/** Extensões de arquivo reconhecidas como HQ ao escanear as pastas-raiz (RF-01, RF-03). */
 export const IMPORTABLE_EXTENSIONS = ['.cbz', '.cbr', '.pdf', '.zip'] as const
 
 /** Extensões de imagem reconhecidas como página dentro de um arquivo (docs/05 §5). */
@@ -15,8 +15,6 @@ export const IMAGE_PAGE_EXTENSIONS = [
 ] as const
 
 export const TITLE_MAX_LENGTH = 200
-export const COLLECTION_NAME_MAX_LENGTH = 100
-export const COLLECTION_DESCRIPTION_MAX_LENGTH = 500
 
 export const DEFAULT_READER_PREFS: ReaderPrefs = {
   mode: 'single',
@@ -39,7 +37,6 @@ export const SETTINGS_DEFAULTS = {
   },
   'ui.sidebarCollapsed': false,
   'window.bounds': null,
-  'import.duplicatePolicy': 'ask',
 } as const
 
 export const CACHE_MIN_BYTES = 512 * 1024 * 1024 // 512 MB

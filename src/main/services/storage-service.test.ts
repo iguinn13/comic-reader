@@ -4,6 +4,7 @@ import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDb, type Db } from '../db/client'
 import { insertComic } from '../db/repositories/comics'
+import { insertLibraryFolder } from '../db/repositories/library-folders'
 import { createAppPaths, type AppPaths } from '../utils/paths'
 import { PageCacheService } from './page-cache-service'
 import { StorageService } from './storage-service'
@@ -12,6 +13,7 @@ let root: string
 let paths: AppPaths
 let db: Db
 let service: StorageService
+let folderId: string
 
 function seedComic(id: string, fileSize: number): void {
   insertComic(db, {
@@ -19,7 +21,9 @@ function seedComic(id: string, fileSize: number): void {
     title: id,
     titleNormalized: id,
     format: 'zip',
-    fileName: `${id}.cbz`,
+    filePath: `/comics/${id}.cbz`,
+    dirPath: '/comics',
+    folderId,
     originalFileName: `${id}.cbz`,
     fileSize,
     fileHash: `hash-${id}`,
@@ -41,6 +45,8 @@ beforeEach(() => {
   paths = createAppPaths(root)
   mkdirSync(paths.cachePagesDir, { recursive: true })
   db = createDb(':memory:')
+  folderId = 'f1'
+  insertLibraryFolder(db, { id: folderId, path: '/comics' })
   service = new StorageService(db, new PageCacheService(db, paths))
 })
 

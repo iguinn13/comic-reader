@@ -20,7 +20,7 @@ Formato: **Contexto → Decisão → Consequências**. Os status possíveis são
 **Consequências.** O módulo é nativo: o electron-builder faz o rebuild no empacotamento e os testes precisam de estratégia própria ([09 §1](09-testes-e-qualidade.md#1-pirâmide)). As chamadas síncronas são aceitáveis porque as consultas são pequenas, mas qualquer consulta > 16 ms deve ser investigada.
 
 ### ADR-003 — Copiar os arquivos importados para uma biblioteca gerenciada
-**Status:** Aceita · **Data:** 2026-09-23
+**Status:** Substituída por [ADR-017](#adr-017--referenciar-arquivos-in-place-em-vez-de-copiar-para-uma-biblioteca-gerenciada) · **Data:** 2026-09-23
 
 **Contexto.** Referenciar o arquivo original quebra a HQ se o usuário mover ou apagar o original.
 **Decisão.** **Copiar** para `userData/library/{id}.{ext}` (escolha do usuário).
@@ -114,7 +114,7 @@ Formato: **Contexto → Decisão → Consequências**. Os status possíveis são
 **Consequências.** Atualizar `pdfjs-dist` para 5.x/6.x no futuro exige reverificar a compatibilidade com o V8 do Electron da época (item 1) antes de simplesmente subir a versão. `'unsafe-inline'` em `script-src` só em dev é uma relaxação real de CSP, mas sem efeito em produção — o checklist de segurança de [02 §6](02-arquitetura.md#6-segurança) continua valendo para o build empacotado.
 
 ### ADR-015 — "Adicionar a…" como diálogo, não submenu
-**Status:** Aceita · **Data:** 2026-09-25
+**Status:** Substituída por [ADR-017](#adr-017--referenciar-arquivos-in-place-em-vez-de-copiar-para-uma-biblioteca-gerenciada) (Listas/Sagas removidas — não há mais "Adicionar a…") · **Data:** 2026-09-25
 
 **Contexto.** RF-19/RF-23/RF-44 descrevem "Adicionar a…" como submenu com listas, sagas e "Nova lista…/Nova saga…", em três lugares (card, seleção múltipla, leitor). Os wrappers de menu do projeto (`context-menu`, `dropdown-menu`) não têm submenus, e o mesmo fluxo precisa funcionar nos três menus (contexto e dropdown).
 **Decisão.** Um único `AddToCollectionDialog` (`features/collections/`), aberto por um item "Adicionar a…" em cada menu. Lista as coleções com check (todas as HQs já estão) ou traço (só parte), alterna ao clicar, e cria coleção nova já com as HQs.
@@ -124,3 +124,23 @@ Formato: **Contexto → Decisão → Consequências**. Os status possíveis são
 **Contexto.** `deleteAppDataOnUninstall` do electron-builder apaga tudo sem perguntar; reinstalar/atualizar não pode destruir a biblioteca.
 **Decisão.** `deleteAppDataOnUninstall: false` e um macro `customUnInstall` em `build/installer.nsh` com `MessageBox` (padrão: manter). Modo silencioso nunca apaga.
 **Consequência.** Testar o instalador em Windows 10/11 limpos (M8.2) precisa ser feito manualmente.
+
+### ADR-017 — Referenciar arquivos in-place em vez de copiar para uma biblioteca gerenciada; remoção de Listas/Sagas
+**Status:** Aceita · **Data:** 2026-09-25
+
+**Contexto.** Depois de usar a v1, o usuário pediu duas mudanças de produto que se implicam mutuamente: (1) apagar completamente Listas e Sagas (organização manual em coleções, ADR-015, RF-20–26 originais); (2) o app não deve mais ter um fluxo de "importar" HQ por HQ — o usuário só aponta para uma ou mais pastas onde já mantém suas HQs organizadas, escaneadas recursivamente ("pode estar em cadeia"), nos moldes do app "Cover" do Windows. Isso é incompatível com ADR-003 (copiar para `userData/library/`): se o app continuasse copiando, a pasta apontada deixaria de refletir a mesma estrutura que o usuário já mantém, e o app voltaria a "possuir" uma cópia organizada à parte — exatamente o modelo que se queria abandonar.
+
+**Decisão.**
+1. **Sem cópia.** `comics.file_path` passa a apontar para o arquivo original, onde quer que esteja; o app só lê, nunca copia/move. `userData/library/` deixa de existir.
+2. **Pastas-raiz configuráveis, múltiplas.** Nova tabela `library_folders` (docs/03 §2.1): o usuário adiciona/remove pastas-raiz pela tela Configurações; cada uma é escaneada recursivamente pelo `LibraryScanService` (docs/05).
+3. **Scan em vez de importação.** Sem fila interativa, sem diálogo de duplicata: o scan roda sozinho (boot automático + botão manual "Atualizar biblioteca"), resolve duplicata por hash silenciosamente (mantém a primeira ocorrência) e remove do índice HQs cujo arquivo sumiu — tudo sem bloquear o usuário com perguntas, porque não há uma pessoa acompanhando o resultado item a item como antes.
+4. **Listas e Sagas removidas por completo.** Tabelas `collections`/`collection_items`, `CollectionService`, telas Sagas/Listas, "Adicionar a…" (ADR-015) — tudo removido. A organização é inteiramente a estrutura de pastas do usuário; a UI da biblioteca é uma lista/grade única (busca, ordenação, filtros), sem hierarquia.
+5. **Substituto funcional de "Próxima da saga":** o painel de fim de leitura (RF-42) agora sugere o próximo arquivo (ordem natural, `naturalSort()`) da **mesma pasta** — automático, sem nenhuma configuração do usuário.
+6. **Exclusão de HQ vira opt-in de dois níveis** (RF-17): por padrão só remove do índice (o usuário organiza os arquivos, então o app não deve apagá-los sem pedir); um checkbox explícito "Apagar também o arquivo do disco" faz a exclusão real, e mesmo assim só se o arquivo ainda estiver dentro de alguma pasta-raiz configurada (checagem de segurança em `LibraryService.delete`).
+7. **Migration consolidada.** Como a v1 ainda não tinha sido lançada (nenhum banco de usuário em produção), a migration `0000` foi reescrita para refletir o schema final direto, em vez de empilhar uma migration incremental `0001` só para essa virada de arquitetura pré-lançamento (docs/03 §4).
+
+**Consequências.**
+- **Robustez trocada por simplicidade de uso:** se o usuário mover/renomear um arquivo fora do app, a HQ some do índice até o próximo scan a reencontrar — como uma entrada "nova" (novo id, progresso zerado), porque não há como saber com certeza que é "a mesma" HQ sem arriscar reaproveitar progresso da HQ errada. Isso é uma regressão de robustez frente ao modelo de cópia (ADR-003), mas é o preço aceito pela decisão de produto de nunca duplicar nem tocar os arquivos do usuário.
+- **Sem "resumo de importação":** erros de arquivo individual (corrompido, sem páginas) são só logados, não aparecem numa UI de resumo — o scan é um evento de fundo, não uma ação que o usuário está observando passo a passo.
+- **Perda de organização manual:** quem usava Listas/Sagas para agrupar HQs sem mexer na estrutura de pastas reais perde essa opção; o caminho equivalente agora é organizar via Explorer/pastas do próprio SO.
+- **`FORMAT_TO_FILE_EXT`/`ComicFileFormat`** (que mapeavam formato → extensão do arquivo interno da biblioteca) deixaram de fazer sentido e foram removidos — a extensão real já vem de `file_path`.

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { useReaderStore } from '@renderer/stores/reader-store'
+import { cn } from '@renderer/lib/utils'
+import { useReaderStore, useShowChrome } from '@renderer/stores/reader-store'
 import type { ReaderSource } from '@shared/types'
 import { computeSpreads, type SpreadDims } from './compute-spreads'
 import { PdfPage } from './pdf-page'
@@ -31,6 +32,7 @@ export function DoubleView({
   const chromeVisible = useReaderStore((s) => s.chromeVisible)
   const isFullscreen = useReaderStore((s) => s.isFullscreen)
   const focusMode = useReaderStore((s) => s.focusMode)
+  const showChrome = useShowChrome()
   const next = useReaderStore((s) => s.next)
   const prev = useReaderStore((s) => s.prev)
   const setChromeVisible = useReaderStore((s) => s.setChromeVisible)
@@ -136,7 +138,10 @@ export function DoubleView({
       onWheel={handleWheel}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      className="relative flex size-full items-start justify-center overflow-auto bg-reader-bg"
+      className={cn(
+        'relative flex size-full items-start justify-center overflow-auto bg-reader-bg',
+        !showChrome && 'scrollbar-hidden',
+      )}
     >
       <div
         className="flex h-full w-full justify-center"

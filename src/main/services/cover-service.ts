@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'fs/promises'
+import { mkdir, writeFile } from 'fs/promises'
 import { dirname } from 'path'
 import { logger } from '../utils/logger'
 import type { ResizeToJpeg } from '../utils/native-image-adapter'
@@ -6,10 +6,6 @@ import type { AppPaths } from '../utils/paths'
 
 const COVER_TARGET_WIDTH = 400
 const COVER_JPEG_QUALITY = 82
-
-/** docs/03-modelo-de-dados.md §3: capa própria de coleção, 600px de largura, JPEG q=85. */
-const COLLECTION_COVER_TARGET_WIDTH = 600
-const COLLECTION_COVER_JPEG_QUALITY = 85
 
 export interface GenerateCoverResult {
   coverVersion: number
@@ -47,35 +43,6 @@ export class CoverService {
       return { coverVersion: 1 }
     } catch (error) {
       logger.error(`[cover] falha ao gerar capa da HQ ${comicId}:`, error)
-      return null
-    }
-  }
-
-  /**
-   * Capa própria de coleção (RF-25 modo 2): copia e redimensiona o arquivo
-   * escolhido pelo usuário (`collections:pickCoverImage`). Diferente da capa
-   * de HQ, aqui uma falha deve **propagar** — é uma ação direta do usuário,
-   * não um passo silencioso de importação em lote — então quem chama decide
-   * o que fazer com `null` (o `CollectionService` converte em `AppError`).
-   */
-  async generateCollectionCover(
-    collectionId: string,
-    sourceFilePath: string,
-    previousVersion: number,
-  ): Promise<GenerateCoverResult | null> {
-    try {
-      const source = await readFile(sourceFilePath)
-      const jpeg = this.resizeToJpeg(
-        source,
-        COLLECTION_COVER_TARGET_WIDTH,
-        COLLECTION_COVER_JPEG_QUALITY,
-      )
-      const destFile = this.paths.collectionCoverFile(collectionId)
-      await mkdir(dirname(destFile), { recursive: true })
-      await writeFile(destFile, jpeg)
-      return { coverVersion: previousVersion + 1 }
-    } catch (error) {
-      logger.error(`[cover] falha ao gerar capa da coleção ${collectionId}:`, error)
       return null
     }
   }

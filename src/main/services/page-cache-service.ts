@@ -7,7 +7,6 @@ import type { Db } from '../db/client'
 import { getComicFileMeta } from '../db/repositories/comics'
 import { getComicPage, listComicPages, updatePageDimensions } from '../db/repositories/pages'
 import { getSetting } from '../db/repositories/settings'
-import { FORMAT_TO_FILE_EXT } from '../utils/comic-format'
 import { logger } from '../utils/logger'
 import type { AppPaths } from '../utils/paths'
 
@@ -95,7 +94,7 @@ export class PageCacheService {
     const meta = getComicFileMeta(this.db, comicId)
     if (!meta) throw new Error(`HQ ${comicId} não encontrada`)
 
-    const archive = await this.openComicArchive(comicId, meta.format)
+    const archive = await this.openComicArchive(meta.filePath, meta.format)
     try {
       const buffer = await archive.readPage(page.entryName)
       await mkdir(this.paths.comicPagesCacheDir(comicId), { recursive: true })
@@ -109,12 +108,11 @@ export class PageCacheService {
   }
 
   private async openComicArchive(
-    comicId: string,
+    filePath: string,
     format: 'zip' | 'rar' | 'pdf',
   ): Promise<ComicArchive> {
     if (format === 'pdf') throw new Error('PDF não usa PageCacheService (comic://file + pdf.js)')
-    const fileExt = FORMAT_TO_FILE_EXT[format]
-    const buffer = await readFile(this.paths.comicFile(comicId, fileExt))
+    const buffer = await readFile(filePath)
     return openArchive(buffer, format)
   }
 
@@ -125,7 +123,7 @@ export class PageCacheService {
 
       const pagesByIndex = new Map(listComicPages(this.db, comicId).map((p) => [p.pageIndex, p]))
       const order = buildExtractionOrder(startPage, pagesByIndex.size)
-      const archive = await this.openComicArchive(comicId, meta.format)
+      const archive = await this.openComicArchive(meta.filePath, meta.format)
       const measured: { pageIndex: number; buffer: Buffer }[] = []
 
       try {

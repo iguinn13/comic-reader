@@ -5,7 +5,7 @@
 | Nível | Ferramenta | Alvo | Onde |
 |---|---|---|---|
 | Unitário | Vitest (node) | Utils (natural sort, normalize, detect), `computeSpreads`, reducers/hooks de navegação | `*.test.ts` ao lado do arquivo |
-| Integração | Vitest (node) + SQLite em memória + fixtures reais | Repositórios, `ImportService`, `CollectionService`, `ReaderService`, `PageCacheService`, archives | `src/main/**/*.test.ts` |
+| Integração | Vitest (node) + SQLite em memória + fixtures reais | Repositórios, `LibraryScanService`, `LibraryService`, `ReaderService`, `PageCacheService`, archives | `src/main/**/*.test.ts` |
 | Componente | Vitest (jsdom) + Testing Library | Componentes com lógica (ComicCard states, toolbar, painel de fim) | `src/renderer/**/*.test.tsx` |
 | E2E | Playwright (`_electron.launch`) | Fluxos críticos no app real | `tests/e2e/` |
 
@@ -16,8 +16,9 @@ Os serviços do main recebem as dependências do Electron (`dialog`, `nativeImag
 ## 2. O que testar
 
 ### 2.1 Obrigatório (integração)
-- **Importação:** os 12 casos de [05 §9](05-importacao.md#9-casos-de-teste-obrigatórios).
-- **Coleções:** unicidade de nome por tipo (case/acentos), adicionar sem duplicar, remoção renormalizando as posições, `reorder` rejeitando não-permutação, resolução de capa (auto, comic, image e fallback ao remover a HQ), progresso x/y, `nextToRead`, exclusão de coleção sem apagar HQs e exclusão de HQ atualizando as coleções.
+- **Scan de biblioteca:** os casos de [05 §10](05-importacao.md#10-casos-de-teste-obrigatórios) — indexação recursiva em pastas encadeadas, dedup por hash mantendo a primeira ocorrência, remoção de entradas cujo arquivo sumiu do disco, adicionar/remover pasta-raiz.
+- **Próximo arquivo da pasta:** ordenação natural (`01, 02, 10`) entre arquivos do mesmo `dirPath`, `null` quando é o único/último arquivo.
+- **Exclusão:** exclusão só do índice (arquivo permanece no disco) e exclusão com `deleteFile: true` (arquivo é apagado apenas quando o caminho está dentro de uma pasta-raiz configurada; fora disso, aborta a exclusão do disco mas remove do índice).
 - **Progresso:** debounce de `setPage` + `flush()` grava o último valor, `complete` define `completed_at`, "não lida" zera, status derivado correto nos 3 casos, e "Continuar lendo" filtra e ordena corretamente.
 - **Biblioteca:** busca sem acento ("acao" → "Ação"), cada filtro de status, favoritas e cada ordenação com desempate estável.
 - **Cache:** extração gera arquivos + `.complete`, dimensões gravadas e LRU remove as mais antigas sem tocar a HQ aberta.
@@ -31,10 +32,10 @@ Os serviços do main recebem as dependências do Electron (`dialog`, `nativeImag
 
 ### 2.3 E2E (Playwright + Electron)
 Cada teste roda com um `userData` temporário (via variável de ambiente `COMIC_READER_USER_DATA`, respeitada só quando `!app.isPackaged` ou em modo de teste).
-1. **Importar e ler:** importa um CBZ (bypass do diálogo via `import.start` exposto em modo de teste), abre, avança 3 páginas com `→`, fecha o app, reabre e confirma que está na página 4.
-2. **Saga:** cria a saga, adiciona 2 HQs, reordena, lê a última página da primeira e confirma que o painel sugere a segunda.
+1. **Adicionar pasta e ler:** adiciona uma pasta-raiz (bypass do diálogo via `COMIC_READER_E2E`/`COMIC_READER_E2E_FOLDER` em modo de teste), aguarda o scan, abre um CBZ, avança 3 páginas com `→`, fecha o app, reabre e confirma que está na página 4.
+2. **Próximo arquivo da pasta:** coloca 2 HQs na mesma pasta, lê a última página da primeira e confirma que o painel sugere a segunda (ordenação natural).
 3. **Modos:** alterna os 3 modos na mesma HQ, sem erros no console.
-4. **Exclusão:** exclui a HQ e confirma que ela sumiu da grade e que o arquivo sumiu de `library/`.
+4. **Exclusão:** exclui a HQ sem marcar "apagar arquivo" (confirma que ela sumiu da grade e o arquivo continua no disco) e exclui outra com a opção marcada (confirma que o arquivo também sumiu do disco).
 
 O teste de memória (RNF-03, `memory.spec.ts`) gera 300 PNGs e rola a HQ inteira; por ser pesado só roda com `E2E_MEMORY=1`. Os demais (`smoke`, `robustness`) rodam sempre com `npm run test:e2e`.
 

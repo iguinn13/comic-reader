@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
-import { ImportRoot } from '@renderer/features/import'
 import { useLibraryChangedSubscription } from '@renderer/features/library/use-library-changed-subscription'
 import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
@@ -94,7 +93,6 @@ export function AppShell(): React.JSX.Element {
       >
         <Outlet />
       </main>
-      <ImportRoot />
     </div>
   )
 }

@@ -1,16 +1,13 @@
 import { AppError, type Result } from '@shared/errors'
 import type {
-  CollectionCoverInput,
-  CollectionDetail,
-  CollectionId,
-  CollectionSummary,
-  CollectionType,
   ComicDetail,
   ComicId,
   ComicSummary,
+  DeleteComicOptions,
   HomeData,
-  ImportJobState,
+  LibraryFolder,
   LibraryQuery,
+  LibraryScanState,
   Page,
   ReaderPrefs,
   ReaderSession,
@@ -47,59 +44,24 @@ export const api = {
     setReadStatus: (ids: ComicId[], status: 'read' | 'unread') =>
       unwrap(window.api.library.setReadStatus(ids, status)),
     removeFromContinue: (id: ComicId) => unwrap(window.api.library.removeFromContinue(id)),
-    delete: (ids: ComicId[]) => unwrap(window.api.library.delete(ids)),
+    delete: (ids: ComicId[], options: DeleteComicOptions) =>
+      unwrap(window.api.library.delete(ids, options)),
     stats: () => unwrap(window.api.library.stats()),
+    scan: () => unwrap(window.api.library.scan()),
+    onScanProgress: (callback: (state: LibraryScanState) => void): (() => void) =>
+      window.api.library.onScanProgress(callback),
+    onChanged: (callback: (reason: 'scan' | 'delete' | 'cover') => void): (() => void) =>
+      window.api.library.onChanged(callback),
   },
 
-  importer: {
-    pickFiles: () => unwrap(window.api.importer.pickFiles()),
-    pathsForFiles: (files: FileList | File[]): string[] => window.api.importer.pathsForFiles(files),
-    start: (paths: string[]) => unwrap(window.api.importer.start(paths)),
-    cancel: (jobId: string) => unwrap(window.api.importer.cancel(jobId)),
-    resolveDuplicate: (
-      jobId: string,
-      itemId: string,
-      decision: 'skip' | 'import',
-      applyToAll: boolean,
-    ) => unwrap(window.api.importer.resolveDuplicate(jobId, itemId, decision, applyToAll)),
-    getJob: () => unwrap(window.api.importer.getJob()),
-    onProgress: (callback: (state: ImportJobState) => void): (() => void) =>
-      window.api.importer.onProgress(callback),
-    onLibraryChanged: (callback: (reason: 'import' | 'delete' | 'cover') => void): (() => void) =>
-      window.api.importer.onLibraryChanged(callback),
-  },
-
-  collections: {
-    list: (type: CollectionType, sort: 'name' | 'updatedAt') =>
-      unwrap(window.api.collections.list(type, sort)),
-    get: (id: CollectionId) => unwrap(window.api.collections.get(id)),
-    create: (input: {
-      type: CollectionType
-      name: string
-      description?: string
-      comicIds?: ComicId[]
-    }) => unwrap(window.api.collections.create(input)),
-    update: (
-      id: CollectionId,
-      patch: { name?: string; description?: string; type?: CollectionType },
-    ) => unwrap(window.api.collections.update(id, patch)),
-    delete: (id: CollectionId) => unwrap(window.api.collections.delete(id)),
-    addItems: (id: CollectionId, comicIds: ComicId[]) =>
-      unwrap(window.api.collections.addItems(id, comicIds)),
-    removeItems: (id: CollectionId, comicIds: ComicId[]) =>
-      unwrap(window.api.collections.removeItems(id, comicIds)),
-    reorder: (id: CollectionId, orderedComicIds: ComicId[]) =>
-      unwrap(window.api.collections.reorder(id, orderedComicIds)),
-    setCover: (id: CollectionId, cover: CollectionCoverInput) =>
-      unwrap(window.api.collections.setCover(id, cover)),
-    pickCoverImage: () => unwrap(window.api.collections.pickCoverImage()),
-    membership: (comicIds: ComicId[]) => unwrap(window.api.collections.membership(comicIds)),
-    nextToRead: (sagaId: CollectionId) => unwrap(window.api.collections.nextToRead(sagaId)),
+  libraryFolders: {
+    list: () => unwrap(window.api.libraryFolders.list()),
+    add: () => unwrap(window.api.libraryFolders.add()),
+    remove: (id: string) => unwrap(window.api.libraryFolders.remove(id)),
   },
 
   reader: {
-    open: (comicId: ComicId, fromCollectionId?: CollectionId) =>
-      unwrap(window.api.reader.open(comicId, fromCollectionId)),
+    open: (comicId: ComicId) => unwrap(window.api.reader.open(comicId)),
     setPage: (comicId: ComicId, page: number): void => window.api.reader.setPage(comicId, page),
     savePrefs: (comicId: ComicId, prefs: ReaderPrefs) =>
       unwrap(window.api.reader.savePrefs(comicId, prefs)),
@@ -128,14 +90,4 @@ export const api = {
 
 // Tipos re-exportados por conveniência para quem consumir `lib/api.ts` sem
 // precisar importar `@shared/types` separadamente.
-export type {
-  CollectionDetail,
-  CollectionSummary,
-  ComicDetail,
-  ComicSummary,
-  HomeData,
-  ImportJobState,
-  Page,
-  ReaderSession,
-  Settings,
-}
+export type { ComicDetail, ComicSummary, HomeData, LibraryFolder, Page, ReaderSession, Settings }

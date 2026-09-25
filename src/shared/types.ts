@@ -2,12 +2,9 @@
  * DTOs e tipos de domínio compartilhados por main, preload e renderer.
  * Espelha docs/04-contratos-ipc.md §2 e docs/03-modelo-de-dados.md §2.
  */
-import type { AppErrorCode } from './errors'
 
 export type ComicId = string
-export type CollectionId = string
 export type ReadStatus = 'unread' | 'reading' | 'read'
-export type CollectionType = 'list' | 'saga'
 export type ComicFormat = 'zip' | 'rar' | 'pdf'
 
 export type ReaderMode = 'single' | 'double' | 'vertical'
@@ -41,39 +38,9 @@ export interface ComicSummary {
   createdAt: number
 }
 
-export interface ComicCollectionRef {
-  id: CollectionId
-  type: CollectionType
-  name: string
-}
-
 export interface ComicDetail extends ComicSummary {
   originalFileName: string
   fileSize: number
-  collections: ComicCollectionRef[]
-}
-
-export interface CollectionSummary {
-  id: CollectionId
-  type: CollectionType
-  name: string
-  description: string | null
-  coverUrl: string | null
-  coverMode: 'auto' | 'image' | 'comic'
-  itemCount: number
-  /** Só relevante para sagas: quantos itens já estão lidos. */
-  readCount: number
-  updatedAt: number
-}
-
-export interface CollectionItemRef extends ComicSummary {
-  position: number
-}
-
-export interface CollectionDetail extends CollectionSummary {
-  coverComicId: ComicId | null
-  /** Ordenados por `position`. */
-  items: CollectionItemRef[]
 }
 
 export interface LibraryQuery {
@@ -83,8 +50,6 @@ export interface LibraryQuery {
   order: 'asc' | 'desc'
   status: 'all' | ReadStatus
   favoritesOnly: boolean
-  /** Filtra dentro de uma lista (RF-24). */
-  collectionId?: CollectionId
   limit: number
   offset: number
 }
@@ -97,8 +62,6 @@ export interface Page<T> {
 export interface HomeData {
   /** RF-11: HQs em andamento, mais recentes primeiro, no máx. 20. */
   continueReading: ComicSummary[]
-  /** RF-63: sagas com pelo menos 1 lida e 1 não lida, no máx. 10. */
-  sagasInProgress: CollectionSummary[]
   /** RF-63: últimas 20 HQs adicionadas. */
   recentlyAdded: ComicSummary[]
 }
@@ -114,14 +77,6 @@ export interface ReaderPage {
 export type ReaderSource =
   { kind: 'images'; pages: ReaderPage[] } | { kind: 'pdf'; fileUrl: string }
 
-export interface SagaContext {
-  sagaId: CollectionId
-  sagaName: string
-  position: number
-  total: number
-  next: ComicSummary | null
-}
-
 export interface ReaderSession {
   comic: ComicDetail
   source: ReaderSource
@@ -129,7 +84,8 @@ export interface ReaderSession {
   /** Preferências da HQ mescladas com os padrões globais. */
   prefs: ReaderPrefs
   hasCustomPrefs: boolean
-  sagaContext: SagaContext[]
+  /** Próximo arquivo (ordem natural) na mesma pasta, ou null se for o último/único. */
+  nextInFolder: ComicSummary | null
 }
 
 export interface WindowBounds {
@@ -155,36 +111,23 @@ export interface Settings {
   'library.view': LibraryViewSettings
   'ui.sidebarCollapsed': boolean
   'window.bounds': WindowBounds | null
-  'import.duplicatePolicy': 'ask'
 }
 
-export type ImportItemStatus =
-  | 'queued'
-  | 'processing'
-  | 'awaiting-duplicate-decision'
-  | 'done'
-  | 'skipped-duplicate'
-  | 'failed'
-  | 'cancelled'
-
-export interface ImportItem {
+/** Uma pasta-raiz configurada pelo usuário, escaneada recursivamente (docs/05). */
+export interface LibraryFolder {
   id: string
-  /** Nome exibido; para itens de dentro de um ZIP, "pack.zip › Batman 01.cbz". */
-  sourceName: string
-  status: ImportItemStatus
-  errorCode?: AppErrorCode
-  comicId?: ComicId
-  duplicateOf?: { id: ComicId; title: string }
+  path: string
+  addedAt: number
 }
 
-export interface ImportJobState {
-  jobId: string
-  status: 'running' | 'paused-for-decision' | 'finished' | 'cancelled'
-  items: ImportItem[]
-  counts: { total: number; done: number; skipped: number; failed: number }
-  startedAt: number
-  finishedAt: number | null
+export interface LibraryScanState {
+  scanning: boolean
+  scanned: number
+  added: number
+  removed: number
 }
 
-export type CollectionCoverInput =
-  { mode: 'auto' } | { mode: 'comic'; comicId: ComicId } | { mode: 'image'; path: string }
+export interface DeleteComicOptions {
+  /** Também apaga o arquivo original do disco (com checagem de segurança no main). */
+  deleteFile: boolean
+}
