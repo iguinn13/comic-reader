@@ -31,7 +31,7 @@ export function ComicRail({
           </Link>
         )}
       </div>
-      <div className="flex gap-4 overflow-x-auto scrollbar-hidden pb-2">
+      <div className="flex gap-4 overflow-x-auto scrollbar-hidden p-2">
         {comics.map((comic) => (
           <div key={comic.id} className="w-48 shrink-0">
             <ComicCard comic={comic} />

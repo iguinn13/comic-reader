@@ -31,25 +31,39 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
   const queryClient = useQueryClient()
 
   const isSelected = useSelectionStore((state) => state.selectedIds.has(comic.id))
-  const hasSelection = useSelectionStore((state) => state.selectedIds.size > 0)
+  const selectedCount = useSelectionStore((state) => state.selectedIds.size)
+  const hasSelection = selectedCount > 0
+  // Menu de contexto num card que faz parte de uma seleção múltipla age em todos os selecionados.
+  const isMultiTarget = isSelected && selectedCount > 1
+  const targetIds = (): string[] =>
+    isMultiTarget ? Array.from(useSelectionStore.getState().selectedIds) : [comic.id]
   const toggleSelected = useSelectionStore((state) => state.toggle)
 
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteIds, setDeleteIds] = useState<string[]>([comic.id])
 
   const invalidateLibrary = (): void => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
   }
 
   const { mutate: toggleFavorite, isPending: isTogglingFavorite } = useMutation({
-    mutationFn: (value: boolean) => api.library.setFavorite([comic.id], value),
+    mutationFn: (value: boolean) => api.library.setFavorite(targetIds(), value),
     onSuccess: invalidateLibrary,
   })
 
   const { mutate: setReadStatus } = useMutation({
-    mutationFn: (status: 'read' | 'unread') => api.library.setReadStatus([comic.id], status),
+    mutationFn: (status: 'read' | 'unread') => api.library.setReadStatus(targetIds(), status),
     onSuccess: (_result, status) => {
       invalidateLibrary()
+      if (isMultiTarget) {
+        toast(
+          t(status === 'read' ? 'toast.selectionRead' : 'toast.selectionUnread', {
+            count: selectedCount,
+          }),
+        )
+        return
+      }
       // Guarda o estado anterior para o Desfazer devolver também a página.
       const previous = { status: comic.status, page: comic.currentPage }
       toast(t(status === 'read' ? 'toast.markedRead' : 'toast.markedUnread'), {
@@ -192,18 +206,26 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
                 : 'library.contextMenu.markRead',
             )}
           </ContextMenuItem>
-          {comic.status !== 'unread' && (
+          {!isMultiTarget && comic.status !== 'unread' && (
             <ContextMenuItem onSelect={() => setReadStatus('unread')}>
               <RotateCcw className="size-4" />
               {t('library.contextMenu.resetProgress')}
             </ContextMenuItem>
           )}
-          <ContextMenuItem onSelect={() => setRenameOpen(true)}>
-            <Pencil className="size-4" />
-            {t('library.contextMenu.rename')}
-          </ContextMenuItem>
+          {!isMultiTarget && (
+            <ContextMenuItem onSelect={() => setRenameOpen(true)}>
+              <Pencil className="size-4" />
+              {t('library.contextMenu.rename')}
+            </ContextMenuItem>
+          )}
           <ContextMenuSeparator />
-          <ContextMenuItem danger onSelect={() => setDeleteOpen(true)}>
+          <ContextMenuItem
+            danger
+            onSelect={() => {
+              setDeleteIds(targetIds())
+              setDeleteOpen(true)
+            }}
+          >
             <Trash2 className="size-4" />
             {t('library.contextMenu.delete')}
           </ContextMenuItem>
@@ -231,7 +253,12 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
         open={renameOpen}
         onOpenChange={setRenameOpen}
       />
-      <ConfirmDeleteDialog comicIds={[comic.id]} open={deleteOpen} onOpenChange={setDeleteOpen} />
+      <ConfirmDeleteDialog
+        comicIds={deleteIds}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDeleted={isMultiTarget ? () => useSelectionStore.getState().clear() : undefined}
+      />
     </div>
   )
 }

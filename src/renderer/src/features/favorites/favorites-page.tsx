@@ -24,7 +24,7 @@ export function FavoritesPage(): React.JSX.Element {
   const isEmpty = !isLoading && total === 0 && !search
 
   return (
-    <div className="flex h-full flex-col gap-4 p-8">
+    <div className="flex h-full flex-col gap-4 p-8 mt-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-text">{t('nav.favorites')}</h1>
         {!isEmpty && (

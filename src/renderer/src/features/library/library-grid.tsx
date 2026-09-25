@@ -60,7 +60,7 @@ export function LibraryGrid({
   }, [onEndReached, lastVirtualRow, rowCount])
 
   return (
-    <div ref={parentRef}className="h-full overflow-y-auto">
+    <div ref={parentRef} className="h-full overflow-y-auto px-1.5 pt-1.5">
       {containerWidth > 0 && (
         <div className="relative w-full" style={{ height: rowVirtualizer.getTotalSize() }}>
           {virtualRows.map((virtualRow) => {

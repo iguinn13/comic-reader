@@ -42,7 +42,7 @@ export function HomePage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full flex-col gap-8 overflow-y-auto p-8">
+    <div className="flex h-full flex-col gap-8 overflow-y-auto p-8 mt-4">
       <h1 className="text-2xl font-semibold text-text">{t('home.greeting')}</h1>
 
       <ComicRail

@@ -79,7 +79,7 @@ export function FolderBrowser(): React.JSX.Element {
         ))}
       </nav>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pt-1.5">
         {isEmptyHere ? (
           <EmptyState title={t('library.folders.emptyFolder')} />
         ) : (
