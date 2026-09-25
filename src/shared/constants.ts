@@ -34,6 +34,7 @@ export const SETTINGS_DEFAULTS = {
     order: 'desc',
     status: 'all',
     favoritesOnly: false,
+    mode: 'folders',
   },
   'ui.sidebarCollapsed': false,
   'window.bounds': null,

@@ -36,6 +36,7 @@ describe('setSetting', () => {
       order: 'asc',
       status: 'unread',
       favoritesOnly: true,
+      mode: 'flat',
     })
 
     expect(getSetting(db, 'library.view')).toEqual({
@@ -43,6 +44,7 @@ describe('setSetting', () => {
       order: 'asc',
       status: 'unread',
       favoritesOnly: true,
+      mode: 'flat',
     })
   })
 })

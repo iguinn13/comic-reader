@@ -221,3 +221,11 @@ SQLite não faz ordenação natural (`10` viria antes de `2`), então isto é re
 SELECT id, file_path FROM comics WHERE dir_path = :dirPath;
 -- ordenação e "próximo" resolvidos em JS com naturalSort()
 ```
+
+**Navegação por pastas (RF-64, docs/10 ADR-018)**
+
+Não existe uma tabela de pastas intermediárias — só `library_folders` (pastas-raiz) e `comics.file_path`. `LibraryService.browseFolder` busca todas as HQs de uma pasta-raiz e agrupa em JS pelo primeiro segmento do caminho relativo ao nível pedido (`path.relative`): um segmento = HQ direta neste nível; mais de um = pertence à subpasta nomeada pelo primeiro segmento.
+```sql
+SELECT * FROM comics WHERE folder_id = :folderId;
+-- agrupamento em subpastas x HQs diretas resolvido em JS (path.relative + split)
+```

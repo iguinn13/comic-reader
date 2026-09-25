@@ -4,6 +4,8 @@ import type {
   ComicId,
   ComicSummary,
   DeleteComicOptions,
+  FolderContents,
+  FolderLocation,
   HomeData,
   LibraryFolder,
   LibraryQuery,
@@ -39,6 +41,8 @@ export interface ComicReaderApi {
     scan(): Promise<Result<void>>
     onScanProgress(callback: (state: LibraryScanState) => void): () => void
     onChanged(callback: (reason: 'scan' | 'delete' | 'cover') => void): () => void
+    /** RF-64: subpastas e HQs de um nível da navegação por pastas. */
+    browseFolder(location: FolderLocation): Promise<Result<FolderContents>>
   }
 
   libraryFolders: {

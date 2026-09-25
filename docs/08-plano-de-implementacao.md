@@ -143,3 +143,4 @@ Este milestone implementava Listas e Sagas (coleções manuais: criar/editar/exc
 | | | RF-61 | M1 |
 | | | RF-62 | M3, M4, M6 |
 | | | RF-63 | M4 |
+| | | RF-64 | M3 (pós-v1, ver `docs/10-decisoes.md` ADR-018) |

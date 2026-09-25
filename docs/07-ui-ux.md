@@ -91,11 +91,29 @@ Adicionadas recentemente                          Ver tudo →
 - Uma seção vazia é ocultada. Com a biblioteca inteira vazia, mostra o estado vazio principal (§6).
 - "Ver tudo" em Continuar lendo → Biblioteca com filtro "Em andamento" e ordenação "Lidas recentemente".
 
-### 4.2 Biblioteca (`#/library`) — RF-10, 12, 13, 18
-- **Toolbar:** busca (com atalho `Ctrl+F` e botão ✕ para limpar), segmented control de status (**Todas · Não lidas · Em andamento · Lidas**), toggle ☆ Favoritas e dropdown de ordenação (Adicionadas recentemente, Lidas recentemente, Título A–Z, Título Z–A).
-- **Contador:** "248 HQs" (ou "12 resultados para 'batman'").
-- **Grade virtualizada:** colunas `auto-fill` com largura mínima de 150 px, gap de 20 px e proporção da capa 2:3 (`object-fit: cover`).
-- **Barra de seleção** (quando há seleção): substitui a toolbar com "3 selecionadas · Marcar como lida · Marcar como não lida · Favoritar · Excluir · ✕".
+### 4.2 Biblioteca (`#/library`) — RF-10, 12, 13, 18, RF-64
+- **Toggle de visualização:** "Pastas" (padrão) · "Todas as HQs", ao lado do contador — alterna entre a navegação por pastas (§4.2.1) e a lista única abaixo. É estado local da tela, não persiste entre sessões.
+- **Contador:** "248 HQs" (ou "12 resultados para 'batman'"), sempre o total da biblioteca inteira, mesmo em "Pastas".
+- Em **"Todas as HQs"**:
+  - **Toolbar:** busca (com atalho `Ctrl+F` e botão ✕ para limpar), segmented control de status (**Todas · Não lidas · Em andamento · Lidas**), toggle ☆ Favoritas e dropdown de ordenação (Adicionadas recentemente, Lidas recentemente, Título A–Z, Título Z–A).
+  - **Grade virtualizada:** colunas `auto-fill` com largura mínima de 150 px, gap de 20 px e proporção da capa 2:3 (`object-fit: cover`).
+  - **Barra de seleção** (quando há seleção): substitui a toolbar com "3 selecionadas · Marcar como lida · Marcar como não lida · Favoritar · Excluir · ✕".
+
+#### 4.2.1 Pastas (dentro da Biblioteca) — RF-64
+```
+Biblioteca › DC › Ano Um                    ← breadcrumb, cada segmento clicável
+
+┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+│  📁      │ │  📁      │ │  CAPA   │ │  CAPA   │
+│Elseworlds│ │ Bronze  │ │ #1      │ │ #2      │
+└─────────┘ └─────────┘ └─────────┘ └─────────┘
+  8 HQs        12 HQs     p. 3 de 22   Não lida
+```
+- Mesma grade `auto-fill`/150 px/gap 20 px da lista única — as subpastas entram como cards na frente das HQs, sem uma coluna lateral dedicada (estilo do app "Cover": clicar entra na pasta, o breadcrumb volta).
+- Card de subpasta: ícone de pasta + nome (2 linhas máx.) + contagem de HQs (recursiva); sem menu de contexto (é só navegação, criar/mover pastas é feito fora do app).
+- Nível-topo (antes de entrar em qualquer pasta): uma "pasta" por pasta-raiz configurada (RF-01/03), nomeada pelo nome real da pasta no disco.
+- Pasta sem subpastas nem HQs: estado vazio simples ("Esta pasta não tem HQs nem subpastas"), sem ação — a pasta existe no disco, só está vazia.
+- Card de HQ é o mesmo `ComicCard` de §4.3, com o mesmo menu de contexto/seleção.
 
 ### 4.3 Card de HQ (componente `ComicCard`)
 ```
@@ -155,6 +173,7 @@ Seções em coluna única (máx. 720 px):
 | Busca sem resultado | "Nada encontrado para '…'" | Limpar busca/filtros |
 | Favoritas vazia | "Toque no ♡ de uma HQ para ela aparecer aqui." | — |
 | Nenhuma pasta configurada | Mesma mensagem da Biblioteca vazia | **Adicionar pasta** |
+| Pasta vazia (navegação por pastas) | "Esta pasta não tem HQs nem subpastas" | — |
 | HQ com arquivo ausente/corrompido | "Não foi possível abrir esta HQ. O arquivo pode ter sido removido ou estar corrompido." | Voltar · Excluir da biblioteca |
 
 ## 7. Responsividade (RNF-08)

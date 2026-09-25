@@ -101,6 +101,8 @@ export interface LibraryViewSettings {
   order: LibraryQuery['order']
   status: LibraryQuery['status']
   favoritesOnly: boolean
+  /** RF-64: "pastas" navega pela estrutura de pastas, "flat" é a lista única com filtros. */
+  mode: 'flat' | 'folders'
 }
 
 /** docs/03-modelo-de-dados.md §2.6. */
@@ -130,4 +132,30 @@ export interface LibraryScanState {
 export interface DeleteComicOptions {
   /** Também apaga o arquivo original do disco (com checagem de segurança no main). */
   deleteFile: boolean
+}
+
+/**
+ * Onde a navegação por pastas está: `folderId: null` é o nível-topo (lista
+ * as pastas-raiz configuradas); com um `folderId`, `relativePath` é o
+ * caminho dentro dela ("" = raiz da própria pasta-raiz), em segmentos por
+ * nome de pasta — nunca o caminho absoluto de disco (RF-64).
+ */
+export interface FolderLocation {
+  folderId: string | null
+  relativePath: string
+}
+
+/** Uma subpasta listada em `library.browseFolder` (RF-64). */
+export interface FolderEntry {
+  name: string
+  folderId: string
+  relativePath: string
+  /** Quantidade de HQs dentro dela (recursivo). */
+  comicCount: number
+}
+
+export interface FolderContents {
+  subfolders: FolderEntry[]
+  /** Vazio no nível-topo: pastas-raiz nunca têm HQs soltas ali. */
+  comics: ComicSummary[]
 }

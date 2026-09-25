@@ -1,25 +1,30 @@
 import { rm } from 'fs/promises'
-import { relative, isAbsolute } from 'path'
+import { basename, join, relative, isAbsolute, sep } from 'path'
 import { AppError } from '@shared/errors'
 import type {
   ComicDetail,
   ComicId,
   ComicSummary,
   DeleteComicOptions,
+  FolderContents,
+  FolderLocation,
   HomeData,
   LibraryQuery,
   Page,
 } from '@shared/types'
+import { naturalSort } from '../archive'
 import type { Db } from '../db/client'
 import {
   deleteComics,
   getComicFileMeta,
   getComicDetail,
+  listComicRowsInFolder,
   listComics,
   renameComic,
   setFavorite,
+  type ComicRow,
 } from '../db/repositories/comics'
-import { listLibraryFolders } from '../db/repositories/library-folders'
+import { getLibraryFolder, listLibraryFolders } from '../db/repositories/library-folders'
 import {
   getContinueReading,
   getRecentlyAdded,
@@ -130,5 +135,61 @@ export class LibraryService {
       continueReading: getContinueReading(this.db, HOME_LIST_LIMIT).map(toComicSummary),
       recentlyAdded: getRecentlyAdded(this.db, HOME_LIST_LIMIT).map(toComicSummary),
     }
+  }
+
+  /**
+   * RF-64: navegação por pastas. Sem `folderId`, lista as pastas-raiz
+   * configuradas como "subpastas" do nível-topo. Com `folderId`, agrupa as
+   * HQs daquela pasta-raiz em JS (não há uma tabela de pastas intermediárias
+   * — só `comics.file_path`): cada HQ cujo caminho relativo a `relativePath`
+   * tem mais de um segmento pertence à subpasta nomeada pelo primeiro
+   * segmento; com só um segmento, está direto neste nível.
+   */
+  browseFolder(location: FolderLocation): FolderContents {
+    if (location.folderId === null) {
+      const folders = listLibraryFolders(this.db)
+      return {
+        subfolders: folders.map((folder) => ({
+          name: basename(folder.path),
+          folderId: folder.id,
+          relativePath: '',
+          comicCount: listComicRowsInFolder(this.db, folder.id).length,
+        })),
+        comics: [],
+      }
+    }
+
+    const folder = getLibraryFolder(this.db, location.folderId)
+    if (!folder) throw new AppError('NOT_FOUND', 'errors.folderNotFound')
+
+    const prefix = location.relativePath ? join(folder.path, location.relativePath) : folder.path
+    const rows = listComicRowsInFolder(this.db, location.folderId)
+
+    const directRows: ComicRow[] = []
+    const subfolderCounts = new Map<string, number>()
+    for (const row of rows) {
+      const rel = relative(prefix, row.filePath)
+      if (rel.startsWith('..') || isAbsolute(rel)) continue
+      const parts = rel.split(sep)
+      if (parts.length === 1) {
+        directRows.push(row)
+      } else {
+        subfolderCounts.set(parts[0], (subfolderCounts.get(parts[0]) ?? 0) + 1)
+      }
+    }
+
+    const sortedNames = naturalSort([...subfolderCounts.keys()])
+    const subfolders = sortedNames.map((name) => ({
+      name,
+      folderId: location.folderId!,
+      relativePath: location.relativePath ? `${location.relativePath}/${name}` : name,
+      comicCount: subfolderCounts.get(name)!,
+    }))
+
+    const sortedPaths = naturalSort(directRows.map((row) => row.filePath))
+    const byPath = new Map(directRows.map((row) => [row.filePath, row]))
+    const comics = sortedPaths.map((path) => toComicSummary(byPath.get(path)!))
+
+    return { subfolders, comics }
   }
 }

@@ -41,6 +41,12 @@ export const zComicIdList = z.array(zComicId).min(1).max(1000)
 
 export const zDeleteComicOptions = z.object({ deleteFile: z.boolean() })
 
+/** RF-64: nível-topo é `folderId: null` (lista as pastas-raiz); `relativePath` nunca é caminho absoluto. */
+export const zFolderLocation = z.object({
+  folderId: zFolderId.nullable(),
+  relativePath: z.string().max(4096),
+})
+
 export const zSettingsPatch = z
   .object({
     'reader.defaults': zReaderPrefs,
@@ -51,6 +57,7 @@ export const zSettingsPatch = z
       order: z.enum(['asc', 'desc']),
       status: zReadStatusFilter,
       favoritesOnly: z.boolean(),
+      mode: z.enum(['flat', 'folders']),
     }),
     'ui.sidebarCollapsed': z.boolean(),
     'window.bounds': z

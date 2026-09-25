@@ -72,6 +72,23 @@ export interface LibraryScanState {
 export interface DeleteComicOptions {
   deleteFile: boolean;                                // RF-17: opt-in explícito
 }
+
+export interface FolderLocation {
+  folderId: string | null;                            // null = nível-topo (lista as pastas-raiz)
+  relativePath: string;                               // "" = raiz da pasta-raiz; "DC/Ano Um" = subpasta
+}
+
+export interface FolderEntry {
+  name: string;                                       // nome de exibição (basename da pasta)
+  folderId: string;
+  relativePath: string;
+  comicCount: number;                                 // recursivo
+}
+
+export interface FolderContents {
+  subfolders: FolderEntry[];
+  comics: ComicSummary[];                              // vazio no nível-topo
+}
 ```
 
 Os tipos do leitor (`ReaderPrefs`, `ReaderMode`, `FitMode`) estão definidos em [03 §2.4](03-modelo-de-dados.md#24-reading_progress).
@@ -131,8 +148,11 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppErrorPayl
 | `delete(ids, options)` | `library:delete` | `ComicId[] (1..1000), DeleteComicOptions` | `{ deleted: number }` | RF-17 |
 | `stats()` | `library:stats` | — | `{ comicCount; libraryBytes; cacheBytes }` | RF-51, 52 |
 | `scan()` | `library:scan` | — | `void` | RF-04 ("Atualizar biblioteca") |
+| `browseFolder(location)` | `library:browseFolder` | `FolderLocation` | `FolderContents` | RF-64 |
 
 `delete` com `deleteFile: true` só apaga o arquivo do disco se ele ainda estiver dentro de alguma pasta-raiz configurada (checagem de segurança no `LibraryService`); fora disso, o arquivo é preservado e só o registro é removido, silenciosamente.
+
+`browseFolder` não tem uma tabela de subpastas: agrupa as HQs da pasta-raiz em memória pelo primeiro segmento do caminho relativo a `relativePath` (docs/10 ADR-018). Com `folderId: null`, devolve as pastas-raiz configuradas como `subfolders` (e `comics: []`).
 
 **Eventos**
 | Evento | Payload | Quando |

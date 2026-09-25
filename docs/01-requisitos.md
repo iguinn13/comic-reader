@@ -120,6 +120,12 @@ Nas grades de HQs é possível selecionar várias (checkbox ao passar o mouse, `
 **RF-19 — Menu de contexto do card (P1)**
 Clique direito (ou botão "⋯" no hover) no card de HQ: *Ler*, *Marcar como lida/não lida*, *Favoritar/Desfavoritar*, *Renomear*, *Excluir*.
 
+**RF-64 — Navegação por pastas (P1)**
+A Biblioteca tem duas visualizações, alternadas por um botão: **Pastas** (padrão) e **Todas as HQs** (a grade única com busca/filtros/ordenação de RF-10..13).
+- Em **Pastas**, a tela mostra a estrutura de pastas do próprio usuário: no nível-topo, uma pasta por pasta-raiz configurada (RF-01/RF-03); dentro dela, as subpastas (com a contagem de HQs) e as HQs que estão diretamente ali, na mesma grade — clicar numa subpasta entra nela, com um caminho (breadcrumb) no topo para voltar.
+- Uma pasta sem subpastas nem HQs mostra um estado vazio simples.
+- Esta navegação é só de leitura: criar/renomear/mover pastas continua sendo feito pelo usuário fora do app (docs/10 ADR).
+
 ### 4.4 Leitor
 
 Detalhamento completo em [06-leitor.md](06-leitor.md).
@@ -222,7 +228,7 @@ Contém: "Continuar lendo" (RF-11) e "Adicionadas recentemente" (últimas 20 HQs
 | Item em `general.md` | Requisito(s) |
 |---|---|
 | Upload e leitura de HQs | RF-01, RF-02, RF-06, RF-30 |
-| Organizar em pastas (decisão de produto: fora do app) | RF-01 a RF-06, `docs/10-decisoes.md` |
+| Organizar em pastas (decisão de produto: fora do app) | RF-01 a RF-06, RF-64, `docs/10-decisoes.md` |
 | Opção de zoom | RF-34, RF-33 |
 | Trocar página por setas e mouse | RF-35, RF-36 |
 | Tela cheia | RF-37 |
@@ -242,4 +248,4 @@ Contém: "Continuar lendo" (RF-11) e "Adicionadas recentemente" (últimas 20 HQs
 
 **Adições combinadas no refinamento:** PDF (RF-01/RF-02), página dupla (RF-32), busca/filtros (RF-12, RF-13), status lido (RF-14), favoritos (RF-15), duplicatas (RF-05), scan automático e manual (RF-04), renomear HQ (RF-16), fim da HQ/próximo arquivo da pasta (RF-42).
 
-**Revisão pós-v1 (ver `docs/10-decisoes.md`):** o modelo de importação manual (RF-01–06 originais) e as coleções manuais Listas/Sagas (antigo §4.3, RF-20–26) foram substituídos por escaneamento de pastas-raiz configuradas pelo usuário — sem cópia de arquivos e sem organização dentro do app.
+**Revisão pós-v1 (ver `docs/10-decisoes.md`):** o modelo de importação manual (RF-01–06 originais) e as coleções manuais Listas/Sagas (antigo §4.3, RF-20–26) foram substituídos por escaneamento de pastas-raiz configuradas pelo usuário — sem cópia de arquivos e sem organização dentro do app. Em seguida, a Biblioteca ganhou de volta uma visualização por pastas (RF-64, ADR-018): a estrutura de pastas do usuário passou a ser navegável dentro do app (só leitura), ao lado da lista única (RF-10..13).
