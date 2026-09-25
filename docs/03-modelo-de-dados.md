@@ -131,7 +131,7 @@ END
 ```
 - Marcar **lida**: `completed_at = now`. `current_page` é mantido (reabrir continua de onde estava; se estava na última página, o leitor abre na última).
 - Marcar **não lida**: `completed_at = NULL, current_page = 0, last_read_at = NULL`.
-- Reabrir uma HQ lida e navegar **não** remove o `completed_at`.
+- Salvar uma página **diferente** da `current_page` (voltar a ler uma HQ lida) zera `completed_at`: a HQ passa a "em andamento". Reabrir e salvar a mesma página não altera o status. Chegar de novo à última página marca como lida (RF-42).
 
 `ReaderPrefs` (JSON, validado por zod):
 ```ts

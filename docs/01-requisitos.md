@@ -101,6 +101,7 @@ Campo de busca na Biblioteca que filtra por título, sem diferenciar maiúsculas
 **RF-14 — Status de leitura (P1)**
 Toda HQ tem um status derivado: **não lida** (página 0 e nunca concluída), **em andamento** (página > 0, não concluída) ou **lida** (concluída).
 - A HQ fica "lida" automaticamente ao chegar à última página (ver RF-42).
+- Voltar a ler uma HQ lida (mudar de página) remove o status de lida e a deixa **em andamento**, até chegar de novo à última página.
 - O usuário pode marcar manualmente como **lida** ou **não lida** (uma ou várias). "Não lida" zera o progresso.
 
 **RF-15 — Favoritos (P1)**

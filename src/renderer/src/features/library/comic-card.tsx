@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Heart, Pencil, Play, Trash2 } from 'lucide-react'
+import { Check, Heart, Pencil, Play, RotateCcw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Checkbox } from '@renderer/components/ui/checkbox'
@@ -106,7 +106,10 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
                 src={comic.coverUrl}
                 alt=""
                 loading="lazy"
-                className="size-full object-cover transition-transform duration-150 ease-out group-hover:scale-[1.03]"
+                className={cn(
+                  'size-full object-cover transition duration-150 ease-out group-hover:scale-[1.03]',
+                  comic.status === 'read' && 'opacity-50 saturate-50 group-hover:opacity-100',
+                )}
               />
             ) : (
               <div className="flex size-full items-center justify-center bg-linear-to-b from-surface-2 to-surface p-3 text-center text-xs text-text-subtle">
@@ -150,6 +153,16 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
               </span>
             </span>
 
+            {comic.status === 'read' && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[11px] font-medium text-black"
+              >
+                <Check className="size-3" strokeWidth={3} />
+                {t('library.readBadge')}
+              </span>
+            )}
+
             {comic.status === 'reading' && (
               <div
                 role="progressbar"
@@ -179,6 +192,12 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
                 : 'library.contextMenu.markRead',
             )}
           </ContextMenuItem>
+          {comic.status !== 'unread' && (
+            <ContextMenuItem onSelect={() => setReadStatus('unread')}>
+              <RotateCcw className="size-4" />
+              {t('library.contextMenu.resetProgress')}
+            </ContextMenuItem>
+          )}
           <ContextMenuItem onSelect={() => setRenameOpen(true)}>
             <Pencil className="size-4" />
             {t('library.contextMenu.rename')}
@@ -195,8 +214,14 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
         <p className="line-clamp-2 text-[13px] font-medium leading-tight text-text">
           {comic.title}
         </p>
-        <p className="text-xs text-text-muted">
-          {statusLabel} · {comic.format.toUpperCase()}
+        <p
+          className={cn(
+            'text-xs text-text-muted',
+            comic.status === 'read' && 'text-success',
+            comic.status === 'reading' && 'text-accent',
+          )}
+        >
+          {statusLabel}
         </p>
       </div>
 

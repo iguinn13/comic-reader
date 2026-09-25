@@ -66,18 +66,37 @@ describe('getProgress', () => {
 })
 
 describe('setCurrentPage', () => {
-  it('atualiza a página atual e last_read_at, sem mexer em completed_at', () => {
+  it('atualiza a página atual e last_read_at', () => {
     const input = makeInput()
     insertComic(db, input)
-    markRead(db, input.id)
 
     setCurrentPage(db, input.id, 5)
 
     const progress = getProgress(db, input.id)
     expect(progress?.currentPage).toBe(5)
     expect(progress?.lastReadAt).not.toBeNull()
-    // Reabrir uma HQ lida e navegar não remove a marca de lida (docs/03 §2.3).
-    expect(progress?.completedAt).not.toBeNull()
+  })
+
+  it('remove completed_at quando a página muda (HQ lida volta a "em andamento")', () => {
+    const input = makeInput()
+    insertComic(db, input)
+    setCurrentPage(db, input.id, 7)
+    markRead(db, input.id)
+
+    setCurrentPage(db, input.id, 6)
+
+    expect(getProgress(db, input.id)?.completedAt).toBeNull()
+  })
+
+  it('mantém completed_at quando a mesma página é salva de novo', () => {
+    const input = makeInput()
+    insertComic(db, input)
+    setCurrentPage(db, input.id, 7)
+    markRead(db, input.id)
+
+    setCurrentPage(db, input.id, 7)
+
+    expect(getProgress(db, input.id)?.completedAt).not.toBeNull()
   })
 })
 

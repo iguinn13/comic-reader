@@ -98,6 +98,8 @@ export class ReaderService {
   }
 
   complete(comicId: ComicId): void {
+    // Grava a página pendente antes: senão o flush tardio (página nova) removeria a marca de lida.
+    this.flushOne(comicId)
     markRead(this.db, comicId)
   }
 

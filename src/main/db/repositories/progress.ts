@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, isNull, sql } from 'drizzle-orm'
 import type { ReaderPrefs } from '@shared/types'
 import type { Db } from '../client'
 import { comics, readingProgress } from '../schema'
@@ -20,12 +20,18 @@ export function getProgress(db: Db, comicId: string): ProgressRow | null {
 }
 
 /**
- * Avança/retrocede a página atual. Não mexe em `completed_at`: reabrir uma
- * HQ lida e navegar não remove a marca de lida (docs/03 §2.3).
+ * Avança/retrocede a página atual. Se a página mudou, remove a marca de lida:
+ * voltar a ler uma HQ lida a deixa "em andamento" (docs/03 §2.3). Reabrir e
+ * salvar a mesma página não altera o status. No SQLite o lado direito do
+ * UPDATE enxerga os valores antigos, então `current_page` ainda é o anterior.
  */
 export function setCurrentPage(db: Db, comicId: string, page: number): void {
   db.update(readingProgress)
-    .set({ currentPage: page, lastReadAt: Date.now() })
+    .set({
+      currentPage: page,
+      lastReadAt: Date.now(),
+      completedAt: sql`CASE WHEN ${readingProgress.currentPage} <> ${page} THEN NULL ELSE ${readingProgress.completedAt} END`,
+    })
     .where(eq(readingProgress.comicId, comicId))
     .run()
 }

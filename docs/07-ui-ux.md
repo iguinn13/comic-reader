@@ -126,7 +126,7 @@ Biblioteca › DC › Ano Um                    ← breadcrumb, cada segmento cl
 │▬▬▬▬▬────────│ ← barra de progresso 3px (accent) se em andamento
 └─────────────┘
 Batman: Ano Um #1          ← 13px, 2 linhas máx
-p. 12 de 48 · CBZ          ← 12px muted (ou "Não lida" / "Lida")
+p. 12 de 48                ← 12px (ou "Não lida" / "Lida"); o formato do arquivo não é exibido
 ```
 - Clique → lê. `Ctrl/Shift+clique` → seleção. Clique direito → menu de contexto (RF-19). `Enter` com foco → lê.
 - A capa ainda não gerada mostra um placeholder com o título sobre um gradiente de `surface`.
