@@ -60,6 +60,9 @@ export function ReaderPage(): React.JSX.Element | null {
     queryFn: () => api.reader.open(comicId!),
     enabled: !!comicId,
     staleTime: Infinity,
+    // Sem cache entre aberturas: a sessão traz a `currentPage` salva no disco, e
+    // reaproveitar a de uma leitura anterior faria a HQ voltar para a página velha.
+    gcTime: 0,
     refetchOnWindowFocus: false,
     retry: false,
   })
@@ -292,7 +295,7 @@ export function ReaderPage(): React.JSX.Element | null {
         />
       </div>
 
-      <div className="min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
         {prefs.mode === 'double' ? (
           <DoubleView source={session.source} pageCount={session.comic.pageCount} />
         ) : prefs.mode === 'vertical' ? (

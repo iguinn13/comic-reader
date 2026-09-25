@@ -106,6 +106,7 @@ export function VerticalView({
     let lastRun = 0
 
     function handleScroll(): void {
+      if (!hasScrolledToInitialRef.current) return
       const now = Date.now()
       if (now - lastRun < SCROLL_THROTTLE_MS) return
       lastRun = now
@@ -159,7 +160,7 @@ export function VerticalView({
       onWheel={handleWheel}
       onClick={handleClick}
       className={cn(
-        'relative size-full overflow-auto bg-reader-bg',
+        'absolute inset-0 overflow-auto bg-reader-bg',
         !showChrome && 'scrollbar-hidden',
       )}
     >

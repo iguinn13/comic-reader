@@ -151,7 +151,7 @@ export function SingleView({
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       className={cn(
-        'relative size-full overflow-auto bg-reader-bg text-center',
+        'absolute inset-0 overflow-auto bg-reader-bg text-center',
         !showChrome && 'scrollbar-hidden',
       )}
     >

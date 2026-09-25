@@ -150,7 +150,7 @@ export function DoubleView({
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       className={cn(
-        'relative flex size-full items-start justify-center overflow-auto bg-reader-bg',
+        'absolute inset-0 flex items-start justify-center overflow-auto bg-reader-bg',
         !showChrome && 'scrollbar-hidden',
       )}
     >
