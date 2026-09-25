@@ -22,7 +22,7 @@ Definidos em `src/renderer/src/styles/globals.css` via `@theme` do Tailwind v4 e
 | `--color-border` | `#26262E` | Divisores, bordas sutis |
 | `--color-text` | `#ECECEF` | Texto principal |
 | `--color-text-muted` | `#9A9AA6` | Metadados, legendas |
-| `--color-text-subtle` | `#6B6B78` | Placeholders, desabilitado |
+| `--color-text-subtle` | `#8A8A97` | Placeholders, desabilitado (≥ 4,5:1 sobre `bg`, RNF-10) |
 | `--color-accent` | `#F2A93B` | Âmbar "papel velho": item ativo, progresso, botão primário, foco |
 | `--color-accent-fg` | `#1A1203` | Texto sobre o accent |
 | `--color-success` | `#4CC38A` | Selo "Lida", importação ok |

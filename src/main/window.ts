@@ -41,7 +41,12 @@ function buildContentSecurityPolicy(): string {
   if (is.dev) {
     // O servidor de dev do electron-vite roda em http(s)://localhost com HMR
     // por WebSocket. Fora de dev, o renderer é carregado como arquivo local.
-    directives['script-src'].push("'unsafe-eval'")
+    // `unsafe-inline` é necessário aqui porque o @vitejs/plugin-react injeta
+    // um script inline de preamble do Fast Refresh no HTML servido em dev —
+    // sem isso, a CSP bloqueia esse script e a página inteira quebra
+    // ("can't detect preamble"). Não existe em build de produção (o preamble
+    // é só do modo dev), então não afeta a CSP do app empacotado.
+    directives['script-src'].push("'unsafe-eval'", "'unsafe-inline'")
     directives['connect-src'].push('ws://localhost:*', 'http://localhost:*')
   }
 

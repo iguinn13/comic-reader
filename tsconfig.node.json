@@ -6,7 +6,9 @@
     "src/main/**/*",
     "src/preload/**/*",
     "src/shared/**/*",
-    "scripts/**/*"
+    "scripts/**/*",
+    "tests/e2e/**/*",
+    "playwright.config.ts"
   ],
   "compilerOptions": {
     "composite": true,

@@ -9,7 +9,11 @@ import { getAllSettings, setSetting, type SettingKey } from '../db/repositories/
  * de fallback/serialização já é coberta em src/main/db/repositories/settings.test.ts.
  */
 export class SettingsService {
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    /** RF-51: chamado quando o limite de cache muda, para já aplicar o LRU. */
+    private readonly onCacheLimitChanged?: () => void,
+  ) {}
 
   get(): Settings {
     return getAllSettings(this.db)
@@ -19,6 +23,7 @@ export class SettingsService {
     for (const key of Object.keys(patch) as SettingKey[]) {
       setSetting(this.db, key, patch[key] as Settings[typeof key])
     }
+    if (patch['cache.maxBytes'] !== undefined) this.onCacheLimitChanged?.()
     return this.get()
   }
 

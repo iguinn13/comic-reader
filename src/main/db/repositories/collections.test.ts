@@ -11,13 +11,17 @@ import {
   deleteCollection,
   DuplicateCollectionNameError,
   getCollection,
+  getCollectionIdsForComics,
+  getCollectionsForComic,
   getNextToRead,
+  getNextUnreadOrFirst,
   getSagaProgress,
   listCollectionItems,
   removeItems,
   reorder,
   ReorderMismatchError,
   resolveCoverUrl,
+  setCollectionCover,
   updateCollection,
   type CreateCollectionInput,
 } from './collections'
@@ -63,9 +67,10 @@ function addComic(overrides: Partial<InsertComicInput> = {}): string {
 }
 
 /**
- * Ajusta `cover_mode`/`cover_comic_id` direto no schema. Não há setter
- * dedicado nesta tarefa (isso é RF-25/CollectionService, M5); o teste só
- * precisa colocar a coleção num estado válido para exercitar `resolveCoverUrl`.
+ * Ajusta `cover_mode`/`cover_comic_id` direto no schema, sem passar por
+ * `setCollectionCover` (que também mexe em `cover_version`/`updated_at`) —
+ * o teste só precisa colocar a coleção num estado válido para exercitar
+ * `resolveCoverUrl`.
  */
 function setCoverMode(
   db: Db,
@@ -314,6 +319,90 @@ describe('getNextToRead', () => {
 
     expect(getNextToRead(db, saga.id, b)).toBeNull()
     expect(getNextToRead(db, saga.id, randomUUID())).toBeNull()
+  })
+})
+
+describe('getNextUnreadOrFirst', () => {
+  it('devolve a primeira não lida, na ordem da saga', () => {
+    const saga = makeCollection({ type: 'saga', nameNormalized: 'saga w' })
+    createCollection(db, saga)
+    const a = addComic()
+    const b = addComic()
+    const c = addComic()
+    addItems(db, saga.id, [a, b, c])
+    markRead(db, a)
+
+    expect(getNextUnreadOrFirst(db, saga.id)).toBe(b)
+  })
+
+  it('quando todas estão lidas, devolve a primeira ("Ler novamente")', () => {
+    const saga = makeCollection({ type: 'saga', nameNormalized: 'saga completa' })
+    createCollection(db, saga)
+    const a = addComic()
+    const b = addComic()
+    addItems(db, saga.id, [a, b])
+    markRead(db, a)
+    markRead(db, b)
+
+    expect(getNextUnreadOrFirst(db, saga.id)).toBe(a)
+  })
+
+  it('devolve null para uma saga vazia', () => {
+    const saga = makeCollection({ type: 'saga', nameNormalized: 'saga vazia 2' })
+    createCollection(db, saga)
+
+    expect(getNextUnreadOrFirst(db, saga.id)).toBeNull()
+  })
+})
+
+describe('getCollectionsForComic / getCollectionIdsForComics', () => {
+  it('lista as coleções de uma HQ, ordenadas por nome', () => {
+    const listB = makeCollection({ type: 'list', name: 'B', nameNormalized: 'b' })
+    const listA = makeCollection({ type: 'list', name: 'A', nameNormalized: 'a' })
+    createCollection(db, listB)
+    createCollection(db, listA)
+    const comicId = addComic()
+    addItems(db, listB.id, [comicId])
+    addItems(db, listA.id, [comicId])
+
+    const result = getCollectionsForComic(db, comicId)
+    expect(result.map((c) => c.name)).toEqual(['A', 'B'])
+  })
+
+  it('devolve lista vazia quando a HQ não está em nenhuma coleção', () => {
+    const comicId = addComic()
+    expect(getCollectionsForComic(db, comicId)).toEqual([])
+  })
+
+  it('getCollectionIdsForComics agrupa por HQ', () => {
+    const collection = makeCollection()
+    createCollection(db, collection)
+    const a = addComic()
+    const b = addComic()
+    addItems(db, collection.id, [a])
+
+    const byComic = getCollectionIdsForComics(db, [a, b])
+    expect(byComic.get(a)).toEqual(new Set([collection.id]))
+    expect(byComic.has(b)).toBe(false)
+  })
+})
+
+describe('setCollectionCover', () => {
+  it('grava modo, HQ de capa e versão, e atualiza updated_at', () => {
+    const collection = makeCollection()
+    createCollection(db, collection)
+    const comicId = addComic()
+
+    setCollectionCover(db, collection.id, {
+      coverMode: 'comic',
+      coverComicId: comicId,
+      coverVersion: 0,
+    })
+
+    const row = getCollection(db, collection.id)
+    expect(row?.coverMode).toBe('comic')
+    expect(row?.coverComicId).toBe(comicId)
+    expect(row?.updatedAt).toBeGreaterThanOrEqual(collection.updatedAt)
   })
 })
 

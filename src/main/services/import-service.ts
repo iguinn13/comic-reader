@@ -8,9 +8,10 @@ import type { ComicFormat, ImportItem, ImportItemStatus, ImportJobState } from '
 import { detectFormat, openArchive, ZipArchive, type ComicArchive } from '../archive'
 import type { Db } from '../db/client'
 import { getComicsByHash, insertComic, type InsertComicPageInput } from '../db/repositories/comics'
+import { FORMAT_TO_FILE_EXT } from '../utils/comic-format'
 import { logger } from '../utils/logger'
 import { normalizeText } from '../utils/normalize'
-import type { AppPaths, ComicFileFormat } from '../utils/paths'
+import type { AppPaths } from '../utils/paths'
 import { titleFromFileName } from '../utils/title'
 import type { CoverService } from './cover-service'
 
@@ -48,12 +49,6 @@ interface InternalJob {
   applyToAllDuplicates: 'skip' | 'import' | null
   /** `cancel()` foi chamado neste job — vira `status: 'cancelled'` ao terminar, em vez de `'finished'`. */
   cancelRequested: boolean
-}
-
-const FORMAT_TO_FILE_EXT: Record<ComicFormat, ComicFileFormat> = {
-  zip: 'cbz',
-  rar: 'cbr',
-  pdf: 'pdf',
 }
 
 /**

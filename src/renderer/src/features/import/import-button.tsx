@@ -9,7 +9,12 @@ import { api } from '@renderer/lib/api'
  * Ponto de entrada visível hoje na tela provisória do M0 (ver `App.tsx`); a
  * versão definitiva mora na sidebar a partir de M3.1.
  */
-export function ImportButton(props: Omit<ButtonProps, 'onClick' | 'children'>): React.JSX.Element {
+interface ImportButtonProps extends Omit<ButtonProps, 'onClick' | 'children'> {
+  /** Sidebar recolhida (docs/07-ui-ux.md §3): só o ícone, com tooltip no título. */
+  iconOnly?: boolean
+}
+
+export function ImportButton({ iconOnly, ...props }: ImportButtonProps): React.JSX.Element {
   const { t } = useTranslation()
 
   async function handleClick(): Promise<void> {
@@ -19,9 +24,13 @@ export function ImportButton(props: Omit<ButtonProps, 'onClick' | 'children'>): 
   }
 
   return (
-    <Button {...props} onClick={() => void handleClick()}>
+    <Button
+      {...props}
+      title={iconOnly ? t('import.button') : undefined}
+      onClick={() => void handleClick()}
+    >
       <Import />
-      {t('import.button')}
+      {!iconOnly && t('import.button')}
     </Button>
   )
 }

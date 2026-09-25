@@ -36,6 +36,8 @@ Cada teste roda com um `userData` temporário (via variável de ambiente `COMIC_
 3. **Modos:** alterna os 3 modos na mesma HQ, sem erros no console.
 4. **Exclusão:** exclui a HQ e confirma que ela sumiu da grade e que o arquivo sumiu de `library/`.
 
+O teste de memória (RNF-03, `memory.spec.ts`) gera 300 PNGs e rola a HQ inteira; por ser pesado só roda com `E2E_MEMORY=1`. Os demais (`smoke`, `robustness`) rodam sempre com `npm run test:e2e`.
+
 ## 3. Fixtures
 
 Ficam em `tests/fixtures/`. São pequenas (< 1 MB no total) e geradas por `scripts/make-fixtures.ts`, com imagens de 200×300 px numeradas; o arquivo de página larga tem 400×300.

@@ -262,3 +262,28 @@ export function listComicIds(db: Db): string[] {
     .all()
     .map((row) => row.id)
 }
+
+/** Só o essencial pra resolver o arquivo/páginas de uma HQ (`PageCacheService`, `comic://file`). */
+export function getComicFileMeta(
+  db: Db,
+  id: string,
+): { format: 'zip' | 'rar' | 'pdf'; pageCount: number } | null {
+  const row = db
+    .select({ format: comics.format, pageCount: comics.pageCount })
+    .from(comics)
+    .where(eq(comics.id, id))
+    .get()
+  return row ?? null
+}
+
+/** RF-52: quantidade de HQs e soma do tamanho dos arquivos na biblioteca. */
+export function getLibraryTotals(db: Db): { comicCount: number; libraryBytes: number } {
+  const row = db
+    .select({
+      comicCount: sql<number>`count(*)`,
+      libraryBytes: sql<number>`coalesce(sum(${comics.fileSize}), 0)`,
+    })
+    .from(comics)
+    .get()
+  return { comicCount: row?.comicCount ?? 0, libraryBytes: row?.libraryBytes ?? 0 }
+}

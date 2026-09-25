@@ -1,6 +1,12 @@
+import type { CollectionService } from '../services/collection-service'
 import type { ImportService } from '../services/import-service'
+import type { LibraryService } from '../services/library-service'
+import type { ReaderService } from '../services/reader-service'
 import type { SettingsService } from '../services/settings-service'
+import { registerCollectionsIpc } from './collections'
 import { registerImporterIpc } from './importer'
+import { registerLibraryIpc } from './library'
+import { registerReaderIpc } from './reader'
 import { registerSettingsIpc } from './settings'
 
 /**
@@ -13,15 +19,20 @@ import { registerSettingsIpc } from './settings'
  * `src/main/ipc/handle.ts` para cada canal do domínio. Essa função é
  * importada e chamada aqui.
  *
- * Os demais domínios (library, collections, reader, app) chegam a partir de
- * M3+, quando os serviços correspondentes existirem.
+ * `app` chega com M6, quando o serviço correspondente existir.
  */
 export interface AppServices {
   settingsService: SettingsService
   importService: ImportService
+  libraryService: LibraryService
+  readerService: ReaderService
+  collectionService: CollectionService
 }
 
 export function registerAllIpc(services: AppServices): void {
   registerSettingsIpc(services.settingsService)
   registerImporterIpc(services.importService)
+  registerLibraryIpc(services.libraryService)
+  registerReaderIpc(services.readerService)
+  registerCollectionsIpc(services.collectionService)
 }

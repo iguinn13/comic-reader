@@ -17,7 +17,7 @@
   --color-border: #26262e;
   --color-text: #ececef;
   --color-text-muted: #9a9aa6;
-  --color-text-subtle: #6b6b78;
+  --color-text-subtle: #8a8a97;
   --color-accent: #f2a93b;
   --color-accent-fg: #1a1203;
   --color-success: #4cc38a;
@@ -45,6 +45,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* `size-full` das telas fora do AppShell (o leitor) precisa de um pai com altura. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
 img {
   max-width: 100%;
 }
@@ -52,6 +59,15 @@ img {
 ::selection {
   background-color: var(--color-accent);
   color: var(--color-accent-fg);
+}
+
+/* Barra de título integrada (titleBarOverlay): áreas arrastáveis da janela. */
+.app-drag {
+  -webkit-app-region: drag;
+}
+
+.app-no-drag {
+  -webkit-app-region: no-drag;
 }
 
 @media (prefers-reduced-motion: reduce) {

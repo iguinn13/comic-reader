@@ -12,6 +12,8 @@ export default defineConfig(
       '**/node_modules',
       '**/dist',
       '**/out',
+      'tests/e2e/**',
+      'playwright.config.ts',
       '**/*.config.{js,mjs,ts}',
       // Worktrees de agentes ficam dentro do próprio repo (.claude/worktrees/*)
       // enquanto rodam; não são o código deste checkout.

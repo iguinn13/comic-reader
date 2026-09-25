@@ -95,3 +95,32 @@ Formato: **Contexto → Decisão → Consequências**. Os status possíveis são
 **Contexto.** ADR-008 previu uma `BrowserWindow` oculta com pdf.js para renderizar a capa de PDFs durante a importação (M2, tarefas 2.3/2.4). Construir e validar essa janela exige um Electron rodando de verdade — algo que o ambiente onde M2 foi implementado não conseguia fazer (o binário do Electron não fica disponível nesse sandbox; ver a nota de ambiente no histórico da sessão). Implementar essa peça sem conseguir executá-la nem uma vez seria construir às cegas.
 **Decisão.** M2 entrega a importação de PDF **completa** (RF-01: valida, conta páginas com `pdf-lib`, importa) mas com a **capa em placeholder** (`cover_version = 0`) — um caminho que a própria spec já previa (docs/05-importacao.md §4 passo 7: falha ao gerar capa nunca falha o item). O ponto de extensão fica marcado com um comentário `TODO(M2-follow-up)` em `src/main/services/cover-service.ts`, apontando exatamente onde a chamada ao `pdf-worker` entraria.
 **Consequências.** Toda HQ em PDF na biblioteca mostra o placeholder de capa até esta pendência ser retomada — o ideal é junto de **M4.9** (suporte a PDF no leitor), quando o pdf.js já estará sendo integrado no renderer de qualquer forma, reduzindo trabalho duplicado. Nenhuma mudança de assinatura é esperada em `CoverService.generateComicCover` além de passar a receber um `firstPageBuffer` não nulo para PDFs.
+
+> **Atualização (M4.9):** o leitor de PDF (ADR-007) foi implementado — ver ADR-014. A janela oculta do worker de capa (ADR-008) continua pendente; esta ADR-013 segue valendo só para essa parte.
+
+### ADR-014 — pdf.js no leitor: versão fixada em 4.x, `comic://` com CORS, CSP relaxada em dev
+**Status:** Aceita · **Data:** 2026-09-24
+
+**Contexto.** M4.9 implementou `PdfPage` (canvas) e `usePdfDocument` (`src/renderer/src/features/reader/`) usando `pdfjs-dist`, conforme ADR-007. Três problemas só apareceram ao rodar o app de verdade (Electron real, não só os testes):
+1. `pdfjs-dist` 6.x usa `Map.prototype.getOrInsertComputed` (proposta TC39 recente) internamente, que ainda não existe no V8 empacotado no Electron 39 — o worker quebra com `TypeError` ao carregar qualquer PDF.
+2. `pdf.js` só usa `fetch` para `url` com esquema `http(s):` (`isValidFetchUrl`); para `comic:` ele cairia no stream via `XMLHttpRequest`, que o Chromium recusa para esquemas não padrão ("Cross origin requests are only supported for protocol schemes...").
+3. O `@vitejs/plugin-react` injeta um `<script>` inline (preamble do Fast Refresh) no HTML servido em dev, que a CSP (`script-src 'self'`) bloqueia — a página inteira quebra com "can't detect preamble", mesmo sem nenhum PDF envolvido.
+
+**Decisão.**
+1. Fixar `pdfjs-dist` em `^4.10.38` (linha 4.x), não a última major (6.x).
+2. `usePdfDocument` busca os bytes com `fetch(comicFileUrl)` e chama `getDocument({ data })`, nunca `getDocument({ url })` — evita o caminho de rede interno do pdf.js. O protocolo `comic:` ganhou a privilege `corsEnabled: true` (`src/main/protocol.ts`) para esse `fetch` funcionar a partir do renderer.
+3. Em dev (`is.dev`), a CSP passa a incluir `'unsafe-inline'` em `script-src`, além do `'unsafe-eval'` já existente. Só se aplica em dev — o preamble do Fast Refresh não existe no build de produção.
+
+**Consequências.** Atualizar `pdfjs-dist` para 5.x/6.x no futuro exige reverificar a compatibilidade com o V8 do Electron da época (item 1) antes de simplesmente subir a versão. `'unsafe-inline'` em `script-src` só em dev é uma relaxação real de CSP, mas sem efeito em produção — o checklist de segurança de [02 §6](02-arquitetura.md#6-segurança) continua valendo para o build empacotado.
+
+### ADR-015 — "Adicionar a…" como diálogo, não submenu
+**Status:** Aceita · **Data:** 2026-09-25
+
+**Contexto.** RF-19/RF-23/RF-44 descrevem "Adicionar a…" como submenu com listas, sagas e "Nova lista…/Nova saga…", em três lugares (card, seleção múltipla, leitor). Os wrappers de menu do projeto (`context-menu`, `dropdown-menu`) não têm submenus, e o mesmo fluxo precisa funcionar nos três menus (contexto e dropdown).
+**Decisão.** Um único `AddToCollectionDialog` (`features/collections/`), aberto por um item "Adicionar a…" em cada menu. Lista as coleções com check (todas as HQs já estão) ou traço (só parte), alterna ao clicar, e cria coleção nova já com as HQs.
+**Consequências.** Um clique a mais que um submenu, em troca de um componente só, com criação inline e busca fácil de estender. Se o submenu for preferido depois, basta trocar o ponto de entrada.
+
+### ADR-016 — Desinstalador pergunta antes de apagar os dados
+**Contexto.** `deleteAppDataOnUninstall` do electron-builder apaga tudo sem perguntar; reinstalar/atualizar não pode destruir a biblioteca.
+**Decisão.** `deleteAppDataOnUninstall: false` e um macro `customUnInstall` em `build/installer.nsh` com `MessageBox` (padrão: manter). Modo silencioso nunca apaga.
+**Consequência.** Testar o instalador em Windows 10/11 limpos (M8.2) precisa ser feito manualmente.

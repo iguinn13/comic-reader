@@ -4,7 +4,146 @@
     "tagline": "Sua estante de HQs, offline e sem distrações."
   },
   "common": {
-    "comingSoon": "Em construção"
+    "close": "Fechar",
+    "skipToContent": "Pular para o conteúdo"
+  },
+  "nav": {
+    "home": "Início",
+    "library": "Biblioteca",
+    "favorites": "Favoritas",
+    "sagas": "Sagas",
+    "lists": "Listas",
+    "settings": "Configurações",
+    "collapse": "Recolher menu",
+    "expand": "Expandir menu",
+    "main": "Navegação principal"
+  },
+  "library": {
+    "title": "Biblioteca",
+    "searchPlaceholder": "Buscar…",
+    "clearSearch": "Limpar busca",
+    "count_one": "{{count}} HQ",
+    "count_other": "{{count}} HQs",
+    "countFiltered_one": "{{count}} resultado para \"{{search}}\"",
+    "countFiltered_other": "{{count}} resultados para \"{{search}}\"",
+    "status": {
+      "all": "Todas",
+      "unread": "Não lidas",
+      "reading": "Em andamento",
+      "read": "Lidas"
+    },
+    "favoritesOnly": "Favoritas",
+    "sort": {
+      "createdAt": "Adicionadas recentemente",
+      "lastReadAt": "Lidas recentemente",
+      "titleAsc": "Título A–Z",
+      "titleDesc": "Título Z–A"
+    },
+    "sortLabel": "Ordenar",
+    "readBadge": "Lida",
+    "unreadBadge": "Não lida",
+    "pageOf": "p. {{current}} de {{total}}",
+    "contextMenu": {
+      "favorite": "Favoritar",
+      "unfavorite": "Desfavoritar",
+      "markRead": "Marcar como lida",
+      "markUnread": "Marcar como não lida",
+      "rename": "Renomear",
+      "delete": "Excluir",
+      "addTo": "Adicionar a…"
+    },
+    "rename": {
+      "title": "Renomear HQ",
+      "label": "Título",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "delete": {
+      "title_one": "Excluir {{count}} HQ?",
+      "title_other": "Excluir {{count}} HQs?",
+      "description": "O arquivo e o progresso de leitura serão apagados. Essa ação não pode ser desfeita.",
+      "confirm": "Excluir",
+      "cancel": "Cancelar"
+    },
+    "selectionBar": {
+      "count_one": "{{count}} selecionada",
+      "count_other": "{{count}} selecionadas",
+      "markRead": "Marcar como lida",
+      "markUnread": "Marcar como não lida",
+      "favorite": "Favoritar",
+      "delete": "Excluir",
+      "clear": "Limpar seleção",
+      "addTo": "Adicionar a…"
+    }
+  },
+  "home": {
+    "greeting": "Olá de volta",
+    "continueReading": "Continuar lendo",
+    "recentlyAdded": "Adicionadas recentemente",
+    "viewAll": "Ver tudo →",
+    "sagasInProgress": "Sagas em andamento"
+  },
+  "reader": {
+    "back": "Voltar",
+    "mode": {
+      "single": "Página única",
+      "double": "Página dupla",
+      "vertical": "Vertical"
+    },
+    "fit": {
+      "height": "Altura",
+      "width": "Largura",
+      "original": "Original"
+    },
+    "zoomIn": "Aumentar zoom",
+    "zoomOut": "Diminuir zoom",
+    "zoomReset": "Resetar zoom",
+    "favorite": "Favoritar",
+    "moreActions": "Mais ações",
+    "focusMode": "Modo foco",
+    "fullscreen": "Tela cheia",
+    "menu": {
+      "markUnread": "Marcar como não lida",
+      "resetPrefs": "Restaurar padrões de leitura",
+      "doubleOffsetOn": "Deslocar pares",
+      "doubleOffsetOff": "Não deslocar pares"
+    },
+    "goToPage": {
+      "title": "Ir para página",
+      "label": "Página (1–{{total}})",
+      "go": "Ir"
+    },
+    "pageIndicator": "{{current}} / {{total}}",
+    "prevPage": "Página anterior",
+    "nextPage": "Próxima página",
+    "error": {
+      "back": "Voltar",
+      "delete": "Excluir da biblioteca"
+    },
+    "endPanel": {
+      "title": "Você terminou \"{{title}}\"",
+      "backToLibrary": "Voltar à biblioteca",
+      "stayHere": "Ficar aqui",
+      "nextInSaga": "Próxima na saga \"{{saga}}\" ({{current}} de {{total}}):",
+      "read": "Ler →"
+    },
+    "sagaBadge": "Saga: {{name}} ({{current}}/{{total}})",
+    "pageLabel": "Página {{page}}"
+  },
+  "emptyState": {
+    "library": {
+      "title": "Sua estante está vazia",
+      "description": "Arraste arquivos CBZ, CBR, PDF ou ZIP para cá, ou importe pelo botão.",
+      "action": "Importar HQs"
+    },
+    "search": {
+      "title": "Nada encontrado para \"{{search}}\"",
+      "titleGeneric": "Nada encontrado com os filtros atuais",
+      "action": "Limpar busca"
+    },
+    "favorites": {
+      "title": "Toque no ♡ de uma HQ para ela aparecer aqui."
+    }
   },
   "import": {
     "button": "Importar",
@@ -34,6 +173,145 @@
     "io": "Erro ao acessar o arquivo",
     "validation": "Dados inválidos",
     "cancelled": "Cancelado",
-    "internal": "Erro inesperado"
+    "internal": "Erro inesperado",
+    "comicNotFound": "HQ não encontrada",
+    "fileMissing": "Não foi possível abrir esta HQ. O arquivo pode ter sido removido ou estar corrompido.",
+    "collectionNotFound": "Coleção não encontrada",
+    "collectionNameTaken": "Já existe uma coleção deste tipo com este nome",
+    "collectionReorderMismatch": "A nova ordem não corresponde aos itens atuais da coleção"
+  },
+  "collections": {
+    "type": {
+      "list": "Lista",
+      "saga": "Saga"
+    },
+    "new": {
+      "list": "Nova lista",
+      "saga": "Nova saga"
+    },
+    "sort": {
+      "name": "Nome",
+      "updatedAt": "Atualizadas recentemente"
+    },
+    "empty": {
+      "list": {
+        "title": "Crie listas para agrupar HQs como quiser."
+      },
+      "saga": {
+        "title": "Crie uma saga para organizar uma ordem de leitura."
+      }
+    },
+    "card": {
+      "edit": "Editar",
+      "readOf": "{{read}} de {{total}} lidas"
+    },
+    "dialog": {
+      "newTitle": "Nova coleção",
+      "editTitle": "Editar coleção",
+      "name": "Nome",
+      "description": "Descrição (opcional)",
+      "cancel": "Cancelar",
+      "save": "Salvar"
+    },
+    "delete": {
+      "title": "Excluir \"{{name}}\"?",
+      "description": "A coleção será apagada, mas as HQs continuam na biblioteca.",
+      "confirm": "Excluir"
+    },
+    "add": {
+      "button": "Adicionar HQs",
+      "title": "Adicionar HQs",
+      "confirm_one": "Adicionar {{count}} HQ",
+      "confirm_other": "Adicionar {{count}} HQs"
+    },
+    "saga": {
+      "drag": "Arrastar para reordenar",
+      "moveStart": "Mover para o início",
+      "moveUp": "Mover para cima",
+      "moveDown": "Mover para baixo",
+      "moveEnd": "Mover para o fim",
+      "remove": "Remover da saga",
+      "continue": "Continuar saga",
+      "readAgain": "Ler novamente"
+    },
+    "detail": {
+      "emptyTitle": {
+        "list": "Esta lista ainda não tem HQs.",
+        "saga": "Esta saga ainda não tem HQs."
+      }
+    },
+    "addTo": {
+      "title": "Adicionar a…",
+      "create": "Criar",
+      "done": "Concluir"
+    },
+    "cover": {
+      "title": "Capa da coleção",
+      "description": "Escolha como a capa é definida.",
+      "auto": "Automática (primeira HQ)",
+      "image": "Escolher imagem…",
+      "fromComic": "Ou use a capa de uma HQ da coleção:"
+    }
+  },
+  "settings": {
+    "reading": {
+      "title": "Leitura",
+      "mode": "Modo padrão",
+      "fit": "Ajuste padrão",
+      "verticalWidth": "Largura padrão do vertical",
+      "applyAll": "Aplicar padrões a todas as HQs",
+      "applyAllTitle": "Aplicar padrões a todas as HQs?",
+      "applyAllDescription": "As preferências de leitura salvas por HQ serão apagadas e todas passarão a usar estes padrões.",
+      "applyAllConfirm": "Aplicar"
+    },
+    "storage": {
+      "title": "Armazenamento",
+      "library_one": "Biblioteca: {{count}} HQ · {{size}}",
+      "library_other": "Biblioteca: {{count}} HQs · {{size}}",
+      "cache": "Cache: {{used}} de {{max}}",
+      "limit": "Limite do cache",
+      "clearCache": "Limpar cache",
+      "openFolder": "Abrir pasta de dados",
+      "cleared": "Cache limpo: {{size}} liberados."
+    },
+    "shortcuts": {
+      "title": "Atalhos"
+    },
+    "about": {
+      "title": "Sobre",
+      "version": "Versão {{version}}",
+      "dataPath": "Pasta de dados: {{path}}"
+    }
+  },
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "next": "Avançar",
+    "prev": "Voltar",
+    "space": "Rolar e avançar / inverso",
+    "scroll": "Rolar a página",
+    "firstLast": "Primeira / última página",
+    "goToPage": "Ir para página",
+    "modes": "Modo única / dupla / vertical",
+    "toggleFit": "Alternar ajuste altura / largura",
+    "zoom": "Aumentar / diminuir zoom",
+    "zoomReset": "Resetar zoom",
+    "doubleOffset": "Deslocar pares (página dupla)",
+    "fullscreen": "Tela cheia",
+    "focusMode": "Modo foco",
+    "favorite": "Favoritar / desfavoritar",
+    "escape": "Fechar / sair da tela cheia, do foco e do leitor",
+    "exit": "Sair do leitor",
+    "help": "Mostrar este painel"
+  },
+  "toast": {
+    "undo": "Desfazer",
+    "markedRead": "Marcada como lida",
+    "markedUnread": "Marcada como não lida",
+    "selectionRead_one": "{{count}} HQ marcada como lida",
+    "selectionRead_other": "{{count}} HQs marcadas como lidas",
+    "selectionUnread_one": "{{count}} HQ marcada como não lida",
+    "selectionUnread_other": "{{count}} HQs marcadas como não lidas",
+    "addedTo": "Adicionada a {{name}}",
+    "removedFrom": "Removida de {{name}}"
   }
 }

@@ -130,6 +130,26 @@ export function updateCollection(
   return getCollection(db, id)
 }
 
+export interface SetCollectionCoverInput {
+  coverMode: CollectionCoverMode
+  /** `null` quando o modo não é `'comic'`. */
+  coverComicId: string | null
+  coverVersion: number
+}
+
+/** RF-25: grava o modo/capa escolhidos. Separado de `updateCollection` porque não mexe em nome/descrição/tipo. */
+export function setCollectionCover(db: Db, id: string, input: SetCollectionCoverInput): void {
+  db.update(collections)
+    .set({
+      coverMode: input.coverMode,
+      coverComicId: input.coverComicId,
+      coverVersion: input.coverVersion,
+      updatedAt: Date.now(),
+    })
+    .where(eq(collections.id, id))
+    .run()
+}
+
 /** Retorna quantas coleções foram apagadas. A cascata apaga só `collection_items`, nunca HQs. */
 export function deleteCollection(db: Db, id: string): number {
   const result = db.delete(collections).where(eq(collections.id, id)).run()
@@ -361,6 +381,52 @@ export function getSagaProgress(db: Db, collectionId: string): { total: number; 
   return { total: row?.total ?? 0, read: row?.read ?? 0 }
 }
 
+/** `ComicDetail.collections` (docs/04 §2): a que coleções esta HQ pertence, para exibir no card/detalhe. */
+export function getCollectionsForComic(
+  db: Db,
+  comicId: string,
+): { id: string; type: CollectionType; name: string }[] {
+  return db
+    .select({ id: collections.id, type: collections.type, name: collections.name })
+    .from(collectionItems)
+    .innerJoin(collections, eq(collections.id, collectionItems.collectionId))
+    .where(eq(collectionItems.comicId, comicId))
+    .orderBy(asc(collections.nameNormalized))
+    .all()
+}
+
+/** RF-19/RF-23: para cada `comicId`, em quais coleções ele está — usado pelo menu "Adicionar a…". */
+export function getCollectionIdsForComics(db: Db, comicIds: string[]): Map<string, Set<string>> {
+  const rows = db
+    .select({ collectionId: collectionItems.collectionId, comicId: collectionItems.comicId })
+    .from(collectionItems)
+    .where(inArray(collectionItems.comicId, comicIds))
+    .all()
+
+  const byComic = new Map<string, Set<string>>()
+  for (const row of rows) {
+    const set = byComic.get(row.comicId) ?? new Set<string>()
+    set.add(row.collectionId)
+    byComic.set(row.comicId, set)
+  }
+  return byComic
+}
+
+/** RF-24 ("Continuar saga"/"Ler novamente"): primeira não lida na ordem; se todas lidas, a primeira. */
+export function getNextUnreadOrFirst(db: Db, sagaId: string): string | null {
+  const items = db
+    .select({ comicId: collectionItems.comicId, completedAt: readingProgress.completedAt })
+    .from(collectionItems)
+    .innerJoin(readingProgress, eq(readingProgress.comicId, collectionItems.comicId))
+    .where(eq(collectionItems.collectionId, sagaId))
+    .orderBy(asc(collectionItems.position))
+    .all()
+
+  if (items.length === 0) return null
+  const firstUnread = items.find((item) => item.completedAt === null)
+  return (firstUnread ?? items[0]).comicId
+}
+
 /** RF-42: próxima HQ da saga após `comicId`, ou `null` se for a última (ou não pertencer à saga). */
 export function getNextToRead(db: Db, sagaId: string, comicId: string): string | null {
   const current = db
@@ -383,4 +449,31 @@ export function getNextToRead(db: Db, sagaId: string, comicId: string): string |
     .get()
 
   return next?.comicId ?? null
+}
+
+/** RF-42: sagas que contêm a HQ, com a posição dela (0-based) e o total de itens. */
+export function getSagasContainingComic(
+  db: Db,
+  comicId: string,
+): { id: string; name: string; position: number; total: number }[] {
+  const rows = db
+    .select({ id: collections.id, name: collections.name, position: collectionItems.position })
+    .from(collectionItems)
+    .innerJoin(collections, eq(collections.id, collectionItems.collectionId))
+    .where(and(eq(collectionItems.comicId, comicId), eq(collections.type, 'saga')))
+    .orderBy(asc(collections.nameNormalized))
+    .all()
+
+  return rows.map((row) => ({ ...row, total: getSagaProgress(db, row.id).total }))
+}
+
+/** RF-63: sagas com pelo menos 1 HQ lida e 1 não lida, mais recentemente atualizadas primeiro. */
+export function listSagasInProgress(db: Db, limit: number): CollectionRow[] {
+  return listCollections(db, 'saga')
+    .filter((saga) => {
+      const { total, read } = getSagaProgress(db, saga.id)
+      return read > 0 && read < total
+    })
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, limit)
 }

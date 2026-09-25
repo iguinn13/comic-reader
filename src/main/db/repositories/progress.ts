@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, gt, isNull } from 'drizzle-orm'
+import type { ReaderPrefs } from '@shared/types'
 import type { Db } from '../client'
 import { comics, readingProgress } from '../schema'
 import { comicColumns, type ComicRow } from './comics'
@@ -71,4 +72,30 @@ export function getRecentlyAdded(db: Db, limit: number): ComicRow[] {
 /** RF-50 "Aplicar a todas as HQs": limpa as preferências de leitura salvas por HQ. */
 export function resetAllReaderPrefs(db: Db): void {
   db.update(readingProgress).set({ readerPrefs: null }).run()
+}
+
+/** `null` = a HQ ainda usa os padrões globais (docs/03 §2.3, RF-41). */
+export function getReaderPrefs(db: Db, comicId: string): ReaderPrefs | null {
+  const row = db
+    .select({ readerPrefs: readingProgress.readerPrefs })
+    .from(readingProgress)
+    .where(eq(readingProgress.comicId, comicId))
+    .get()
+  return row?.readerPrefs ? (JSON.parse(row.readerPrefs) as ReaderPrefs) : null
+}
+
+/** RF-41: preferências específicas desta HQ, sobrepondo os padrões globais. */
+export function setReaderPrefs(db: Db, comicId: string, prefs: ReaderPrefs): void {
+  db.update(readingProgress)
+    .set({ readerPrefs: JSON.stringify(prefs) })
+    .where(eq(readingProgress.comicId, comicId))
+    .run()
+}
+
+/** "Restaurar padrões de leitura" no menu `⋯` do leitor (RF-41): volta esta HQ aos padrões globais. */
+export function resetReaderPrefs(db: Db, comicId: string): void {
+  db.update(readingProgress)
+    .set({ readerPrefs: null })
+    .where(eq(readingProgress.comicId, comicId))
+    .run()
 }
