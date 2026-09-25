@@ -1,16 +1,21 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { EmptyState } from '@renderer/components/empty-state'
 import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
+import { cn } from '@renderer/lib/utils'
 import { useSelectionStore } from '@renderer/stores/selection-store'
+import { SETTINGS_DEFAULTS } from '@shared/constants'
 import type { LibraryQuery } from '@shared/types'
+import { FolderBrowser } from './folder-browser'
 import { LibraryGrid } from './library-grid'
 import { LibraryToolbar } from './library-toolbar'
 import type { LibrarySortOption } from './library-sort'
 import { SelectionBar } from './selection-bar'
 import { useLibraryComics } from './use-library-comics'
+
+type BrowseMode = 'flat' | 'folders'
 
 /** Tela Biblioteca (RF-10, 12, 13, 18, docs/07-ui-ux.md §4.2). */
 export function LibraryPage(): React.JSX.Element {
@@ -47,6 +52,9 @@ export function LibraryPage(): React.JSX.Element {
   const isEmptyLibrary = !isLoading && total === 0 && !search && status === 'all' && !favoritesOnly
   const isFilteredEmpty = !isLoading && total === 0 && !isEmptyLibrary
 
+  // RF-64: local, como o resto dos filtros desta tela (`use-library-comics.ts`) — não persiste entre sessões.
+  const [mode, setMode] = useState<BrowseMode>(SETTINGS_DEFAULTS['library.view'].mode)
+
   async function handleAddFolder(): Promise<void> {
     const folder = await api.libraryFolders.add()
     if (folder) await api.library.scan()
@@ -57,16 +65,33 @@ export function LibraryPage(): React.JSX.Element {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-text">{t('library.title')}</h1>
         {!isEmptyLibrary && (
-          <p className="text-sm text-text-muted">
-            {search
-              ? t('library.countFiltered', { count: total, search })
-              : t('library.count', { count: total })}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-text-muted">
+              {search
+                ? t('library.countFiltered', { count: total, search })
+                : t('library.count', { count: total })}
+            </p>
+            <div className="flex items-center gap-0.5 rounded-md border border-border bg-surface p-0.5">
+              {(['folders', 'flat'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setMode(option)}
+                  className={cn(
+                    'rounded px-3 py-1 text-xs font-medium transition-colors duration-150 ease-out',
+                    mode === option ? 'bg-surface-2 text-text' : 'text-text-muted hover:text-text',
+                  )}
+                >
+                  {t(`library.browseMode.${option}`)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
-      {!isEmptyLibrary && hasSelection && <SelectionBar />}
-      {!isEmptyLibrary && !hasSelection && (
+      {!isEmptyLibrary && mode === 'flat' && hasSelection && <SelectionBar />}
+      {!isEmptyLibrary && mode === 'flat' && !hasSelection && (
         <LibraryToolbar
           search={search}
           onSearchChange={setSearch}
@@ -90,6 +115,8 @@ export function LibraryPage(): React.JSX.Element {
               </Button>
             }
           />
+        ) : mode === 'folders' ? (
+          <FolderBrowser />
         ) : isFilteredEmpty ? (
           <EmptyState
             title={

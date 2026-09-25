@@ -13,6 +13,7 @@ export const CH = {
     scan: 'library:scan',
     onScanProgress: 'library:scanProgress',
     onChanged: 'library:changed',
+    browseFolder: 'library:browseFolder',
   },
   libraryFolders: {
     list: 'libraryFolders:list',

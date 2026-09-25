@@ -4,6 +4,8 @@ import type {
   ComicId,
   ComicSummary,
   DeleteComicOptions,
+  FolderContents,
+  FolderLocation,
   HomeData,
   LibraryFolder,
   LibraryQuery,
@@ -52,6 +54,7 @@ export const api = {
       window.api.library.onScanProgress(callback),
     onChanged: (callback: (reason: 'scan' | 'delete' | 'cover') => void): (() => void) =>
       window.api.library.onChanged(callback),
+    browseFolder: (location: FolderLocation) => unwrap(window.api.library.browseFolder(location)),
   },
 
   libraryFolders: {
@@ -90,4 +93,13 @@ export const api = {
 
 // Tipos re-exportados por conveniência para quem consumir `lib/api.ts` sem
 // precisar importar `@shared/types` separadamente.
-export type { ComicDetail, ComicSummary, HomeData, LibraryFolder, Page, ReaderSession, Settings }
+export type {
+  ComicDetail,
+  ComicSummary,
+  FolderContents,
+  HomeData,
+  LibraryFolder,
+  Page,
+  ReaderSession,
+  Settings,
+}

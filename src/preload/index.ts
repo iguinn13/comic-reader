@@ -44,6 +44,7 @@ const api: ComicReaderApi = {
     scan: () => invoke(CH.library.scan),
     onScanProgress: (callback) => on(CH.library.onScanProgress, callback),
     onChanged: (callback) => on(CH.library.onChanged, callback),
+    browseFolder: (location) => invoke(CH.library.browseFolder, location),
   },
 
   libraryFolders: {

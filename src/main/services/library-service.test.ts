@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
-import { join } from 'path'
+import { basename, join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AppError } from '@shared/errors'
 import { createDb, type Db } from '../db/client'
@@ -167,6 +167,48 @@ describe('LibraryService.setFavorite/setReadStatus/delete', () => {
     } finally {
       rmSync(outsideDir, { recursive: true, force: true })
     }
+  })
+})
+
+describe('LibraryService.browseFolder', () => {
+  it('sem folderId, lista as pastas-raiz configuradas como subpastas do nível-topo', () => {
+    const contents = service.browseFolder({ folderId: null, relativePath: '' })
+    expect(contents.subfolders).toEqual([
+      { name: basename(root), folderId, relativePath: '', comicCount: 0 },
+    ])
+    expect(contents.comics).toEqual([])
+  })
+
+  it('agrupa HQs em subpastas pelo primeiro segmento relativo, e HQs soltas ficam direto no nível', () => {
+    const direct = makeInput({ filePath: join(root, 'solta.cbz') })
+    const nested1 = makeInput({ filePath: join(root, 'DC', 'Ano Um', '01.cbz') })
+    const nested2 = makeInput({ filePath: join(root, 'DC', 'Ano Um', '02.cbz') })
+    const nested3 = makeInput({ filePath: join(root, 'DC', 'Elseworlds', '01.cbz') })
+    insertComic(db, direct)
+    insertComic(db, nested1)
+    insertComic(db, nested2)
+    insertComic(db, nested3)
+
+    const top = service.browseFolder({ folderId, relativePath: '' })
+    expect(top.comics.map((c) => c.id)).toEqual([direct.id])
+    expect(top.subfolders).toEqual([{ name: 'DC', folderId, relativePath: 'DC', comicCount: 3 }])
+
+    const insideDC = service.browseFolder({ folderId, relativePath: 'DC' })
+    expect(insideDC.comics).toEqual([])
+    expect(insideDC.subfolders).toEqual([
+      { name: 'Ano Um', folderId, relativePath: 'DC/Ano Um', comicCount: 2 },
+      { name: 'Elseworlds', folderId, relativePath: 'DC/Elseworlds', comicCount: 1 },
+    ])
+
+    const insideAnoUm = service.browseFolder({ folderId, relativePath: 'DC/Ano Um' })
+    expect(insideAnoUm.subfolders).toEqual([])
+    expect(insideAnoUm.comics.map((c) => c.id)).toEqual([nested1.id, nested2.id])
+  })
+
+  it('lança NOT_FOUND para um folderId inexistente', () => {
+    expect(() => service.browseFolder({ folderId: randomUUID(), relativePath: '' })).toThrowError(
+      AppError,
+    )
   })
 })
 

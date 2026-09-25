@@ -76,6 +76,17 @@
     "scan": {
       "action": "Atualizar biblioteca",
       "scanning": "Atualizando…"
+    },
+    "browseMode": {
+      "folders": "Pastas",
+      "flat": "Todas as HQs"
+    },
+    "folders": {
+      "breadcrumb": "Caminho da pasta",
+      "root": "Biblioteca",
+      "emptyFolder": "Esta pasta não tem HQs nem subpastas",
+      "comicCount_one": "{{count}} HQ",
+      "comicCount_other": "{{count}} HQs"
     }
   },
   "home": {
@@ -154,7 +165,8 @@
     "internal": "Erro inesperado",
     "comicNotFound": "HQ não encontrada",
     "fileMissing": "Não foi possível abrir esta HQ. O arquivo pode ter sido removido ou estar corrompido.",
-    "folderAlreadyAdded": "Esta pasta já está na biblioteca"
+    "folderAlreadyAdded": "Esta pasta já está na biblioteca",
+    "folderNotFound": "Pasta não encontrada"
   },
   "settings": {
     "folders": {

@@ -325,6 +325,20 @@ export function listComicsInFolder(
     .all()
 }
 
+/**
+ * Todas as HQs (linha completa) de uma pasta-raiz, para a navegação por
+ * pastas (RF-64): quem chama agrupa por `filePath` relativo à pasta-raiz em
+ * JS (main tem `path.relative`), em vez de tentar isso em SQL.
+ */
+export function listComicRowsInFolder(db: Db, folderId: string): ComicRow[] {
+  return db
+    .select(comicColumns)
+    .from(comics)
+    .innerJoin(readingProgress, eq(readingProgress.comicId, comics.id))
+    .where(eq(comics.folderId, folderId))
+    .all()
+}
+
 /** RF-52: quantidade de HQs e soma do tamanho dos arquivos na biblioteca. */
 export function getLibraryTotals(db: Db): { comicCount: number; libraryBytes: number } {
   const row = db

@@ -1,4 +1,4 @@
-import type { ComicId, LibraryQuery } from '@shared/types'
+import type { ComicId, FolderLocation, LibraryQuery } from '@shared/types'
 
 /**
  * Fábrica central de chaves do TanStack Query (docs/02-arquitetura.md §8),
@@ -18,6 +18,7 @@ export const queryKeys = {
     list: (query: LibraryQuery) => ['library', 'list', query] as const,
     detail: (id: ComicId) => ['library', 'detail', id] as const,
     stats: () => ['library', 'stats'] as const,
+    folder: (location: FolderLocation) => ['library', 'folder', location] as const,
   },
 
   settings: {

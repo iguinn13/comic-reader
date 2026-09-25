@@ -4,6 +4,7 @@ import {
   zComicId,
   zComicIdList,
   zDeleteComicOptions,
+  zFolderLocation,
   zLibraryQuery,
   zReadStatus,
   zTitle,
@@ -27,4 +28,7 @@ export function registerLibraryIpc(service: LibraryService, scanService: Library
     service.delete(ids, options),
   )
   handle(CH.library.scan, z.tuple([]), () => scanService.scan())
+  handle(CH.library.browseFolder, z.tuple([zFolderLocation]), ([location]) =>
+    service.browseFolder(location),
+  )
 }
