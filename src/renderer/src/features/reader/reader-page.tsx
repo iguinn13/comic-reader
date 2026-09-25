@@ -256,7 +256,12 @@ export function ReaderPage(): React.JSX.Element | null {
   if (!session) return null
 
   return (
-    <div className={cn('flex size-full flex-col bg-reader-bg', !showChrome && 'cursor-none')}>
+    <div
+      className={cn(
+        'flex size-full flex-col overflow-hidden bg-reader-bg',
+        !showChrome && 'cursor-none',
+      )}
+    >
       <div
         className={cn(
           'shrink-0 transition-[opacity,transform] duration-150 ease-out',
