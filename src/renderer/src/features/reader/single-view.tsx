@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { cn } from '@renderer/lib/utils'
-import { useReaderStore } from '@renderer/stores/reader-store'
+import { useReaderStore, useShowChrome } from '@renderer/stores/reader-store'
 import type { ReaderSource } from '@shared/types'
 import { PdfPage } from './pdf-page'
 import { usePdfDocument } from './pdf-document'
@@ -25,6 +25,7 @@ export function SingleView({
   const chromeVisible = useReaderStore((s) => s.chromeVisible)
   const isFullscreen = useReaderStore((s) => s.isFullscreen)
   const focusMode = useReaderStore((s) => s.focusMode)
+  const showChrome = useShowChrome()
   const next = useReaderStore((s) => s.next)
   const prev = useReaderStore((s) => s.prev)
   const setChromeVisible = useReaderStore((s) => s.setChromeVisible)
@@ -139,7 +140,10 @@ export function SingleView({
       onWheel={handleWheel}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      className="relative size-full overflow-auto bg-reader-bg text-center"
+      className={cn(
+        'relative size-full overflow-auto bg-reader-bg text-center',
+        !showChrome && 'scrollbar-hidden',
+      )}
     >
       {page ? (
         <img

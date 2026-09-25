@@ -10,7 +10,9 @@ export interface ComicRow {
   title: string
   titleNormalized: string
   format: 'zip' | 'rar' | 'pdf'
-  fileName: string
+  /** Caminho absoluto do arquivo original — nunca exposto ao renderer (docs/10 ADR). */
+  filePath: string
+  dirPath: string
   originalFileName: string
   fileSize: number
   fileHash: string
@@ -39,7 +41,12 @@ export interface InsertComicInput {
   /** Já normalizado (minúsculas, sem acento) por quem chama — docs/03 §1. */
   titleNormalized: string
   format: 'zip' | 'rar' | 'pdf'
-  fileName: string
+  /** Caminho absoluto do arquivo original — lido in-place, nunca copiado (docs/10 ADR). */
+  filePath: string
+  /** Pasta-pai de `filePath`. */
+  dirPath: string
+  /** Pasta-raiz (docs/05-importacao.md) sob a qual o arquivo foi encontrado. */
+  folderId: string
   originalFileName: string
   fileSize: number
   fileHash: string
@@ -65,7 +72,8 @@ export const comicColumns = {
   title: comics.title,
   titleNormalized: comics.titleNormalized,
   format: comics.format,
-  fileName: comics.fileName,
+  filePath: comics.filePath,
+  dirPath: comics.dirPath,
   originalFileName: comics.originalFileName,
   fileSize: comics.fileSize,
   fileHash: comics.fileHash,
@@ -82,9 +90,9 @@ export const comicColumns = {
 
 /**
  * Insere a HQ, as páginas (zip/rar) e a linha inicial de progresso numa
- * única transação — passo 8 do pipeline de importação (docs/05-importacao.md
- * §4). Quem chama (ImportService, fora do escopo desta tarefa) já resolveu
- * `id`, hash, contagem de páginas etc.
+ * única transação — passo final do scan de pastas (docs/05-importacao.md
+ * §4). Quem chama (`LibraryScanService`) já resolveu `id`, hash, contagem de
+ * páginas etc.
  */
 export function insertComic(db: Db, input: InsertComicInput): void {
   db.transaction((tx) => {
@@ -94,7 +102,9 @@ export function insertComic(db: Db, input: InsertComicInput): void {
         title: input.title,
         titleNormalized: input.titleNormalized,
         format: input.format,
-        fileName: input.fileName,
+        filePath: input.filePath,
+        dirPath: input.dirPath,
+        folderId: input.folderId,
         originalFileName: input.originalFileName,
         fileSize: input.fileSize,
         fileHash: input.fileHash,
@@ -238,7 +248,7 @@ export function setFavorite(db: Db, id: string, isFavorite: boolean): void {
   db.update(comics).set({ isFavorite, updatedAt: Date.now() }).where(eq(comics.id, id)).run()
 }
 
-/** Retorna quantas HQs foram apagadas (RF-17). Cascata apaga páginas, progresso e itens de coleção. */
+/** Retorna quantas HQs foram apagadas (RF-17). Cascata apaga páginas e progresso; nunca o arquivo original. */
 export function deleteComics(db: Db, ids: string[]): number {
   if (ids.length === 0) return 0
   const result = db.delete(comics).where(inArray(comics.id, ids)).run()
@@ -267,13 +277,52 @@ export function listComicIds(db: Db): string[] {
 export function getComicFileMeta(
   db: Db,
   id: string,
-): { format: 'zip' | 'rar' | 'pdf'; pageCount: number } | null {
+): {
+  format: 'zip' | 'rar' | 'pdf'
+  pageCount: number
+  filePath: string
+  dirPath: string
+  folderId: string
+} | null {
   const row = db
-    .select({ format: comics.format, pageCount: comics.pageCount })
+    .select({
+      format: comics.format,
+      pageCount: comics.pageCount,
+      filePath: comics.filePath,
+      dirPath: comics.dirPath,
+      folderId: comics.folderId,
+    })
     .from(comics)
     .where(eq(comics.id, id))
     .get()
   return row ?? null
+}
+
+/** Para achar o "próximo arquivo da pasta" no fim da leitura (RF-42, ordenado com `naturalSort`). */
+export function listComicsInDir(db: Db, dirPath: string): Array<{ id: string; filePath: string }> {
+  return db
+    .select({ id: comics.id, filePath: comics.filePath })
+    .from(comics)
+    .where(eq(comics.dirPath, dirPath))
+    .all()
+}
+
+/** Para checar se um caminho já está indexado durante o scan (docs/05). */
+export function getComicByFilePath(db: Db, filePath: string): { id: string } | null {
+  const row = db.select({ id: comics.id }).from(comics).where(eq(comics.filePath, filePath)).get()
+  return row ?? null
+}
+
+/** Todas as HQs de uma pasta-raiz, para o rescan detectar arquivos que sumiram (docs/05). */
+export function listComicsInFolder(
+  db: Db,
+  folderId: string,
+): Array<{ id: string; filePath: string }> {
+  return db
+    .select({ id: comics.id, filePath: comics.filePath })
+    .from(comics)
+    .where(eq(comics.folderId, folderId))
+    .all()
 }
 
 /** RF-52: quantidade de HQs e soma do tamanho dos arquivos na biblioteca. */

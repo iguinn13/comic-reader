@@ -26,7 +26,6 @@ import { stepVerticalWidth, stepZoom } from './zoom'
 
 interface ReaderTopBarProps {
   title: string
-  sagaBadge?: string
   mode: ReaderMode
   fit: FitMode
   zoom: number
@@ -45,7 +44,6 @@ interface ReaderTopBarProps {
   onToggleFullscreen: () => void
   onToggleFocusMode: () => void
   onMarkUnread: () => void
-  onAddToCollection: () => void
   onResetPrefs: () => void
 }
 
@@ -58,7 +56,6 @@ const MODE_ICONS: Record<ReaderMode, typeof RectangleVertical> = {
 /** Barra superior do leitor (docs/06-leitor.md §2). O modo vertical chega em M4.7. */
 export function ReaderTopBar({
   title,
-  sagaBadge,
   mode,
   fit,
   zoom,
@@ -77,7 +74,6 @@ export function ReaderTopBar({
   onToggleFullscreen,
   onToggleFocusMode,
   onMarkUnread,
-  onAddToCollection,
   onResetPrefs,
 }: ReaderTopBarProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -101,11 +97,6 @@ export function ReaderTopBar({
       </Button>
 
       <span className="truncate text-sm font-medium text-text">{title}</span>
-      {sagaBadge && (
-        <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-text-muted">
-          {sagaBadge}
-        </span>
-      )}
 
       <div className="app-no-drag ml-auto flex items-center gap-1">
         <div className="flex items-center gap-0.5 rounded-md border border-border bg-surface p-0.5">
@@ -226,9 +217,6 @@ export function ReaderTopBar({
                 {doubleOffset ? t('reader.menu.doubleOffsetOff') : t('reader.menu.doubleOffsetOn')}
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onSelect={onAddToCollection}>
-              {t('library.contextMenu.addTo')}
-            </DropdownMenuItem>
             <DropdownMenuItem onSelect={onMarkUnread}>
               {t('reader.menu.markUnread')}
             </DropdownMenuItem>

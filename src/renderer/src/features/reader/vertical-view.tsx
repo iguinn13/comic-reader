@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useReaderStore } from '@renderer/stores/reader-store'
+import { cn } from '@renderer/lib/utils'
+import { useReaderStore, useShowChrome } from '@renderer/stores/reader-store'
 import type { ReaderSource } from '@shared/types'
 import { PdfPage } from './pdf-page'
 import { usePdfDocument } from './pdf-document'
@@ -40,6 +41,7 @@ export function VerticalView({
   const chromeVisible = useReaderStore((s) => s.chromeVisible)
   const isFullscreen = useReaderStore((s) => s.isFullscreen)
   const focusMode = useReaderStore((s) => s.focusMode)
+  const showChrome = useShowChrome()
   const goTo = useReaderStore((s) => s.goTo)
   const setChromeVisible = useReaderStore((s) => s.setChromeVisible)
   const setPrefs = useReaderStore((s) => s.setPrefs)
@@ -156,7 +158,10 @@ export function VerticalView({
       ref={measureRef}
       onWheel={handleWheel}
       onClick={handleClick}
-      className="relative size-full overflow-auto bg-reader-bg"
+      className={cn(
+        'relative size-full overflow-auto bg-reader-bg',
+        !showChrome && 'scrollbar-hidden',
+      )}
     >
       {containerWidth > 0 && (
         <div

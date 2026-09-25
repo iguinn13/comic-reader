@@ -4,18 +4,23 @@
 
 ```mermaid
 erDiagram
+  library_folders ||--o{ comics : "contém"
   comics ||--o{ comic_pages : "tem"
   comics ||--|| reading_progress : "tem"
-  comics ||--o{ collection_items : "pertence"
-  collections ||--o{ collection_items : "contém"
-  collections |o--o| comics : "capa (cover_comic_id)"
 
+  library_folders {
+    text id PK
+    text path
+    integer created_at
+  }
   comics {
     text id PK
     text title
     text title_normalized
     text format
-    text file_name
+    text file_path
+    text dir_path
+    text folder_id FK
     text original_file_name
     integer file_size
     text file_hash
@@ -39,24 +44,6 @@ erDiagram
     integer completed_at
     text reader_prefs
   }
-  collections {
-    text id PK
-    text type
-    text name
-    text name_normalized
-    text description
-    text cover_mode
-    text cover_comic_id
-    integer cover_version
-    integer created_at
-    integer updated_at
-  }
-  collection_items {
-    text collection_id PK
-    text comic_id PK
-    integer position
-    integer added_at
-  }
   settings {
     text key PK
     text value
@@ -71,7 +58,21 @@ Convenções:
 
 ## 2. Tabelas
 
-### 2.1 `comics`
+### 2.1 `library_folders`
+
+Pastas-raiz configuradas pelo usuário (RF-01/RF-03), escaneadas recursivamente pelo `LibraryScanService` (docs/05-importacao.md). O app nunca copia arquivos: as HQs são lidas in-place, a partir do caminho salvo em `comics.file_path` (ver ADR de `docs/10-decisoes.md`).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `id` | TEXT PK | UUID |
+| `path` | TEXT NOT NULL | Caminho absoluto, `UNIQUE` |
+| `created_at` | INTEGER NOT NULL | |
+
+Índice: `idx_folders_path(path)` (único).
+
+Remover uma pasta-raiz apaga em cascata todas as HQs indexadas sob ela (`comics.folder_id` `ON DELETE CASCADE`) — nunca os arquivos originais.
+
+### 2.2 `comics`
 
 | Coluna | Tipo | Regras |
 |---|---|---|
@@ -79,19 +80,21 @@ Convenções:
 | `title` | TEXT NOT NULL | 1–200 caracteres (RF-16) |
 | `title_normalized` | TEXT NOT NULL | Atualizada junto com `title` |
 | `format` | TEXT NOT NULL | `'zip' \| 'rar' \| 'pdf'`, formato **real** detectado por magic bytes |
-| `file_name` | TEXT NOT NULL | Nome do arquivo dentro de `library/`: `{id}.{cbz\|cbr\|pdf}` |
+| `file_path` | TEXT NOT NULL | Caminho absoluto do arquivo original, `UNIQUE`. **Nunca** exposto ao renderer — só IDs cruzam o IPC (docs/02 §4) |
+| `dir_path` | TEXT NOT NULL | Pasta-pai de `file_path`; usado para achar o "próximo arquivo da pasta" (RF-42) |
+| `folder_id` | TEXT NOT NULL FK → library_folders ON DELETE CASCADE | Pasta-raiz sob a qual o arquivo foi encontrado |
 | `original_file_name` | TEXT NOT NULL | Nome original (para exibição em "Detalhes"/erros) |
 | `file_size` | INTEGER NOT NULL | Bytes |
-| `file_hash` | TEXT NOT NULL | SHA-1 hex do arquivo (RF-05). **Não** é único, porque "Importar mesmo assim" permite duplicar |
+| `file_hash` | TEXT NOT NULL | SHA-1 hex do arquivo (RF-05), usado pra pular duplicatas entre pastas sobrepostas |
 | `page_count` | INTEGER NOT NULL | ≥ 1 |
 | `cover_version` | INTEGER NOT NULL DEFAULT 0 | Incrementado quando a capa é (re)gerada; 0 = capa ainda não gerada (placeholder) |
 | `is_favorite` | INTEGER NOT NULL DEFAULT 0 | RF-15 |
-| `created_at` | INTEGER NOT NULL | Data da importação |
+| `created_at` | INTEGER NOT NULL | Data em que a HQ foi indexada |
 | `updated_at` | INTEGER NOT NULL | |
 
-Índices: `idx_comics_title_norm(title_normalized)`, `idx_comics_created(created_at)`, `idx_comics_hash(file_hash)`, `idx_comics_fav(is_favorite)`.
+Índices: `idx_comics_title_norm(title_normalized)`, `idx_comics_created(created_at)`, `idx_comics_hash(file_hash)`, `idx_comics_fav(is_favorite)`, `idx_comics_dir(dir_path)`, `idx_comics_file_path(file_path)` (único).
 
-### 2.2 `comic_pages`
+### 2.3 `comic_pages`
 
 Ordem canônica das páginas de CBZ/CBR. Para PDF não há linhas (o pdf.js fornece as páginas), e `page_count` vem do `pdf-lib`.
 
@@ -106,7 +109,7 @@ Ordem canônica das páginas de CBZ/CBR. Para PDF não há linhas (o pdf.js forn
 PK: `(comic_id, page_index)`.
 As dimensões servem para o modo página dupla (detectar páginas largas) e para os placeholders do modo vertical (evitar saltos de layout). Enquanto estão nulas, o renderer assume a proporção 2:3 e corrige ao carregar a imagem.
 
-### 2.3 `reading_progress`
+### 2.4 `reading_progress`
 
 Uma linha por HQ, criada junto com a HQ.
 
@@ -145,43 +148,7 @@ interface ReaderPrefs {
 
 Índices: `idx_progress_last_read(last_read_at)`, `idx_progress_completed(completed_at)`.
 
-### 2.4 `collections`
-
-| Coluna | Tipo | Regras |
-|---|---|---|
-| `id` | TEXT PK | UUID |
-| `type` | TEXT NOT NULL | `'list' \| 'saga'` |
-| `name` | TEXT NOT NULL | 1–100 caracteres |
-| `name_normalized` | TEXT NOT NULL | `UNIQUE(type, name_normalized)` (RF-20) |
-| `description` | TEXT NULL | Até 500 caracteres |
-| `cover_mode` | TEXT NOT NULL DEFAULT `'auto'` | `'auto' \| 'image' \| 'comic'` (RF-25) |
-| `cover_comic_id` | TEXT NULL FK → comics ON DELETE SET NULL | Usado quando `cover_mode='comic'` |
-| `cover_version` | INTEGER NOT NULL DEFAULT 0 | Incrementado ao trocar a imagem própria |
-| `created_at` / `updated_at` | INTEGER NOT NULL | `updated_at` também muda quando itens entram, saem ou são reordenados |
-
-**Resolução da capa** (feita no `CollectionService`, que devolve `coverUrl` pronta):
-1. `image` → `comic://cover/collection/{id}?v={cover_version}`
-2. `comic` e `cover_comic_id` ainda na coleção → capa dessa HQ
-3. caso contrário (`auto`, ou fallback) → capa da HQ de menor `position`; coleção vazia → `null` (placeholder)
-
-Quando uma HQ usada em `cover_mode='comic'` sai da coleção ou é excluída, o serviço redefine `cover_mode='auto'` na mesma transação (RF-25).
-
-### 2.5 `collection_items`
-
-| Coluna | Tipo | Regras |
-|---|---|---|
-| `collection_id` | TEXT FK → collections ON DELETE CASCADE | |
-| `comic_id` | TEXT FK → comics ON DELETE CASCADE | |
-| `position` | INTEGER NOT NULL | 0-based, contínuo dentro da coleção |
-| `added_at` | INTEGER NOT NULL | |
-
-PK: `(collection_id, comic_id)` (RF-23: sem repetição). Índices: `idx_items_order(collection_id, position)` e `idx_items_comic(comic_id)`.
-
-- Inserir usa `position = MAX(position)+1`.
-- Remover ou reordenar **renormaliza** as posições (0..n-1) na mesma transação. As coleções são pequenas (dezenas a centenas), então o custo é desprezível.
-- Para listas, `position` também é mantido e reflete a ordem de adição, o que permite converter a lista em saga sem perda (RF-21).
-
-### 2.6 `settings`
+### 2.5 `settings`
 
 Chave/valor com `value` em JSON. As chaves e os defaults ficam em `src/shared/constants.ts`:
 
@@ -193,32 +160,27 @@ Chave/valor com `value` em JSON. As chaves e os defaults ficam em `src/shared/co
 | `library.view` | `{sort, order, status, favoritesOnly}` | `{sort:'createdAt', order:'desc', status:'all', favoritesOnly:false}` | RF-13 |
 | `ui.sidebarCollapsed` | boolean | `false` | RF-60 |
 | `window.bounds` | `{x,y,width,height,maximized}` | 1280×800 centralizada | RF-61 |
-| `import.duplicatePolicy` | `'ask'` | `'ask'` | RF-05 (reservado para v2) |
 
 ## 3. Layout em disco
 
-Raiz: `app.getPath('userData')` (Windows: `%APPDATA%\Comic Reader\`). Todos os caminhos são construídos **só** em `src/main/utils/paths.ts`.
+Raiz: `app.getPath('userData')` (Windows: `%APPDATA%\Comic Reader\`). Todos os caminhos são construídos **só** em `src/main/utils/paths.ts`. Não existe mais uma pasta `library/`: as HQs continuam nas pastas do próprio usuário, referenciadas por `comics.file_path`.
 
 ```
 userData/
 ├─ comic-reader.db            # SQLite (+ -wal, -shm)
-├─ library/
-│  └─ {comicId}.cbz|cbr|pdf   # cópia do arquivo importado (extensão = formato real)
 ├─ covers/
-│  ├─ comics/{comicId}.jpg          # 400 px de largura, JPEG q=82
-│  └─ collections/{collectionId}.jpg# imagem própria, 600 px de largura, JPEG q=85
+│  └─ comics/{comicId}.jpg    # 400 px de largura, JPEG q=82
 ├─ cache/
-│  ├─ pages/{comicId}/
-│  │  ├─ 0000.jpg|png|webp|gif      # índice com 4+ dígitos, extensão original
-│  │  └─ .complete                  # marcador: extração total concluída
-│  └─ tmp/                          # área de trabalho da importação (limpa no boot)
+│  └─ pages/{comicId}/
+│     ├─ 0000.jpg|png|webp|gif      # índice com 4+ dígitos, extensão original
+│     └─ .complete                  # marcador: extração total concluída
 └─ logs/
    └─ main.log
 ```
 
 - O **cache** é descartável: apagar `cache/` nunca perde dados.
-- A **biblioteca** e as **capas** são dados do usuário. Capas podem ser regeneradas a partir da biblioteca.
-- Um backup consiste em copiar `comic-reader.db`, `library/` e `covers/`.
+- As **capas** são dados derivados do app; podem ser regeneradas a partir das HQs.
+- As HQs em si **não** vivem em `userData` — um backup do app (banco + capas) não substitui um backup das pastas do usuário.
 
 ## 4. Pragmas e migrations
 
@@ -230,7 +192,7 @@ PRAGMA busy_timeout = 5000;
 ```
 
 - As migrations são geradas pelo `drizzle-kit generate` e aplicadas no boot com `migrate()` do Drizzle, lendo a pasta de migrations empacotada via `extraResources` do electron-builder.
-- Nunca se edita uma migration já publicada. Toda mudança é uma nova migration.
+- Nunca se edita uma migration já publicada. Toda mudança é uma nova migration. (Exceção pontual: a virada de `library`/coleções para pastas in-place, antes do lançamento da v1 e sem nenhum banco de usuário em produção, consolidou a baseline `0000` — ver ADR em `docs/10-decisoes.md`.)
 - Os seeds de desenvolvimento (5.000 HQs falsas para RNF-02) ficam num script separado, `scripts/seed-dev.ts`, que nunca roda em produção.
 
 ## 5. Consultas principais (referência)
@@ -252,16 +214,10 @@ LIMIT :limit OFFSET :offset;
 ORDER BY p.last_read_at DESC LIMIT 20;
 ```
 
-**Progresso da saga (RF-24)**
-```sql
-SELECT COUNT(*) AS total, SUM(p.completed_at IS NOT NULL) AS read
-FROM collection_items i JOIN reading_progress p ON p.comic_id = i.comic_id
-WHERE i.collection_id = :id;
-```
+**Próximo arquivo da pasta (RF-42)**
 
-**Próxima da saga (RF-42)**
+SQLite não faz ordenação natural (`10` viria antes de `2`), então isto é resolvido em JS, não em SQL: busca todas as HQs da mesma `dir_path`, ordena com `naturalSort()` (`src/main/archive/natural-sort.ts`, já usado para ordenar páginas dentro de um arquivo) e pega a que vem depois de `file_path` na lista ordenada.
 ```sql
-SELECT i2.comic_id FROM collection_items i1
-JOIN collection_items i2 ON i2.collection_id = i1.collection_id AND i2.position = i1.position + 1
-WHERE i1.collection_id = :sagaId AND i1.comic_id = :comicId;
+SELECT id, file_path FROM comics WHERE dir_path = :dirPath;
+-- ordenação e "próximo" resolvidos em JS com naturalSort()
 ```

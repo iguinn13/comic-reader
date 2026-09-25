@@ -66,7 +66,7 @@ export function ShortcutsDialog({
         <ShortcutsTable />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('collections.addTo.done')}
+            {t('common.close')}
           </Button>
         </DialogFooter>
       </DialogContent>

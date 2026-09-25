@@ -1,16 +1,7 @@
-import {
-  Heart,
-  Home,
-  LayoutGrid,
-  Layers,
-  List,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
-} from 'lucide-react'
+import { Heart, Home, LayoutGrid, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
-import { ImportButton } from '@renderer/features/import'
+import { RefreshLibraryButton } from '@renderer/features/library-folders/refresh-library-button'
 import { cn } from '@renderer/lib/utils'
 
 interface SidebarProps {
@@ -28,8 +19,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/', labelKey: 'nav.home', icon: Home },
   { to: '/library', labelKey: 'nav.library', icon: LayoutGrid },
   { to: '/favorites', labelKey: 'nav.favorites', icon: Heart },
-  { to: '/sagas', labelKey: 'nav.sagas', icon: Layers },
-  { to: '/lists', labelKey: 'nav.lists', icon: List },
 ]
 
 export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps): React.JSX.Element {
@@ -73,7 +62,7 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps): React.J
       </div>
 
       <div className="flex flex-col gap-1">
-        <ImportButton
+        <RefreshLibraryButton
           iconOnly={collapsed}
           className={collapsed ? 'w-9 justify-center px-0' : 'w-full justify-start'}
         />

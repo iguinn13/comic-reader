@@ -1,11 +1,22 @@
 import { sqliteTable, text, integer, primaryKey, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 /**
- * Schema Drizzle das 6 tabelas de docs/03-modelo-de-dados.md §2.
+ * Schema Drizzle das 5 tabelas de docs/03-modelo-de-dados.md §2.
  *
  * Convenções (doc §1): ids são UUID v4 em TEXT, datas são epoch em
  * milissegundos em INTEGER, booleanos são INTEGER 0/1 (`mode: 'boolean'`).
  */
+
+/** Uma pasta-raiz escolhida pelo usuário, escaneada recursivamente (docs/05-importacao.md). */
+export const libraryFolders = sqliteTable(
+  'library_folders',
+  {
+    id: text('id').primaryKey(),
+    path: text('path').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [uniqueIndex('idx_folders_path').on(t.path)],
+)
 
 export const comics = sqliteTable(
   'comics',
@@ -14,7 +25,13 @@ export const comics = sqliteTable(
     title: text('title').notNull(),
     titleNormalized: text('title_normalized').notNull(),
     format: text('format').notNull().$type<'zip' | 'rar' | 'pdf'>(),
-    fileName: text('file_name').notNull(),
+    /** Caminho absoluto do arquivo original — a HQ é lida in-place, nunca copiada (docs/10 ADR). */
+    filePath: text('file_path').notNull(),
+    /** Pasta-pai de `filePath`, usada para achar o "próximo arquivo da pasta" (docs/06 RF-42). */
+    dirPath: text('dir_path').notNull(),
+    folderId: text('folder_id')
+      .notNull()
+      .references(() => libraryFolders.id, { onDelete: 'cascade' }),
     originalFileName: text('original_file_name').notNull(),
     fileSize: integer('file_size').notNull(),
     fileHash: text('file_hash').notNull(),
@@ -29,6 +46,8 @@ export const comics = sqliteTable(
     index('idx_comics_created').on(t.createdAt),
     index('idx_comics_hash').on(t.fileHash),
     index('idx_comics_fav').on(t.isFavorite),
+    index('idx_comics_dir').on(t.dirPath),
+    uniqueIndex('idx_comics_file_path').on(t.filePath),
   ],
 )
 
@@ -66,44 +85,6 @@ export const readingProgress = sqliteTable(
   (t) => [
     index('idx_progress_last_read').on(t.lastReadAt),
     index('idx_progress_completed').on(t.completedAt),
-  ],
-)
-
-export const collections = sqliteTable(
-  'collections',
-  {
-    id: text('id').primaryKey(),
-    type: text('type').notNull().$type<'list' | 'saga'>(),
-    name: text('name').notNull(),
-    /** `UNIQUE(type, name_normalized)` — RF-20. */
-    nameNormalized: text('name_normalized').notNull(),
-    description: text('description'),
-    coverMode: text('cover_mode').notNull().default('auto').$type<'auto' | 'image' | 'comic'>(),
-    coverComicId: text('cover_comic_id').references(() => comics.id, { onDelete: 'set null' }),
-    coverVersion: integer('cover_version').notNull().default(0),
-    createdAt: integer('created_at').notNull(),
-    updatedAt: integer('updated_at').notNull(),
-  },
-  (t) => [uniqueIndex('idx_collections_type_name').on(t.type, t.nameNormalized)],
-)
-
-/** PK composta impede repetição de HQ na mesma coleção (RF-23, doc §2.5). */
-export const collectionItems = sqliteTable(
-  'collection_items',
-  {
-    collectionId: text('collection_id')
-      .notNull()
-      .references(() => collections.id, { onDelete: 'cascade' }),
-    comicId: text('comic_id')
-      .notNull()
-      .references(() => comics.id, { onDelete: 'cascade' }),
-    position: integer('position').notNull(),
-    addedAt: integer('added_at').notNull(),
-  },
-  (t) => [
-    primaryKey({ columns: [t.collectionId, t.comicId] }),
-    index('idx_items_order').on(t.collectionId, t.position),
-    index('idx_items_comic').on(t.comicId),
   ],
 )
 

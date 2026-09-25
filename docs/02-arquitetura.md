@@ -12,7 +12,6 @@
 | Estado de UI | **Zustand** | Preferências de UI, estado do leitor, seleção |
 | Dados do main no renderer | **TanStack Query** | Cache e invalidação das chamadas IPC |
 | Listas grandes | **@tanstack/react-virtual** | Grades e modo vertical |
-| Drag & drop (reordenar saga) | **@dnd-kit** | |
 | i18n | **i18next** + **react-i18next** | Só `pt-BR` na v1 |
 | Banco | **SQLite** via **better-sqlite3** + **Drizzle ORM** | Migrations versionadas, WAL |
 | ZIP/CBZ | **yauzl** | Leitura por streaming com acesso aleatório às entradas |
@@ -45,7 +44,7 @@ flowchart LR
     SVC[Serviços]
     DB[(SQLite)]
     PROTO["Protocolo comic://"]
-    FS[(userData: library, covers, cache)]
+    FS[(userData: covers, cache — HQs ficam nas pastas do usuário)]
     PDFW[Janela oculta: PDF worker]
   end
 
@@ -55,14 +54,15 @@ flowchart LR
   SVC <-->|render de capa PDF| PDFW
   UI -->|"<img src='comic://page/…'>"| PROTO --> FS
   PDFJS -->|"fetch comic://file/…"| PROTO
-  IPC -.eventos: import:progress.-> API -.-> Z
+  IPC -.eventos: library:scanProgress.-> API -.-> Z
 ```
 
 - **Main** é o único processo com acesso a disco e banco. Ele contém toda a regra de negócio (serviços).
 - **Preload** expõe uma API mínima e tipada (`window.api`) via `contextBridge`, sem expor `ipcRenderer` cru.
 - **Renderer** é só apresentação: não conhece caminhos de arquivo, só **IDs**.
 - **Imagens** (páginas e capas) nunca trafegam por IPC. O renderer usa URLs do protocolo `comic://`, servidas pelo main a partir do disco.
-- **PDF worker** é uma `BrowserWindow` oculta (sandbox, sem UI) que o main usa para renderizar a primeira página de PDFs em JPEG durante a importação (ADR-008 em [10-decisoes.md](10-decisoes.md)).
+- **PDF worker** é uma `BrowserWindow` oculta (sandbox, sem UI) que o main usa para renderizar a primeira página de PDFs em JPEG durante o scan (ADR-008 em [10-decisoes.md](10-decisoes.md)).
+- As HQs em si **não** ficam em `userData`: o app lê os arquivos direto das pastas-raiz que o usuário configura (`library_folders`, docs/03 §2.1; docs/05). `userData` guarda só o banco, capas geradas e cache descartável.
 
 ## 3. Camadas do main
 
@@ -83,14 +83,13 @@ Regras:
 
 | Serviço | Responsabilidade | RFs |
 |---|---|---|
-| `ImportService` | Fila de importação, detecção de formato, dedup, cópia, capa, eventos de progresso | RF-01..06 |
-| `LibraryService` | Consulta/listagem com busca, filtros e ordenação, renomear, favoritar, status, exclusão | RF-10..19 |
-| `CollectionService` | CRUD de listas/sagas, itens, reordenação, capa, progresso da saga | RF-20..26 |
-| `ReaderService` | Abrir sessão de leitura, salvar progresso (com debounce e flush), preferências por HQ, conclusão, próxima da saga | RF-30..44 |
+| `LibraryScanService` | Escaneia recursivamente as pastas-raiz, detecta formato, dedup por hash, capa, indexa, limpa arquivos ausentes | RF-01..06 |
+| `LibraryService` | Consulta/listagem com busca, filtros e ordenação, renomear, favoritar, status, exclusão (com opção de apagar o arquivo) | RF-10..19 |
+| `ReaderService` | Abrir sessão de leitura, salvar progresso (com debounce e flush), preferências por HQ, conclusão, próximo arquivo da pasta | RF-30..44 |
 | `PageCacheService` | Extração de páginas para o cache, LRU por tamanho, pré-extração em segundo plano | RF-43, RF-51 |
-| `CoverService` | Geração de miniaturas (HQ e coleção), capa de PDF via worker | RF-06, RF-25 |
+| `CoverService` | Geração de miniaturas de HQ, capa de PDF via worker | RF-06 |
 | `SettingsService` | Leitura/escrita de configurações com defaults e validação | RF-50..53, RF-60, RF-61 |
-| `MaintenanceService` | Rotinas de boot: migrations, limpeza de órfãos e temporários | RNF-05 |
+| `MaintenanceService` | Rotinas de boot: migrations, limpeza de capas órfãs | RNF-05 |
 
 ### 3.2 Interface de arquivos (`archive/`)
 
@@ -125,7 +124,7 @@ comic-reader/
 │  │  ├─ api.ts                  # interface ComicReaderApi (contrato do window.api)
 │  │  ├─ channels.ts             # nomes dos canais IPC
 │  │  ├─ schemas.ts              # schemas zod dos inputs
-│  │  ├─ types.ts                # DTOs: ComicSummary, CollectionDetail, ...
+│  │  ├─ types.ts                # DTOs: ComicSummary, LibraryFolder, ...
 │  │  ├─ errors.ts               # AppErrorCode, Result<T>
 │  │  └─ constants.ts            # limites, extensões suportadas, defaults
 │  ├─ main/
@@ -154,13 +153,13 @@ comic-reader/
 │        ├─ i18n/ (index.ts, locales/pt-BR.json)
 │        ├─ styles/globals.css   # Tailwind + tokens (@theme)
 │        ├─ components/ui/       # shadcn gerados
-│        ├─ components/          # AppShell, Sidebar, ComicCard, CollectionCard, EmptyState, ...
+│        ├─ components/          # AppShell, Sidebar, ComicCard, EmptyState, ...
 │        ├─ features/
-│        │  ├─ home/  library/  favorites/  collections/
+│        │  ├─ home/  library/  favorites/
 │        │  ├─ reader/           # ReaderPage, modos, toolbar, hooks de teclado
-│        │  ├─ import/           # ImportPanel, DropOverlay, DuplicateDialog
+│        │  ├─ library-folders/  # RefreshLibraryButton, LibraryFoldersSection
 │        │  └─ settings/
-│        └─ stores/              # ui-store.ts, reader-store.ts, selection-store.ts, import-store.ts
+│        └─ stores/              # ui-store.ts, reader-store.ts, selection-store.ts
 ├─ tests/
 │  ├─ fixtures/                  # CBZ/CBR/PDF/ZIP pequenos (ver 09)
 │  ├─ unit/                      # opcional; testes podem ficar co-localizados *.test.ts
@@ -185,13 +184,11 @@ E tratado com `protocol.handle('comic', handler)`:
 | `comic://page/{comicId}/{pageIndex}` | Imagem da página (do cache; se ausente, extrai sob demanda) | `<img>` no leitor (CBZ/CBR) |
 | `comic://file/{comicId}` | Bytes do arquivo da HQ (suporta `Range`) | pdf.js carrega PDFs |
 | `comic://cover/comic/{comicId}?v={coverVersion}` | JPEG da capa | Cards |
-| `comic://cover/collection/{collectionId}?v={coverVersion}` | JPEG da capa custom | Cards de coleção (modo imagem própria) |
 
 Regras do handler:
-- Ele só aceita IDs no formato esperado (UUID) e `pageIndex` inteiro dentro do intervalo. **Nunca** usa trechos da URL como caminho. O caminho é sempre resolvido a partir do registro no banco e de `paths.ts`.
+- Ele só aceita IDs no formato esperado (UUID) e `pageIndex` inteiro dentro do intervalo. **Nunca** usa trechos da URL como caminho. O caminho é sempre resolvido a partir do registro no banco (`comics.file_path`) e de `paths.ts` (para cache/capas) — nunca a partir de nada vindo do renderer.
 - Define `Content-Type` pelo formato real da imagem e `Cache-Control: max-age=31536000, immutable` para páginas e capas versionadas (o `?v=` muda quando a capa muda).
 - Responde 404 para inexistentes e 500 com log para falha de extração. O renderer mostra um placeholder de erro na página.
-- A capa em modo **Automática** de uma coleção aponta para a URL da capa da HQ escolhida, sem arquivo próprio.
 
 ## 6. Segurança
 
@@ -203,7 +200,7 @@ Checklist obrigatório (RNF-06):
 - [ ] `setWindowOpenHandler` → `deny`. `will-navigate` bloqueado para qualquer URL fora do app.
 - [ ] O preload expõe só funções de domínio. Nenhum `ipcRenderer`, `require` ou `process` vaza.
 - [ ] Todo handler IPC valida o input com zod, e input inválido gera o erro `VALIDATION`.
-- [ ] Caminhos vindos do sistema (diálogo, drag & drop) são aceitos só em `import.start` e `collections.setCover`, e apenas se existirem e tiverem extensão permitida. O drag & drop usa `webUtils.getPathForFile(file)` no preload.
+- [ ] O único caminho vindo do sistema é a pasta escolhida em `libraryFolders.add()` (`dialog.showOpenDialog`, sempre no main). O renderer nunca envia caminhos de arquivo pelo IPC — só IDs.
 - [ ] `app.requestSingleInstanceLock()`: uma segunda instância só foca a janela existente.
 - [ ] Nenhuma requisição de rede: fontes e ícones empacotados.
 
@@ -215,18 +212,18 @@ Checklist obrigatório (RNF-06):
 3. `app.whenReady()` →
    1. Garantir os diretórios de `userData` ([03 §3](03-modelo-de-dados.md#3-layout-em-disco)).
    2. Abrir o banco, aplicar pragmas e rodar migrations.
-   3. `MaintenanceService.run()`: apagar `cache/tmp/*`, remover arquivos órfãos em `library/` e `covers/` e registrar HQs sem arquivo (as HQs **não** são apagadas; o leitor mostra erro, RF-62).
+   3. `MaintenanceService.run()`: remover capas órfãs em `covers/` (sem HQ correspondente). As HQs cujo arquivo sumiu **não** são apagadas aqui — isso é responsabilidade do próximo scan (`LibraryScanService`, docs/05 §7).
    4. Registrar os handlers IPC e o `protocol.handle`.
    5. Criar a janela com os bounds salvos e `show: false` → `ready-to-show` → `show()` (evita o flash branco; `backgroundColor` = cor de fundo do tema).
-4. `PageCacheService` aplica o limite de LRU em segundo plano após o boot.
+4. `PageCacheService` aplica o limite de LRU em segundo plano após o boot, e `LibraryScanService.scan()` re-escaneia todas as pastas-raiz em segundo plano (RF-04) — nenhum dos dois atrasa a abertura da janela.
 
 **Encerramento**
-- `before-quit`: `ReaderService.flush()` grava o progresso pendente (síncrono, better-sqlite3), `ImportService.cancelAll()` roda o rollback dos itens em andamento, salva os bounds da janela e fecha o banco.
+- `before-quit`: `ReaderService.flush()` grava o progresso pendente (síncrono, better-sqlite3), salva os bounds da janela e fecha o banco.
 - `render-process-gone`: o progresso recebido até ali já está no main (o renderer envia cada mudança de página), então `flush()` é chamado e a janela é recarregada.
 
 ## 8. Fluxo de dados no renderer
 
-- **Leituras** usam `useQuery` com chaves centralizadas em `src/renderer/src/lib/query-keys.ts` (ex.: `['comics', filters]`, `['collection', id]`).
+- **Leituras** usam `useQuery` com chaves centralizadas em `src/renderer/src/lib/query-keys.ts` (ex.: `queryKeys.library.list(query)`, `queryKeys.libraryFolders.all()`).
 - **Escritas** usam `useMutation`, com `invalidateQueries` nas chaves afetadas. Favoritar e marcar lida usam atualização otimista.
-- **Eventos do main** (progresso de importação, `library:changed`) atualizam o `import-store` e invalidam `['comics']`, `['home']` e `['collections']`.
+- **Eventos do main** (`library:scanProgress`, `library:changed`) atualizam o estado de scan em UI e invalidam `queryKeys.library.all()`.
 - O **Zustand** guarda só o estado de UI, sem duplicar dados do banco.

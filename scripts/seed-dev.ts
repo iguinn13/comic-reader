@@ -31,6 +31,7 @@ import { dirname, join } from 'path'
 import { homedir } from 'os'
 import { closeDb, createDb } from '../src/main/db/client'
 import { insertComic, setFavorite } from '../src/main/db/repositories/comics'
+import { insertLibraryFolder } from '../src/main/db/repositories/library-folders'
 import { markRead, setCurrentPage } from '../src/main/db/repositories/progress'
 import { createAppPaths } from '../src/main/utils/paths'
 // Import relativo (não @shared): este script roda via tsx fora do build do
@@ -111,18 +112,28 @@ function main(): void {
   const db = createDb(finalDbPath)
   const now = Date.now()
 
+  // Pasta-raiz falsa (docs/05-importacao.md): os arquivos não precisam existir
+  // de verdade no disco — o objetivo é medir consulta/renderização de lista,
+  // não abrir HQs.
+  const folderId = randomUUID()
+  const folderPath = join(homedir(), 'Comics (seed)')
+  insertLibraryFolder(db, { id: folderId, path: folderPath })
+
   for (let i = 0; i < count; i++) {
     const id = randomUUID()
     const title = titleFor(i)
     const format = FORMATS[i % FORMATS.length]
+    const originalFileName = `${title} - ${id.slice(0, 8)}.${EXTENSION_BY_FORMAT[format]}`
 
     insertComic(db, {
       id,
       title,
       titleNormalized: normalizeTitle(title),
       format,
-      fileName: `${id}.${EXTENSION_BY_FORMAT[format]}`,
-      originalFileName: `${title}.${EXTENSION_BY_FORMAT[format]}`,
+      filePath: join(folderPath, originalFileName),
+      dirPath: folderPath,
+      folderId,
+      originalFileName,
       fileSize: 20_000_000 + Math.floor(Math.random() * 80_000_000),
       fileHash: `seed-${id}`,
       pageCount: 20 + Math.floor(Math.random() * 40),

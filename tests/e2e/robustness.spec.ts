@@ -1,7 +1,7 @@
-import { existsSync, readdirSync } from 'fs'
+import { copyFileSync } from 'fs'
 import { join } from 'path'
 import { expect, test } from '@playwright/test'
-import { FIXTURES, cleanup, importFixture, launch } from './app'
+import { FIXTURES, addFixtureToLibrary, cleanup, launch } from './app'
 
 type Api = { api: Record<string, any> }
 
@@ -16,7 +16,7 @@ function kill(app: Awaited<ReturnType<typeof launch>>['app']): Promise<void> {
 
 test('matar o app durante a leitura perde no máximo o debounce do progresso', async () => {
   const first = await launch()
-  const comicId = await importFixture(first.page, 'simple.cbz')
+  const comicId = await addFixtureToLibrary(first.page, first.comicsDir, 'simple.cbz')
   await first.page.evaluate((id) => {
     window.location.hash = `#/read/${id}`
   }, comicId)
@@ -27,45 +27,51 @@ test('matar o app durante a leitura perde no máximo o debounce do progresso', a
   await first.page.waitForTimeout(1200)
   await kill(first.app)
 
-  const second = await launch(first.userData)
+  const second = await launch(first.userData, first.comicsDir)
   const page = await second.page.evaluate(
     async (id) => (await (window as unknown as Api).api.library.get(id)).data.currentPage,
     comicId,
   )
   expect(page).toBe(3)
   await second.app.close()
-  cleanup(first.userData)
+  cleanup(first.userData, first.comicsDir)
 })
 
-test('matar o app durante a importação deixa a biblioteca consistente ao reabrir', async () => {
+test('matar o app no meio do scan deixa a biblioteca consistente ao reabrir', async () => {
   const first = await launch()
-  await first.page.evaluate(
-    async (paths) => (window as unknown as Api).api.importer.start(paths),
-    ['pack.zip', 'simple.cbz', 'wide-page.cbz', 'natural-order.cbz'].map((f) => join(FIXTURES, f)),
-  )
+  for (const name of ['simple.cbz', 'wide-page.cbz', 'natural-order.cbz']) {
+    copyFileSync(join(FIXTURES, name), join(first.comicsDir, name))
+  }
+  // Dispara o scan sem esperar terminar, e derruba o processo logo em seguida
+  // — cada HQ só entra no banco numa transação própria (docs/03 §4), então o
+  // pior caso é algumas HQs ainda não escaneadas, nunca um registro parcial.
+  void first.page.evaluate(async () => {
+    await (window as unknown as Api).api.libraryFolders.add()
+  })
+  await first.page.waitForTimeout(50)
   await kill(first.app)
 
-  const second = await launch(first.userData)
-  const items: { id: string; fileName?: string }[] = await second.page.evaluate(async () => {
-    const result = await (window as unknown as Api).api.library.list({
-      sort: 'createdAt',
-      order: 'desc',
-      status: 'all',
-      favoritesOnly: false,
-      limit: 100,
-      offset: 0,
+  // O scan automático do boot (docs/02 §7) termina o trabalho na reabertura.
+  const second = await launch(first.userData, first.comicsDir)
+  await expect
+    .poll(async () => {
+      const result = await second.page.evaluate(
+        async () =>
+          (
+            await (window as unknown as Api).api.library.list({
+              sort: 'createdAt',
+              order: 'desc',
+              status: 'all',
+              favoritesOnly: false,
+              limit: 100,
+              offset: 0,
+            })
+          ).data.total,
+      )
+      return result
     })
-    return result.data.items
-  })
-
-  const libraryDir = join(second.userData, 'library')
-  const files = existsSync(libraryDir) ? readdirSync(libraryDir) : []
-  // Toda HQ registrada tem o arquivo, e todo arquivo em library/ tem registro (sem órfãos).
-  for (const item of items) expect(files.some((name) => name.startsWith(item.id))).toBe(true)
-  for (const name of files) expect(items.some((item) => name.startsWith(item.id))).toBe(true)
-  const tmpDir = join(second.userData, 'cache', 'tmp')
-  expect(existsSync(tmpDir) ? readdirSync(tmpDir) : []).toEqual([])
+    .toBe(3)
 
   await second.app.close()
-  cleanup(first.userData)
+  cleanup(first.userData, first.comicsDir)
 })

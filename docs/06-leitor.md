@@ -4,9 +4,9 @@ Cobre RF-30 a RF-44. O leitor é a tela mais importante do app e deve ser rápid
 
 ## 1. Rota e ciclo de vida
 
-- Rota: `#/read/:comicId?from=:collectionId`.
+- Rota: `#/read/:comicId`.
 - O leitor ocupa a área toda: a sidebar é **escondida** no leitor, que tem o próprio botão "Voltar".
-- **Entrada:** `reader.open(comicId, from)` → `ReaderSession`. Enquanto carrega, a tela mostra a capa desfocada + spinner.
+- **Entrada:** `reader.open(comicId)` → `ReaderSession`. Enquanto carrega, a tela mostra a capa desfocada + spinner.
 - **Saída** (botão Voltar, `Esc` sem nada ativo, ou `Backspace`): `reader.close(comicId)` e volta para a rota anterior (`navigate(-1)`, ou `/library` se não houver histórico).
 - **Erros:** `FILE_MISSING` e `CORRUPTED_FILE` mostram um estado de erro com "Voltar" e "Excluir da biblioteca" (RF-62). Uma página individual que falha mostra um placeholder "Não foi possível carregar a página N", e a navegação continua.
 
@@ -14,7 +14,7 @@ Cobre RF-30 a RF-44. O leitor é a tela mais importante do app e deve ser rápid
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ ←  Batman: Ano Um #1          Saga: Ano Um (1/4)    ▣ ▥ ≡  − 100% +  ♡ ⋯  ☾  ⛶ │  ← barra superior
+│ ←  Batman: Ano Um #1                                ▣ ▥ ≡  − 100% +  ♡ ⋯  ☾  ⛶ │  ← barra superior
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   ‹                        [ PÁGINA ]                           ›    │  ← área de leitura
@@ -24,10 +24,10 @@ Cobre RF-30 a RF-44. O leitor é a tela mais importante do app e deve ser rápid
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Barra superior:** voltar; título (clicável → renomear); badge da saga (se aberta de uma saga); seletor de modo (`single` / `double` / `vertical`); controles de ajuste/zoom (dependem do modo); favoritar (RF-44); menu `⋯` (Adicionar a…, Marcar como não lida, Restaurar padrões de leitura); modo foco (☾); tela cheia (⛶).
+- **Barra superior:** voltar; título (clicável → renomear); seletor de modo (`single` / `double` / `vertical`); controles de ajuste/zoom (dependem do modo); favoritar (RF-44); menu `⋯` (Marcar como não lida, Restaurar padrões de leitura); modo foco (☾); tela cheia (⛶).
 - **Barra inferior:** slider de páginas (arrastar mostra o preview "página N"), indicador `N / total` (clicável → campo "Ir para página") e setas de navegação.
 - **Área de leitura:** fundo `--reader-bg` (quase preto), ou `#000` no modo foco.
-- **Auto-ocultar:** em **tela cheia** ou **modo foco**, as barras somem após 2,5 s sem movimento do mouse e reaparecem ao mover o mouse ou aproximá-lo das bordas. O cursor também some quando as barras estão ocultas. Fora desses modos, as barras ficam sempre visíveis.
+- **Auto-ocultar:** em **tela cheia** ou **modo foco**, as barras somem após 2,5 s sem movimento do mouse e reaparecem ao mover o mouse ou aproximá-lo das bordas. A transição de opacidade/posição das barras é suave (`150ms ease-out`, `transition-[opacity,transform]`), não um corte abrupto. A scrollbar da área de leitura também some junto (`scrollbar-width: none` / `::-webkit-scrollbar`), e o cursor some quando as barras estão ocultas. Fora desses modos, as barras ficam sempre visíveis.
 
 ## 3. Modos de leitura
 
@@ -124,6 +124,8 @@ A tabela de atalhos também aparece num diálogo (`?`) e em Configurações.
 
 O renderer escuta `onFullscreenChanged`, porque o usuário pode sair da tela cheia por meios do SO.
 
+Sair do leitor (voltar, `Esc`, ou desmontagem por qualquer outro motivo) enquanto a janela está em tela cheia também sai da tela cheia — a janela nunca fica presa em tela cheia fora do leitor, já que o toggle é exclusivo dessa tela.
+
 ## 7. Pré-carregamento e cache — RF-43, RNF-01
 
 **Main (`PageCacheService`)**
@@ -149,15 +151,16 @@ O renderer escuta `onFullscreenChanged`, porque o usuário pode sair da tela che
 ┌──────────────────────────────────────────────┐
 │  ✓ Você terminou "Batman: Ano Um #1"         │
 │                                              │
-│  Próxima na saga "Ano Um" (2 de 4):          │
+│  Próximo arquivo desta pasta:                │
 │  [capa]  Batman: Ano Um #2        [ Ler → ]  │
 │                                              │
 │  [ Voltar à biblioteca ]   [ Ficar aqui ]    │
 └──────────────────────────────────────────────┘
 ```
 
-- **Ler →** chama `reader.open(nextId, sagaId)` sem sair da rota (`replace`).
-- Com várias sagas: uma linha por saga (no máximo 3). Sem saga ou última da saga: só os botões de baixo.
+- A sugestão vem de `nextInFolder` (`ReaderSession`, docs/04 §2): o próximo arquivo em ordem natural dentro da mesma pasta (docs/05 §6) — puramente posicional, sem depender de nenhuma organização manual.
+- **Ler →** chama `reader.open(nextId)` sem sair da rota (`replace`).
+- Sem próximo arquivo na pasta (última ou única HQ do diretório): só os botões de baixo aparecem.
 - `→` no painel ativa o botão focado (padrão: "Ler →" se existir); `Esc` fecha.
 
 ## 9. Estado (Zustand `reader-store`)
@@ -188,6 +191,7 @@ Os componentes de modo (`SingleView`, `DoubleView`, `VerticalView`, e `PdfPage` 
 - [ ] Página larga aparece sozinha no modo duplo. "Deslocar pares" altera o pareamento.
 - [ ] No vertical, `+`/`-` muda a largura e a página visível não "pula".
 - [ ] Modo foco: fundo preto, barras somem em 2,5 s e voltam com o mouse. Continua ativo ao reabrir o app.
-- [ ] Chegar à última página marca como lida, e avançar mostra o painel com a próxima da saga.
+- [ ] Chegar à última página marca como lida, e avançar mostra o painel com o próximo arquivo da pasta (quando existir).
+- [ ] Sair do leitor em tela cheia devolve a janela ao estado normal.
 - [ ] HQ de 300 páginas no vertical: uso de memória dentro do RNF-03.
 - [ ] PDF abre e navega nos 3 modos.

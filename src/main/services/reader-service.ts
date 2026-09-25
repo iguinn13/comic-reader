@@ -1,17 +1,9 @@
 import { existsSync } from 'fs'
 import { AppError } from '@shared/errors'
-import type {
-  CollectionId,
-  ComicFormat,
-  ComicId,
-  ReaderPrefs,
-  ReaderSession,
-  SagaContext,
-  ReaderSource,
-} from '@shared/types'
+import type { ComicFormat, ComicId, ReaderPrefs, ReaderSession, ReaderSource } from '@shared/types'
+import { naturalSort } from '../archive'
 import type { Db } from '../db/client'
-import { getNextToRead, getSagasContainingComic } from '../db/repositories/collections'
-import { getComicDetail } from '../db/repositories/comics'
+import { getComicDetail, listComicsInDir } from '../db/repositories/comics'
 import { listComicPages, updatePageDimensions } from '../db/repositories/pages'
 import {
   getReaderPrefs,
@@ -22,8 +14,6 @@ import {
 } from '../db/repositories/progress'
 import { getSetting } from '../db/repositories/settings'
 import { toComicDetail, toComicSummary } from './comic-dto'
-import { FORMAT_TO_FILE_EXT } from '../utils/comic-format'
-import type { AppPaths } from '../utils/paths'
 import type { PageCacheService } from './page-cache-service'
 
 /** docs/04-contratos-ipc.md §4.4: debounce de `setPage` por HQ. */
@@ -31,8 +21,9 @@ const SET_PAGE_DEBOUNCE_MS = 500
 
 /**
  * Sessão de leitura, progresso e preferências (docs/06-leitor.md, RF-30..44).
- * `sagaContext` lista as sagas que contêm a HQ (RF-42), com a saga de origem
- * (`fromCollectionId`) primeiro.
+ * `nextInFolder` é o próximo arquivo (ordem natural) na mesma pasta, usado
+ * pelo painel de fim de leitura (RF-42) — substitui a antiga navegação por
+ * saga: a organização agora é inteiramente a estrutura de pastas do usuário.
  */
 export class ReaderService {
   private readonly pendingPages = new Map<ComicId, number>()
@@ -40,16 +31,14 @@ export class ReaderService {
 
   constructor(
     private readonly db: Db,
-    private readonly paths: AppPaths,
     private readonly pageCache: PageCacheService,
   ) {}
 
-  open(comicId: ComicId, fromCollectionId?: CollectionId): ReaderSession {
+  open(comicId: ComicId): ReaderSession {
     const row = getComicDetail(this.db, comicId)
     if (!row) throw new AppError('NOT_FOUND', 'errors.comicNotFound')
 
-    const fileExt = FORMAT_TO_FILE_EXT[row.format]
-    if (!existsSync(this.paths.comicFile(comicId, fileExt))) {
+    if (!existsSync(row.filePath)) {
       throw new AppError('FILE_MISSING', 'errors.fileMissing')
     }
 
@@ -59,12 +48,12 @@ export class ReaderService {
     const defaults = getSetting(this.db, 'reader.defaults')
 
     return {
-      comic: toComicDetail(this.db, row),
-      source: buildSource(comicId, row.format, this.db),
+      comic: toComicDetail(row),
+      source: buildSource(this.db, comicId, row.format),
       currentPage: row.currentPage,
       prefs: customPrefs ?? defaults,
       hasCustomPrefs: customPrefs !== null,
-      sagaContext: buildSagaContext(this.db, comicId, fromCollectionId),
+      nextInFolder: getNextInFolder(this.db, comicId, row.dirPath, row.filePath),
     }
   }
 
@@ -127,7 +116,7 @@ export class ReaderService {
   }
 }
 
-function buildSource(comicId: ComicId, format: ComicFormat, db: Db): ReaderSource {
+function buildSource(db: Db, comicId: ComicId, format: ComicFormat): ReaderSource {
   if (format === 'pdf') return { kind: 'pdf', fileUrl: `comic://file/${comicId}` }
 
   return {
@@ -141,23 +130,21 @@ function buildSource(comicId: ComicId, format: ComicFormat, db: Db): ReaderSourc
   }
 }
 
-function buildSagaContext(
+function getNextInFolder(
   db: Db,
   comicId: ComicId,
-  fromCollectionId?: CollectionId,
-): SagaContext[] {
-  const sagas = getSagasContainingComic(db, comicId)
-  sagas.sort((a, b) => Number(b.id === fromCollectionId) - Number(a.id === fromCollectionId))
+  dirPath: string,
+  filePath: string,
+): ReaderSession['nextInFolder'] {
+  const siblings = listComicsInDir(db, dirPath)
+  const sortedPaths = naturalSort(siblings.map((s) => s.filePath))
+  const currentIndex = sortedPaths.indexOf(filePath)
+  const nextPath = currentIndex >= 0 ? sortedPaths[currentIndex + 1] : undefined
+  if (!nextPath) return null
 
-  return sagas.map((saga) => {
-    const nextId = getNextToRead(db, saga.id, comicId)
-    const nextRow = nextId ? getComicDetail(db, nextId) : null
-    return {
-      sagaId: saga.id,
-      sagaName: saga.name,
-      position: saga.position,
-      total: saga.total,
-      next: nextRow ? toComicSummary(nextRow) : null,
-    }
-  })
+  const nextId = siblings.find((s) => s.filePath === nextPath)?.id
+  if (!nextId || nextId === comicId) return null
+
+  const nextRow = getComicDetail(db, nextId)
+  return nextRow ? toComicSummary(nextRow) : null
 }

@@ -1,12 +1,11 @@
 import type { ComicDetail, ComicSummary } from '@shared/types'
-import type { Db } from '../db/client'
 import type { ComicRow } from '../db/repositories/comics'
-import { getCollectionsForComic } from '../db/repositories/collections'
 
 /**
  * Monta os DTOs de HQ a partir da linha do banco (docs/02-arquitetura.md
  * §3.1). Compartilhado por `LibraryService` e `ReaderService` pra não
- * duplicar a URL versionada da capa e o cálculo de `progress`.
+ * duplicar a URL versionada da capa e o cálculo de `progress`. Nunca expõe
+ * `filePath`/`dirPath`: o renderer só conhece IDs (regras de arquitetura).
  */
 
 /** Monta a URL versionada da capa (docs/02-arquitetura.md §5); `null` = ainda sem capa gerada. */
@@ -30,11 +29,10 @@ export function toComicSummary(row: ComicRow): ComicSummary {
   }
 }
 
-export function toComicDetail(db: Db, row: ComicRow): ComicDetail {
+export function toComicDetail(row: ComicRow): ComicDetail {
   return {
     ...toComicSummary(row),
     originalFileName: row.originalFileName,
     fileSize: row.fileSize,
-    collections: getCollectionsForComic(db, row.id),
   }
 }

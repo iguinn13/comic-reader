@@ -1,10 +1,9 @@
-import type { CollectionService } from '../services/collection-service'
-import type { ImportService } from '../services/import-service'
+import type { Db } from '../db/client'
+import type { LibraryScanService } from '../services/library-scan-service'
 import type { LibraryService } from '../services/library-service'
 import type { ReaderService } from '../services/reader-service'
 import type { SettingsService } from '../services/settings-service'
-import { registerCollectionsIpc } from './collections'
-import { registerImporterIpc } from './importer'
+import { registerLibraryFoldersIpc } from './library-folders'
 import { registerLibraryIpc } from './library'
 import { registerReaderIpc } from './reader'
 import { registerSettingsIpc } from './settings'
@@ -22,17 +21,16 @@ import { registerSettingsIpc } from './settings'
  * `app` chega com M6, quando o serviço correspondente existir.
  */
 export interface AppServices {
+  db: Db
   settingsService: SettingsService
-  importService: ImportService
   libraryService: LibraryService
+  libraryScanService: LibraryScanService
   readerService: ReaderService
-  collectionService: CollectionService
 }
 
 export function registerAllIpc(services: AppServices): void {
   registerSettingsIpc(services.settingsService)
-  registerImporterIpc(services.importService)
-  registerLibraryIpc(services.libraryService)
+  registerLibraryIpc(services.libraryService, services.libraryScanService)
+  registerLibraryFoldersIpc(services.db, services.libraryScanService)
   registerReaderIpc(services.readerService)
-  registerCollectionsIpc(services.collectionService)
 }

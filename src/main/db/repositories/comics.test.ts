@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createDb, type Db } from '../client'
 import { comicPages, readingProgress } from '../schema'
+import { insertLibraryFolder } from './library-folders'
 import {
   deleteComics,
   getComicDetail,
@@ -15,6 +16,7 @@ import {
 import { markRead, setCurrentPage } from './progress'
 
 let db: Db
+let folderId: string
 
 function makeInput(overrides: Partial<InsertComicInput> = {}): InsertComicInput {
   const id = overrides.id ?? randomUUID()
@@ -23,7 +25,9 @@ function makeInput(overrides: Partial<InsertComicInput> = {}): InsertComicInput 
     title: 'Batman - Ano Um 01',
     titleNormalized: 'batman - ano um 01',
     format: 'zip',
-    fileName: `${id}.cbz`,
+    filePath: `/comics/Batman_-_Ano_Um_01-${id}.cbz`,
+    dirPath: '/comics',
+    folderId,
     originalFileName: 'Batman_-_Ano_Um_01.cbz',
     fileSize: 1024,
     fileHash: `hash-${id}`,
@@ -41,6 +45,8 @@ function makeInput(overrides: Partial<InsertComicInput> = {}): InsertComicInput 
 
 beforeEach(() => {
   db = createDb(':memory:')
+  folderId = randomUUID()
+  insertLibraryFolder(db, { id: folderId, path: '/comics' })
 })
 
 describe('insertComic', () => {

@@ -47,10 +47,9 @@ export function LibraryPage(): React.JSX.Element {
   const isEmptyLibrary = !isLoading && total === 0 && !search && status === 'all' && !favoritesOnly
   const isFilteredEmpty = !isLoading && total === 0 && !isEmptyLibrary
 
-  async function handleImport(): Promise<void> {
-    const paths = await api.importer.pickFiles()
-    if (paths.length === 0) return
-    await api.importer.start(paths)
+  async function handleAddFolder(): Promise<void> {
+    const folder = await api.libraryFolders.add()
+    if (folder) await api.library.scan()
   }
 
   return (
@@ -86,7 +85,9 @@ export function LibraryPage(): React.JSX.Element {
             title={t('emptyState.library.title')}
             description={t('emptyState.library.description')}
             action={
-              <Button onClick={() => void handleImport()}>{t('emptyState.library.action')}</Button>
+              <Button onClick={() => void handleAddFolder()}>
+                {t('emptyState.library.action')}
+              </Button>
             }
           />
         ) : isFilteredEmpty ? (

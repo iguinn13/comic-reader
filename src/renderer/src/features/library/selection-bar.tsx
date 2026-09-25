@@ -1,19 +1,18 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, CircleDashed, Heart, ListPlus, Trash2, X } from 'lucide-react'
+import { CheckCircle2, CircleDashed, Heart, Trash2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
 import { toast } from '@renderer/stores/toast-store'
 import { useSelectionStore } from '@renderer/stores/selection-store'
-import { AddToCollectionDialog } from '@renderer/features/collections/add-to-collection-dialog'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 
 /**
  * Substitui a toolbar quando há seleção (RF-18, docs/07-ui-ux.md §4.2):
  * "N selecionadas · Marcar como lida · Marcar como não lida · Favoritar ·
- * Adicionar a… · Excluir · ✕".
+ * Excluir · ✕".
  */
 export function SelectionBar(): React.JSX.Element {
   const { t } = useTranslation()
@@ -21,7 +20,6 @@ export function SelectionBar(): React.JSX.Element {
   const selectedIds = useSelectionStore((state) => Array.from(state.selectedIds))
   const clearSelection = useSelectionStore((state) => state.clear)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [addToOpen, setAddToOpen] = useState(false)
 
   const invalidateLibrary = (): void => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
@@ -63,10 +61,6 @@ export function SelectionBar(): React.JSX.Element {
           <Heart className="size-4" />
           {t('library.selectionBar.favorite')}
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => setAddToOpen(true)}>
-          <ListPlus className="size-4" />
-          {t('library.selectionBar.addTo')}
-        </Button>
         <Button variant="ghost" size="sm" onClick={() => setDeleteOpen(true)}>
           <Trash2 className="size-4" />
           {t('library.selectionBar.delete')}
@@ -81,7 +75,6 @@ export function SelectionBar(): React.JSX.Element {
         </Button>
       </div>
 
-      <AddToCollectionDialog comicIds={selectedIds} open={addToOpen} onOpenChange={setAddToOpen} />
       <ConfirmDeleteDialog
         comicIds={selectedIds}
         open={deleteOpen}

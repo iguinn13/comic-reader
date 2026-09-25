@@ -1,3 +1,5 @@
+import { copyFileSync } from 'fs'
+import { basename, join } from 'path'
 import { expect, test } from '@playwright/test'
 import { makeBigComic } from './big-comic'
 import { cleanup, launch } from './app'
@@ -10,18 +12,24 @@ test.skip(!process.env['E2E_MEMORY'], 'defina E2E_MEMORY=1 para rodar')
 test('HQ de 300 páginas no vertical usa < 600 MB no renderer', async () => {
   test.setTimeout(240_000)
   const file = await makeBigComic(300)
-  const { app, page, userData } = await launch()
+  const { app, page, userData, comicsDir } = await launch()
 
-  const comicId: string = await page.evaluate(async (path) => {
+  copyFileSync(file, join(comicsDir, basename(file)))
+  const comicId: string = await page.evaluate(async () => {
     const api = (window as unknown as { api: Record<string, any> }).api
-    await api.importer.start([path])
-    for (let i = 0; i < 600; i++) {
-      const job = (await api.importer.getJob()).data
-      if (job && job.status !== 'running') return job.items[0].comicId
-      await new Promise((resolve) => setTimeout(resolve, 200))
-    }
-    throw new Error('importação não terminou')
-  }, file)
+    await api.libraryFolders.add()
+    const list = await api.library.list({
+      sort: 'createdAt',
+      order: 'desc',
+      status: 'all',
+      favoritesOnly: false,
+      limit: 1,
+      offset: 0,
+    })
+    const comic = list.data.items[0]
+    if (!comic) throw new Error('scan não indexou a HQ grande')
+    return comic.id as string
+  })
 
   await page.evaluate((id) => {
     window.location.hash = `#/read/${id}`
@@ -71,5 +79,5 @@ test('HQ de 300 páginas no vertical usa < 600 MB no renderer', async () => {
   if (process.platform === 'win32') expect(endMb).toBeLessThan(600)
 
   await app.close()
-  cleanup(userData)
+  cleanup(userData, comicsDir)
 })

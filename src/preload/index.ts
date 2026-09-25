@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import { CH } from '@shared/channels'
 import type { Result } from '@shared/errors'
@@ -11,11 +11,9 @@ import type { ComicReaderApi } from '@shared/api'
  * (checklist de segurança em docs/02-arquitetura.md §6).
  *
  * Cada método chama `ipcRenderer.invoke` num canal de `src/shared/channels.ts`
- * e devolve `Result<T>` (docs/04-contratos-ipc.md §1). Três exceções ao
+ * e devolve `Result<T>` (docs/04-contratos-ipc.md §1). Duas exceções ao
  * padrão request/response, documentadas em `src/shared/api.ts`:
  * - `reader.setPage`/`reader.reportPageSize`: fire-and-forget, sem `Promise`.
- * - `importer.pathsForFiles`: não é IPC, resolve `File` → caminho no próprio
- *   preload via `webUtils.getPathForFile`.
  * - Os métodos `on*`: registram um listener de evento e devolvem a função de
  *   unsubscribe.
  */
@@ -41,39 +39,21 @@ const api: ComicReaderApi = {
     setFavorite: (ids, value) => invoke(CH.library.setFavorite, ids, value),
     setReadStatus: (ids, status) => invoke(CH.library.setReadStatus, ids, status),
     removeFromContinue: (id) => invoke(CH.library.removeFromContinue, id),
-    delete: (ids) => invoke(CH.library.delete, ids),
+    delete: (ids, options) => invoke(CH.library.delete, ids, options),
     stats: () => invoke(CH.library.stats),
+    scan: () => invoke(CH.library.scan),
+    onScanProgress: (callback) => on(CH.library.onScanProgress, callback),
+    onChanged: (callback) => on(CH.library.onChanged, callback),
   },
 
-  importer: {
-    pickFiles: () => invoke(CH.importer.pickFiles),
-    pathsForFiles: (files) => Array.from(files).map((file) => webUtils.getPathForFile(file)),
-    start: (paths) => invoke(CH.importer.start, paths),
-    cancel: (jobId) => invoke(CH.importer.cancel, jobId),
-    resolveDuplicate: (jobId, itemId, decision, applyToAll) =>
-      invoke(CH.importer.resolveDuplicate, jobId, itemId, decision, applyToAll),
-    getJob: () => invoke(CH.importer.getJob),
-    onProgress: (callback) => on(CH.importer.onProgress, callback),
-    onLibraryChanged: (callback) => on(CH.importer.onLibraryChanged, callback),
-  },
-
-  collections: {
-    list: (type, sort) => invoke(CH.collections.list, type, sort),
-    get: (id) => invoke(CH.collections.get, id),
-    create: (input) => invoke(CH.collections.create, input),
-    update: (id, patch) => invoke(CH.collections.update, id, patch),
-    delete: (id) => invoke(CH.collections.delete, id),
-    addItems: (id, comicIds) => invoke(CH.collections.addItems, id, comicIds),
-    removeItems: (id, comicIds) => invoke(CH.collections.removeItems, id, comicIds),
-    reorder: (id, orderedComicIds) => invoke(CH.collections.reorder, id, orderedComicIds),
-    setCover: (id, cover) => invoke(CH.collections.setCover, id, cover),
-    pickCoverImage: () => invoke(CH.collections.pickCoverImage),
-    membership: (comicIds) => invoke(CH.collections.membership, comicIds),
-    nextToRead: (sagaId) => invoke(CH.collections.nextToRead, sagaId),
+  libraryFolders: {
+    list: () => invoke(CH.libraryFolders.list),
+    add: () => invoke(CH.libraryFolders.add),
+    remove: (id) => invoke(CH.libraryFolders.remove, id),
   },
 
   reader: {
-    open: (comicId, fromCollectionId) => invoke(CH.reader.open, comicId, fromCollectionId),
+    open: (comicId) => invoke(CH.reader.open, comicId),
     setPage: (comicId, page) => void ipcRenderer.invoke(CH.reader.setPage, comicId, page),
     savePrefs: (comicId, prefs) => invoke(CH.reader.savePrefs, comicId, prefs),
     resetPrefs: (comicId) => invoke(CH.reader.resetPrefs, comicId),

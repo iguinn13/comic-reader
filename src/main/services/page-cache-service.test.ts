@@ -13,6 +13,7 @@ import { imageSize } from 'image-size'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDb, type Db } from '../db/client'
 import { insertComic, type InsertComicInput } from '../db/repositories/comics'
+import { insertLibraryFolder } from '../db/repositories/library-folders'
 import { setSetting } from '../db/repositories/settings'
 import { createAppPaths, type AppPaths } from '../utils/paths'
 import { buildExtractionOrder, PageCacheService } from './page-cache-service'
@@ -20,19 +21,24 @@ import { buildExtractionOrder, PageCacheService } from './page-cache-service'
 const FIXTURES_DIR = join(__dirname, '../../../tests/fixtures')
 
 let root: string
+let comicsDir: string
 let paths: AppPaths
 let db: Db
 let service: PageCacheService
+let folderId: string
 
-/** Copia `simple.cbz` (5 páginas de 200×300, docs/09 §3) pra `library/` e insere a linha da HQ. */
+/** Copia `simple.cbz` (5 páginas de 200×300, docs/09 §3) pra uma pasta-raiz falsa e insere a linha da HQ. */
 function seedComic(id: string, pageCount = 5): void {
-  copyFileSync(join(FIXTURES_DIR, 'simple.cbz'), paths.comicFile(id, 'cbz'))
+  const filePath = join(comicsDir, `${id}.cbz`)
+  copyFileSync(join(FIXTURES_DIR, 'simple.cbz'), filePath)
   const input: InsertComicInput = {
     id,
     title: `HQ ${id}`,
     titleNormalized: `hq ${id}`,
     format: 'zip',
-    fileName: `${id}.cbz`,
+    filePath,
+    dirPath: comicsDir,
+    folderId,
     originalFileName: 'simple.cbz',
     fileSize: 1024,
     fileHash: `hash-${id}`,
@@ -49,10 +55,13 @@ function seedComic(id: string, pageCount = 5): void {
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'comic-reader-page-cache-'))
+  comicsDir = join(root, 'comics')
   paths = createAppPaths(root)
-  mkdirSync(paths.libraryDir, { recursive: true })
+  mkdirSync(comicsDir, { recursive: true })
   mkdirSync(paths.cachePagesDir, { recursive: true })
   db = createDb(':memory:')
+  folderId = 'f1'
+  insertLibraryFolder(db, { id: folderId, path: comicsDir })
   service = new PageCacheService(db, paths)
 })
 

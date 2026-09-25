@@ -1,100 +1,11 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e265f478-009b-4e22-838c-f5a7bfa6e491",
+  "id": "27911fec-c327-4a8f-98bf-c6e4746e4ee5",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "collection_items": {
-      "name": "collection_items",
-      "columns": {
-        "collection_id": {
-          "name": "collection_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "comic_id": {
-          "name": "comic_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "added_at": {
-          "name": "added_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "idx_items_order": {
-          "name": "idx_items_order",
-          "columns": [
-            "collection_id",
-            "position"
-          ],
-          "isUnique": false
-        },
-        "idx_items_comic": {
-          "name": "idx_items_comic",
-          "columns": [
-            "comic_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "collection_items_collection_id_collections_id_fk": {
-          "name": "collection_items_collection_id_collections_id_fk",
-          "tableFrom": "collection_items",
-          "tableTo": "collections",
-          "columnsFrom": [
-            "collection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "collection_items_comic_id_comics_id_fk": {
-          "name": "collection_items_comic_id_comics_id_fk",
-          "tableFrom": "collection_items",
-          "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "collection_items_collection_id_comic_id_pk": {
-          "columns": [
-            "collection_id",
-            "comic_id"
-          ],
-          "name": "collection_items_collection_id_comic_id_pk"
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "collections": {
-      "name": "collections",
+    "library_folders": {
+      "name": "library_folders",
       "columns": {
         "id": {
           "name": "id",
@@ -103,56 +14,12 @@
           "notNull": true,
           "autoincrement": false
         },
-        "type": {
-          "name": "type",
+        "path": {
+          "name": "path",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name_normalized": {
-          "name": "name_normalized",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "cover_mode": {
-          "name": "cover_mode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'auto'"
-        },
-        "cover_comic_id": {
-          "name": "cover_comic_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "cover_version": {
-          "name": "cover_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -160,40 +27,18 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
         }
       },
       "indexes": {
-        "idx_collections_type_name": {
-          "name": "idx_collections_type_name",
+        "idx_folders_path": {
+          "name": "idx_folders_path",
           "columns": [
-            "type",
-            "name_normalized"
+            "path"
           ],
           "isUnique": true
         }
       },
-      "foreignKeys": {
-        "collections_cover_comic_id_comics_id_fk": {
-          "name": "collections_cover_comic_id_comics_id_fk",
-          "tableFrom": "collections",
-          "tableTo": "comics",
-          "columnsFrom": [
-            "cover_comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -296,8 +141,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "file_name": {
-          "name": "file_name",
+        "file_path": {
+          "name": "file_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "dir_path": {
+          "name": "dir_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "folder_id": {
+          "name": "folder_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -390,9 +249,37 @@
             "is_favorite"
           ],
           "isUnique": false
+        },
+        "idx_comics_dir": {
+          "name": "idx_comics_dir",
+          "columns": [
+            "dir_path"
+          ],
+          "isUnique": false
+        },
+        "idx_comics_file_path": {
+          "name": "idx_comics_file_path",
+          "columns": [
+            "file_path"
+          ],
+          "isUnique": true
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "comics_folder_id_library_folders_id_fk": {
+          "name": "comics_folder_id_library_folders_id_fk",
+          "tableFrom": "comics",
+          "tableTo": "library_folders",
+          "columnsFrom": [
+            "folder_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

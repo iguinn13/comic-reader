@@ -174,3 +174,8 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
     set(INITIAL_STATE)
   },
 }))
+
+/** Se as barras/scrollbar do leitor devem estar visíveis (docs/06-leitor.md §2). */
+export function useShowChrome(): boolean {
+  return useReaderStore((s) => s.chromeVisible || (!s.isFullscreen && !s.focusMode))
+}

@@ -70,6 +70,16 @@ img {
   -webkit-app-region: no-drag;
 }
 
+/* Esconde a scrollbar do leitor junto com as barras (docs/06-leitor.md §2). */
+.scrollbar-hidden {
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

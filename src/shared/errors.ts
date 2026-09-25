@@ -1,6 +1,6 @@
 /**
  * Formato de erro e envelope de resultado para todo o IPC (docs/04-contratos-ipc.md §3).
- * `message` é sempre uma chave i18n (ex.: "errors.collectionNameTaken"), nunca texto pronto.
+ * `message` é sempre uma chave i18n (ex.: "errors.fileMissing"), nunca texto pronto.
  */
 export type AppErrorCode =
   | 'VALIDATION'

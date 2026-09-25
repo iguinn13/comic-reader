@@ -5,14 +5,13 @@
   },
   "common": {
     "close": "Fechar",
+    "cancel": "Cancelar",
     "skipToContent": "Pular para o conteúdo"
   },
   "nav": {
     "home": "Início",
     "library": "Biblioteca",
     "favorites": "Favoritas",
-    "sagas": "Sagas",
-    "lists": "Listas",
     "settings": "Configurações",
     "collapse": "Recolher menu",
     "expand": "Expandir menu",
@@ -49,8 +48,7 @@
       "markRead": "Marcar como lida",
       "markUnread": "Marcar como não lida",
       "rename": "Renomear",
-      "delete": "Excluir",
-      "addTo": "Adicionar a…"
+      "delete": "Excluir"
     },
     "rename": {
       "title": "Renomear HQ",
@@ -61,7 +59,8 @@
     "delete": {
       "title_one": "Excluir {{count}} HQ?",
       "title_other": "Excluir {{count}} HQs?",
-      "description": "O arquivo e o progresso de leitura serão apagados. Essa ação não pode ser desfeita.",
+      "description": "O progresso de leitura, a capa e o cache serão apagados. O arquivo original só é apagado se a opção abaixo estiver marcada — essa ação não pode ser desfeita.",
+      "alsoDeleteFile": "Apagar também o arquivo do disco",
       "confirm": "Excluir",
       "cancel": "Cancelar"
     },
@@ -72,16 +71,18 @@
       "markUnread": "Marcar como não lida",
       "favorite": "Favoritar",
       "delete": "Excluir",
-      "clear": "Limpar seleção",
-      "addTo": "Adicionar a…"
+      "clear": "Limpar seleção"
+    },
+    "scan": {
+      "action": "Atualizar biblioteca",
+      "scanning": "Atualizando…"
     }
   },
   "home": {
     "greeting": "Olá de volta",
     "continueReading": "Continuar lendo",
     "recentlyAdded": "Adicionadas recentemente",
-    "viewAll": "Ver tudo →",
-    "sagasInProgress": "Sagas em andamento"
+    "viewAll": "Ver tudo →"
   },
   "reader": {
     "back": "Voltar",
@@ -124,17 +125,16 @@
       "title": "Você terminou \"{{title}}\"",
       "backToLibrary": "Voltar à biblioteca",
       "stayHere": "Ficar aqui",
-      "nextInSaga": "Próxima na saga \"{{saga}}\" ({{current}} de {{total}}):",
+      "nextInFolder": "Próximo arquivo desta pasta:",
       "read": "Ler →"
     },
-    "sagaBadge": "Saga: {{name}} ({{current}}/{{total}})",
     "pageLabel": "Página {{page}}"
   },
   "emptyState": {
     "library": {
       "title": "Sua estante está vazia",
-      "description": "Arraste arquivos CBZ, CBR, PDF ou ZIP para cá, ou importe pelo botão.",
-      "action": "Importar HQs"
+      "description": "Aponte para uma pasta onde já ficam suas HQs (CBZ, CBR, PDF ou ZIP) — o app escaneia as subpastas automaticamente.",
+      "action": "Adicionar pasta"
     },
     "search": {
       "title": "Nada encontrado para \"{{search}}\"",
@@ -143,28 +143,6 @@
     },
     "favorites": {
       "title": "Toque no ♡ de uma HQ para ela aparecer aqui."
-    }
-  },
-  "import": {
-    "button": "Importar",
-    "dropOverlay": "Solte para importar suas HQs",
-    "panel": {
-      "title": "Importando {{done}} de {{total}}",
-      "finishedTitle": "Importação concluída",
-      "pill": "Importando {{done}}/{{total}}",
-      "minimize": "Minimizar",
-      "cancel": "Cancelar",
-      "close": "Fechar"
-    },
-    "summary": {
-      "text": "{{done}} importadas, {{skipped}} duplicadas ignoradas, {{failed}} com erro"
-    },
-    "duplicate": {
-      "title": "HQ já está na biblioteca",
-      "description": "\"{{sourceName}}\" já está na biblioteca (como \"{{existingTitle}}\")",
-      "applyToAll": "Aplicar aos próximos duplicados desta importação",
-      "skip": "Pular",
-      "importAnyway": "Importar mesmo assim"
     }
   },
   "errors": {
@@ -176,84 +154,15 @@
     "internal": "Erro inesperado",
     "comicNotFound": "HQ não encontrada",
     "fileMissing": "Não foi possível abrir esta HQ. O arquivo pode ter sido removido ou estar corrompido.",
-    "collectionNotFound": "Coleção não encontrada",
-    "collectionNameTaken": "Já existe uma coleção deste tipo com este nome",
-    "collectionReorderMismatch": "A nova ordem não corresponde aos itens atuais da coleção"
-  },
-  "collections": {
-    "type": {
-      "list": "Lista",
-      "saga": "Saga"
-    },
-    "new": {
-      "list": "Nova lista",
-      "saga": "Nova saga"
-    },
-    "sort": {
-      "name": "Nome",
-      "updatedAt": "Atualizadas recentemente"
-    },
-    "empty": {
-      "list": {
-        "title": "Crie listas para agrupar HQs como quiser."
-      },
-      "saga": {
-        "title": "Crie uma saga para organizar uma ordem de leitura."
-      }
-    },
-    "card": {
-      "edit": "Editar",
-      "readOf": "{{read}} de {{total}} lidas"
-    },
-    "dialog": {
-      "newTitle": "Nova coleção",
-      "editTitle": "Editar coleção",
-      "name": "Nome",
-      "description": "Descrição (opcional)",
-      "cancel": "Cancelar",
-      "save": "Salvar"
-    },
-    "delete": {
-      "title": "Excluir \"{{name}}\"?",
-      "description": "A coleção será apagada, mas as HQs continuam na biblioteca.",
-      "confirm": "Excluir"
-    },
-    "add": {
-      "button": "Adicionar HQs",
-      "title": "Adicionar HQs",
-      "confirm_one": "Adicionar {{count}} HQ",
-      "confirm_other": "Adicionar {{count}} HQs"
-    },
-    "saga": {
-      "drag": "Arrastar para reordenar",
-      "moveStart": "Mover para o início",
-      "moveUp": "Mover para cima",
-      "moveDown": "Mover para baixo",
-      "moveEnd": "Mover para o fim",
-      "remove": "Remover da saga",
-      "continue": "Continuar saga",
-      "readAgain": "Ler novamente"
-    },
-    "detail": {
-      "emptyTitle": {
-        "list": "Esta lista ainda não tem HQs.",
-        "saga": "Esta saga ainda não tem HQs."
-      }
-    },
-    "addTo": {
-      "title": "Adicionar a…",
-      "create": "Criar",
-      "done": "Concluir"
-    },
-    "cover": {
-      "title": "Capa da coleção",
-      "description": "Escolha como a capa é definida.",
-      "auto": "Automática (primeira HQ)",
-      "image": "Escolher imagem…",
-      "fromComic": "Ou use a capa de uma HQ da coleção:"
-    }
+    "folderAlreadyAdded": "Esta pasta já está na biblioteca"
   },
   "settings": {
+    "folders": {
+      "title": "Pastas da biblioteca",
+      "empty": "Nenhuma pasta adicionada ainda.",
+      "add": "Adicionar pasta",
+      "remove": "Remover pasta"
+    },
     "reading": {
       "title": "Leitura",
       "mode": "Modo padrão",

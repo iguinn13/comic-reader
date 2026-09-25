@@ -1,11 +1,11 @@
-import { existsSync, readdirSync } from 'fs'
+import { existsSync } from 'fs'
 import { join } from 'path'
 import { expect, test } from '@playwright/test'
-import { cleanup, importFixture, launch } from './app'
+import { addFixtureToLibrary, cleanup, launch } from './app'
 
-test('importar e ler: avança 3 páginas, reabre e volta na página 4', async () => {
+test('adicionar pasta e ler: avança 3 páginas, reabre e volta na página 4', async () => {
   const first = await launch()
-  const comicId = await importFixture(first.page, 'simple.cbz')
+  const comicId = await addFixtureToLibrary(first.page, first.comicsDir, 'simple.cbz')
 
   await first.page.evaluate((id) => {
     window.location.hash = `#/read/${id}`
@@ -17,18 +17,18 @@ test('importar e ler: avança 3 páginas, reabre e volta na página 4', async ()
   await first.page.keyboard.press('Backspace')
   await first.app.close()
 
-  const second = await launch(first.userData)
+  const second = await launch(first.userData, first.comicsDir)
   await second.page.evaluate((id) => {
     window.location.hash = `#/read/${id}`
   }, comicId)
   await expect(second.page.getByText('4 / 5')).toBeVisible()
   await second.app.close()
-  cleanup(first.userData)
+  cleanup(first.userData, first.comicsDir)
 })
 
 test('modos: alterna os 3 modos na mesma HQ sem erros no console', async () => {
-  const { app, page, userData, consoleErrors } = await launch()
-  const comicId = await importFixture(page, 'simple.cbz')
+  const { app, page, userData, comicsDir, consoleErrors } = await launch()
+  const comicId = await addFixtureToLibrary(page, comicsDir, 'simple.cbz')
   await page.evaluate((id) => {
     window.location.hash = `#/read/${id}`
   }, comicId)
@@ -40,51 +40,40 @@ test('modos: alterna os 3 modos na mesma HQ sem erros no console', async () => {
     await expect(page.getByTitle(title)).toHaveAttribute('aria-pressed', 'true')
     await page.waitForTimeout(300)
   }
-  expect(consoleErrors.filter((message) => !message.includes('Electron Security Warning'))).toEqual([])
+  expect(consoleErrors.filter((message) => !message.includes('Electron Security Warning'))).toEqual(
+    [],
+  )
   await app.close()
-  cleanup(userData)
+  cleanup(userData, comicsDir)
 })
 
-test('saga: cria, reordena e o painel de fim sugere a próxima', async () => {
-  const { app, page, userData } = await launch()
-  const a = await importFixture(page, 'simple.cbz')
-  const b = await importFixture(page, 'wide-page.cbz')
+test('próximo arquivo da pasta: painel de fim sugere a HQ seguinte em ordem natural', async () => {
+  const { app, page, userData, comicsDir } = await launch()
+  // Nomes que só ordenam corretamente em ordem natural, não lexicográfica.
+  const a = await addFixtureToLibrary(page, comicsDir, 'simple.cbz')
+  await addFixtureToLibrary(page, comicsDir, 'wide-page.cbz')
 
-  const sagaId = await page.evaluate(
-    async ([x, y]) => {
-      const api = (window as unknown as { api: Record<string, any> }).api
-      const saga = (await api.collections.create({ type: 'saga', name: 'Saga E2E', comicIds: [x, y] })).data
-      await api.collections.reorder(saga.id, [y, x])
-      await api.collections.reorder(saga.id, [x, y])
-      return saga.id as string
-    },
-    [a, b],
-  )
-
-  await page.evaluate(
-    ([id, saga]) => {
-      window.location.hash = `#/read/${id}?from=${saga}`
-    },
-    [a, sagaId],
-  )
+  await page.evaluate((id) => {
+    window.location.hash = `#/read/${id}`
+  }, a)
   await expect(page.getByText('1 / 5')).toBeVisible()
   await page.keyboard.press('End')
   await page.keyboard.press('ArrowRight')
-  await expect(page.getByText('Próxima na saga')).toBeVisible()
+  await expect(page.getByText('Próximo arquivo desta pasta')).toBeVisible()
   await app.close()
-  cleanup(userData)
+  cleanup(userData, comicsDir)
 })
 
-test('exclusão: a HQ some da biblioteca e o arquivo some de library/', async () => {
-  const { app, page, userData } = await launch()
-  const comicId = await importFixture(page, 'simple.cbz')
-  const libraryDir = join(userData, 'library')
-  expect(readdirSync(libraryDir).some((name) => name.startsWith(comicId))).toBe(true)
+test('exclusão: sem apagar o arquivo, a HQ some da biblioteca mas o arquivo continua na pasta', async () => {
+  const { app, page, userData, comicsDir } = await launch()
+  const comicId = await addFixtureToLibrary(page, comicsDir, 'simple.cbz')
+  const filePath = join(comicsDir, 'simple.cbz')
+  expect(existsSync(filePath)).toBe(true)
 
-  await page.evaluate((id) => (window as unknown as { api: any }).api.library.delete([id]), comicId)
-  await expect
-    .poll(() => existsSync(libraryDir) && readdirSync(libraryDir).some((name) => name.startsWith(comicId)))
-    .toBe(false)
+  await page.evaluate(
+    (id) => (window as unknown as { api: any }).api.library.delete([id], { deleteFile: false }),
+    comicId,
+  )
   const total = await page.evaluate(
     async () =>
       (
@@ -99,6 +88,21 @@ test('exclusão: a HQ some da biblioteca e o arquivo some de library/', async ()
       ).data.total,
   )
   expect(total).toBe(0)
+  expect(existsSync(filePath)).toBe(true)
   await app.close()
-  cleanup(userData)
+  cleanup(userData, comicsDir)
+})
+
+test('exclusão com apagar arquivo: a HQ e o arquivo somem juntos', async () => {
+  const { app, page, userData, comicsDir } = await launch()
+  const comicId = await addFixtureToLibrary(page, comicsDir, 'simple.cbz')
+  const filePath = join(comicsDir, 'simple.cbz')
+
+  await page.evaluate(
+    (id) => (window as unknown as { api: any }).api.library.delete([id], { deleteFile: true }),
+    comicId,
+  )
+  expect(existsSync(filePath)).toBe(false)
+  await app.close()
+  cleanup(userData, comicsDir)
 })

@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@renderer/components/ui/dialog'
+import { LibraryFoldersSection } from '@renderer/features/library-folders/library-folders-section'
 import { ShortcutsTable } from '@renderer/features/reader/shortcuts'
 import { api } from '@renderer/lib/api'
 import { formatBytes } from '@renderer/lib/format'
@@ -65,6 +66,10 @@ export function SettingsPage(): React.JSX.Element {
     <div className="h-full overflow-y-auto p-8">
       <div className="mx-auto flex max-w-180 flex-col gap-10">
         <h1 className="text-2xl font-semibold text-text">{t('nav.settings')}</h1>
+
+        <Section title={t('settings.folders.title')}>
+          <LibraryFoldersSection />
+        </Section>
 
         <Section title={t('settings.reading.title')}>
           <Field label={t('settings.reading.mode')}>
@@ -191,7 +196,7 @@ export function SettingsPage(): React.JSX.Element {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmApplyAll(false)}>
-              {t('collections.dialog.cancel')}
+              {t('common.cancel')}
             </Button>
             <Button disabled={applyAll.isPending} onClick={() => applyAll.mutate()}>
               {t('settings.reading.applyAllConfirm')}
