@@ -153,5 +153,12 @@ Formato: **Contexto → Decisão → Consequências**. Os status possíveis são
 1. A Biblioteca ganha duas visualizações (RF-64), alternadas por um botão: **Pastas** (nova, padrão) e **Todas as HQs** (a lista única existente, mantida como está).
 2. Navegação por clique (estilo "Cover"), não uma árvore lateral fixa: a grade mostra as subpastas do nível atual como cards, ao lado das HQs que estão direto ali; clicar numa subpasta entra nela, com um breadcrumb no topo pra voltar. Sem coluna lateral dedicada — evita duplicar a sidebar principal e mantém a tela simples.
 3. **Sem uma tabela nova de "pastas".** Só existem `library_folders` (pastas-raiz) e `comics.file_path`/`dir_path` (docs/03 §2.1/§2.2) — não há uma linha por subpasta intermediária no banco. `LibraryService.browseFolder` (novo) busca todas as HQs de uma pasta-raiz e agrupa em memória pelo primeiro segmento do caminho relativo ao nível pedido: um segmento = HQ direto neste nível; mais de um = pertence à subpasta nomeada pelo primeiro segmento. Simples de implementar e correto por construção (a estrutura real é sempre a do `file_path`), ao custo de recalcular o agrupamento a cada navegação em vez de servir de uma tabela pré-computada — aceitável para os tamanhos de biblioteca esperados (milhares de HQs, não milhões).
-4. O nível-topo da navegação (antes de entrar em qualquer pasta-raiz) lista as pastas-raiz configuradas como se fossem subpastas — reaproveita o mesmo formato de resposta (`FolderContents`) em vez de um caso especial na UI.
+4. O nível-topo da navegação (antes de entrar em qualquer pasta-raiz) lista as pastas-raiz configuradas como se fossem subpastas, exceto as que têm subpastas: essas somem e suas filhas (mais as HQs soltas dela) assumem o lugar — reaproveita o mesmo formato de resposta (`FolderContents`) em vez de um caso especial na UI.
 **Consequências.** Cada troca de pasta é uma consulta nova (IPC `library.browseFolder`); sem cache de "quais são as subpastas de X" além do que o TanStack Query já guarda por `queryKey`. Se uma pasta-raiz acumular dezenas de milhares de HQs, agrupar em memória a cada clique pode ficar perceptível — não é um problema por agora, mas um candidato a paginação/índice dedicado se aparecer relato de lentidão real (RNF-02).
+
+### ADR-019 — Remoção do modo foco (RF-38)
+**Status:** Aceita · **Data:** 2026-09-25
+
+**Contexto.** O modo foco ("desligar a luz") se sobrepunha à tela cheia: as barras já se auto-ocultam em tela cheia, e o fundo do leitor já é quase preto.
+**Decisão.** Remover o modo foco: botão, atalho `L`, setting `reader.focusMode` e o estado no store. A tela cheia (RF-37) mantém o auto-ocultar das barras.
+**Consequências.** Valores antigos de `reader.focusMode` que existam no banco ficam órfãos e são ignorados.

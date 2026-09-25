@@ -44,6 +44,14 @@ export function markRead(db: Db, comicId: string): void {
     .run()
 }
 
+/** Marcação manual (biblioteca): além de lida, volta para a 1ª página (docs/03 §2.3). */
+export function markReadAndRewind(db: Db, comicId: string): void {
+  db.update(readingProgress)
+    .set({ completedAt: Date.now(), currentPage: 0 })
+    .where(eq(readingProgress.comicId, comicId))
+    .run()
+}
+
 /** Zera o progresso por completo (docs/03 §2.3). */
 export function markUnread(db: Db, comicId: string): void {
   db.update(readingProgress)

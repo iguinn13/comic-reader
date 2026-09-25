@@ -25,14 +25,17 @@ export function LibraryGrid({
   const parentRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
 
-  const measureRef = (node: HTMLDivElement | null): (() => void) | void => {
-    parentRef.current = node
+  // Observer criado uma única vez por montagem. Antes era um callback ref inline:
+  // a cada render ele era reanexado e alternava entre `clientWidth` (inteiro) e
+  // `contentRect.width` (fracionário, ex.: escala 125%) → loop infinito de render
+  // que travava a UI (não dava para navegar pela sidebar).
+  useEffect(() => {
+    const node = parentRef.current
     if (!node) return
     const observer = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width))
     observer.observe(node)
-    setContainerWidth(node.clientWidth)
     return () => observer.disconnect()
-  }
+  }, [])
 
   const columns = Math.max(1, Math.floor((containerWidth + GRID_GAP) / (MIN_CARD_WIDTH + GRID_GAP)))
   const cardWidth =
@@ -57,7 +60,7 @@ export function LibraryGrid({
   }, [onEndReached, lastVirtualRow, rowCount])
 
   return (
-    <div ref={measureRef} className="h-full overflow-y-auto">
+    <div ref={parentRef}className="h-full overflow-y-auto">
       {containerWidth > 0 && (
         <div className="relative w-full" style={{ height: rowVirtualizer.getTotalSize() }}>
           {virtualRows.map((virtualRow) => {

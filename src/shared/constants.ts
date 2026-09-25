@@ -27,7 +27,6 @@ export const DEFAULT_READER_PREFS: ReaderPrefs = {
 /** Chaves e defaults de `settings` (docs/03-modelo-de-dados.md §2.6). */
 export const SETTINGS_DEFAULTS = {
   'reader.defaults': DEFAULT_READER_PREFS,
-  'reader.focusMode': false,
   'cache.maxBytes': 2 * 1024 * 1024 * 1024, // 2 GB
   'library.view': {
     sort: 'createdAt',

@@ -47,13 +47,13 @@ export function HomePage(): React.JSX.Element {
 
       <ComicRail
         title={t('home.continueReading')}
-        viewAllHref="/library?status=reading&sort=lastReadAt"
+        viewAllHref="/library?view=flat&status=reading&sort=lastReadAt"
         comics={data.continueReading}
       />
 
       <ComicRail
         title={t('home.recentlyAdded')}
-        viewAllHref="/library"
+        viewAllHref="/library?view=flat"
         comics={data.recentlyAdded}
       />
     </div>

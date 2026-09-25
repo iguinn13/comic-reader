@@ -11,14 +11,13 @@ beforeEach(() => {
 
 describe('getSetting', () => {
   it('cai no default de SETTINGS_DEFAULTS quando não há linha no banco', () => {
-    expect(getSetting(db, 'reader.focusMode')).toBe(SETTINGS_DEFAULTS['reader.focusMode'])
     expect(getSetting(db, 'cache.maxBytes')).toBe(SETTINGS_DEFAULTS['cache.maxBytes'])
     expect(getSetting(db, 'reader.defaults')).toEqual(SETTINGS_DEFAULTS['reader.defaults'])
   })
 
   it('devolve o valor salvo depois de um setSetting', () => {
-    setSetting(db, 'reader.focusMode', true)
-    expect(getSetting(db, 'reader.focusMode')).toBe(true)
+    setSetting(db, 'ui.sidebarCollapsed', true)
+    expect(getSetting(db, 'ui.sidebarCollapsed')).toBe(true)
   })
 })
 
@@ -51,11 +50,11 @@ describe('setSetting', () => {
 
 describe('getAllSettings', () => {
   it('mistura valores salvos com defaults para as chaves ausentes', () => {
-    setSetting(db, 'reader.focusMode', true)
+    setSetting(db, 'ui.sidebarCollapsed', true)
 
     const all = getAllSettings(db)
 
-    expect(all['reader.focusMode']).toBe(true)
+    expect(all['ui.sidebarCollapsed']).toBe(true)
     expect(all['cache.maxBytes']).toBe(SETTINGS_DEFAULTS['cache.maxBytes'])
     expect(all['reader.defaults']).toEqual(SETTINGS_DEFAULTS['reader.defaults'])
     expect(all['window.bounds']).toBeNull()

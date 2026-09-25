@@ -26,7 +26,6 @@ export type ReaderKeyAction =
   | 'zoomReset'
   | 'toggleDoubleOffset'
   | 'toggleFullscreen'
-  | 'toggleFocusMode'
   | 'toggleFavorite'
   | 'escape'
   | 'exit'
@@ -78,9 +77,6 @@ export function mapKeyToAction(
     case 'F':
     case 'F11':
       return 'toggleFullscreen'
-    case 'l':
-    case 'L':
-      return 'toggleFocusMode'
     case 's':
     case 'S':
       return 'toggleFavorite'

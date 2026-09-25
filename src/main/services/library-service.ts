@@ -28,13 +28,13 @@ import { getLibraryFolder, listLibraryFolders } from '../db/repositories/library
 import {
   getContinueReading,
   getRecentlyAdded,
-  markRead,
+  markReadAndRewind,
   markUnread,
 } from '../db/repositories/progress'
 import { logger } from '../utils/logger'
 import type { AppPaths } from '../utils/paths'
 import { normalizeText } from '../utils/normalize'
-import { toComicDetail, toComicSummary } from './comic-dto'
+import { comicCoverUrl, toComicDetail, toComicSummary } from './comic-dto'
 
 const HOME_LIST_LIMIT = 20
 
@@ -44,6 +44,17 @@ function isInsideAnyFolder(filePath: string, folderPaths: string[]): boolean {
     const rel = relative(folder.toLowerCase(), filePath.toLowerCase())
     return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel)
   })
+}
+
+/** Capa da 1ª HQ (ordem natural do caminho) que já tem capa gerada; `null` se não houver. */
+function firstCoverUrl(rows: ComicRow[]): string | null {
+  const byPath = new Map(rows.map((row) => [row.filePath, row]))
+  for (const path of naturalSort([...byPath.keys()])) {
+    const row = byPath.get(path)!
+    const url = comicCoverUrl(row.id, row.coverVersion)
+    if (url) return url
+  }
+  return null
 }
 
 /**
@@ -88,7 +99,7 @@ export class LibraryService {
   }
 
   setReadStatus(ids: ComicId[], status: 'read' | 'unread'): void {
-    const mark = status === 'read' ? markRead : markUnread
+    const mark = status === 'read' ? markReadAndRewind : markUnread
     for (const id of ids) mark(this.db, id)
   }
 
@@ -147,16 +158,26 @@ export class LibraryService {
    */
   browseFolder(location: FolderLocation): FolderContents {
     if (location.folderId === null) {
-      const folders = listLibraryFolders(this.db)
-      return {
-        subfolders: folders.map((folder) => ({
+      // Pasta-raiz com subpastas some do nível-topo e suas filhas assumem o lugar
+      // (com as HQs soltas dela); sem subpastas, ela mesma aparece.
+      const subfolders: FolderContents['subfolders'] = []
+      const comics: ComicSummary[] = []
+      for (const folder of listLibraryFolders(this.db)) {
+        const inside = this.browseFolder({ folderId: folder.id, relativePath: '' })
+        if (inside.subfolders.length > 0) {
+          subfolders.push(...inside.subfolders)
+          comics.push(...inside.comics)
+          continue
+        }
+        subfolders.push({
           name: basename(folder.path),
           folderId: folder.id,
           relativePath: '',
-          comicCount: listComicRowsInFolder(this.db, folder.id).length,
-        })),
-        comics: [],
+          comicCount: inside.comics.length,
+          coverUrl: inside.comics.find((comic) => comic.coverUrl)?.coverUrl ?? null,
+        })
       }
+      return { subfolders, comics }
     }
 
     const folder = getLibraryFolder(this.db, location.folderId)
@@ -167,6 +188,8 @@ export class LibraryService {
 
     const directRows: ComicRow[] = []
     const subfolderCounts = new Map<string, number>()
+    // HQs que estão direto dentro de cada subpasta (só elas dão a capa da pasta).
+    const subfolderDirectRows = new Map<string, ComicRow[]>()
     for (const row of rows) {
       const rel = relative(prefix, row.filePath)
       if (rel.startsWith('..') || isAbsolute(rel)) continue
@@ -175,6 +198,11 @@ export class LibraryService {
         directRows.push(row)
       } else {
         subfolderCounts.set(parts[0], (subfolderCounts.get(parts[0]) ?? 0) + 1)
+        if (parts.length === 2) {
+          const list = subfolderDirectRows.get(parts[0]) ?? []
+          list.push(row)
+          subfolderDirectRows.set(parts[0], list)
+        }
       }
     }
 
@@ -184,6 +212,7 @@ export class LibraryService {
       folderId: location.folderId!,
       relativePath: location.relativePath ? `${location.relativePath}/${name}` : name,
       comicCount: subfolderCounts.get(name)!,
+      coverUrl: firstCoverUrl(subfolderDirectRows.get(name) ?? []),
     }))
 
     const sortedPaths = naturalSort(directRows.map((row) => row.filePath))

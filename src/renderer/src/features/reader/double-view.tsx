@@ -32,7 +32,6 @@ export function DoubleView({
   const doubleOffset = useReaderStore((s) => s.prefs.doubleOffset)
   const chromeVisible = useReaderStore((s) => s.chromeVisible)
   const isFullscreen = useReaderStore((s) => s.isFullscreen)
-  const focusMode = useReaderStore((s) => s.focusMode)
   const showChrome = useShowChrome()
   const next = useReaderStore((s) => s.next)
   const prev = useReaderStore((s) => s.prev)
@@ -122,7 +121,7 @@ export function DoubleView({
     const xRatio = (event.clientX - rect.left) / rect.width
     if (xRatio < 1 / 3) prev()
     else if (xRatio > 2 / 3) next()
-    else if (isFullscreen || focusMode) setChromeVisible(!chromeVisible)
+    else if (isFullscreen) setChromeVisible(!chromeVisible)
   }
 
   function handleDoubleClick(): void {

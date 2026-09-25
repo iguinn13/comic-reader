@@ -108,7 +108,6 @@ export interface LibraryViewSettings {
 /** docs/03-modelo-de-dados.md §2.6. */
 export interface Settings {
   'reader.defaults': ReaderPrefs
-  'reader.focusMode': boolean
   'cache.maxBytes': number
   'library.view': LibraryViewSettings
   'ui.sidebarCollapsed': boolean
@@ -152,10 +151,12 @@ export interface FolderEntry {
   relativePath: string
   /** Quantidade de HQs dentro dela (recursivo). */
   comicCount: number
+  /** Capa da 1ª HQ (ordem natural) que está direto na pasta; `null` se a pasta só tem subpastas. */
+  coverUrl: string | null
 }
 
 export interface FolderContents {
   subfolders: FolderEntry[]
-  /** Vazio no nível-topo: pastas-raiz nunca têm HQs soltas ali. */
+  /** No nível-topo: só as HQs soltas de pastas-raiz que têm subpastas (a pasta-raiz some, ver ADR-018). */
   comics: ComicSummary[]
 }

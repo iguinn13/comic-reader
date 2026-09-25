@@ -37,7 +37,6 @@ export function ReaderPage(): React.JSX.Element | null {
   const prefs = useReaderStore((s) => s.prefs)
   const showChrome = useShowChrome()
   const isFullscreen = useReaderStore((s) => s.isFullscreen)
-  const focusMode = useReaderStore((s) => s.focusMode)
   const endPanelOpen = useReaderStore((s) => s.endPanelOpen)
   const loadSession = useReaderStore((s) => s.loadSession)
   const goTo = useReaderStore((s) => s.goTo)
@@ -47,7 +46,6 @@ export function ReaderPage(): React.JSX.Element | null {
   const applyPrefsFromMain = useReaderStore((s) => s.applyPrefsFromMain)
   const setChromeVisible = useReaderStore((s) => s.setChromeVisible)
   const setFullscreen = useReaderStore((s) => s.setFullscreen)
-  const setFocusMode = useReaderStore((s) => s.setFocusMode)
   const setEndPanelOpen = useReaderStore((s) => s.setEndPanelOpen)
   const reset = useReaderStore((s) => s.reset)
 
@@ -71,13 +69,6 @@ export function ReaderPage(): React.JSX.Element | null {
     if (data) loadSession(data)
   }, [data, loadSession])
 
-  // docs/06-leitor.md §6: o modo foco persiste globalmente. Só na entrada —
-  // depois disso o toggle do próprio leitor manda no valor local.
-  useEffect(() => {
-    void api.settings.get().then((settings) => setFocusMode(settings['reader.focusMode']))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- roda só uma vez, na entrada do leitor
-  }, [])
-
   const isFullscreenRef = useRef(isFullscreen)
   useEffect(() => {
     isFullscreenRef.current = isFullscreen
@@ -98,9 +89,9 @@ export function ReaderPage(): React.JSX.Element | null {
     return api.app.onFullscreenChanged(setFullscreen)
   }, [setFullscreen])
 
-  // Auto-ocultar as barras (docs §2): só em tela cheia/foco, após 2,5 s parado.
+  // Auto-ocultar as barras (docs §2): só em tela cheia, após 2,5 s parado.
   useEffect(() => {
-    if (!isFullscreen && !focusMode) {
+    if (!isFullscreen) {
       setChromeVisible(true)
       return
     }
@@ -116,7 +107,7 @@ export function ReaderPage(): React.JSX.Element | null {
       clearTimeout(timer)
       window.removeEventListener('mousemove', resetTimer)
     }
-  }, [isFullscreen, focusMode, setChromeVisible])
+  }, [isFullscreen, setChromeVisible])
 
   function handleExit(): void {
     void navigate(-1)
@@ -127,11 +118,6 @@ export function ReaderPage(): React.JSX.Element | null {
     void api.library.setFavorite([session.comic.id], value).then(() => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
     })
-  }
-
-  function toggleFocusMode(): void {
-    setFocusMode(!focusMode)
-    void api.settings.update({ 'reader.focusMode': !focusMode })
   }
 
   function handleResetPrefs(): void {
@@ -197,16 +183,12 @@ export function ReaderPage(): React.JSX.Element | null {
       case 'toggleFullscreen':
         void api.app.toggleFullscreen()
         break
-      case 'toggleFocusMode':
-        toggleFocusMode()
-        break
       case 'toggleFavorite':
         toggleFavorite(!session.comic.isFavorite)
         break
       case 'escape':
         if (goToPageOpen) setGoToPageOpen(false)
         else if (isFullscreen) void api.app.toggleFullscreen()
-        else if (focusMode) setFocusMode(false)
         else handleExit()
         break
       case 'exit':
@@ -280,7 +262,6 @@ export function ReaderPage(): React.JSX.Element | null {
           doubleOffset={prefs.doubleOffset}
           isFavorite={session.comic.isFavorite}
           isFullscreen={isFullscreen}
-          focusMode={focusMode}
           onBack={handleExit}
           onModeChange={(mode) => setPrefs({ mode })}
           onFitChange={(fit) => setPrefs({ fit })}
@@ -289,7 +270,6 @@ export function ReaderPage(): React.JSX.Element | null {
           onToggleDoubleOffset={() => setPrefs({ doubleOffset: !prefs.doubleOffset })}
           onToggleFavorite={() => toggleFavorite(!session.comic.isFavorite)}
           onToggleFullscreen={() => void api.app.toggleFullscreen()}
-          onToggleFocusMode={toggleFocusMode}
           onMarkUnread={() => void api.library.setReadStatus([session.comic.id], 'unread')}
           onResetPrefs={handleResetPrefs}
         />

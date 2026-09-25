@@ -20,7 +20,6 @@ describe('mapKeyToAction', () => {
     ['o', 'toggleDoubleOffset'],
     ['f', 'toggleFullscreen'],
     ['F11', 'toggleFullscreen'],
-    ['l', 'toggleFocusMode'],
     ['s', 'toggleFavorite'],
     ['Escape', 'escape'],
     ['Backspace', 'exit'],

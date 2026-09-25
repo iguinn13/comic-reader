@@ -45,7 +45,6 @@ A documentação segue a abordagem **Spec-Driven Development (SDD)**: a especifi
 | **Progresso** | Página atual de uma HQ + status (não lida / em andamento / lida). |
 | **Modo de leitura** | Forma de exibir as páginas: *página única*, *página dupla* ou *vertical contínuo*. |
 | **Vertical contínuo** | Modo estilo webtoon ("portrait com zoom"): páginas empilhadas verticalmente, largura da coluna ajustável. |
-| **Modo foco** | O "desligar a luz": esconde sidebar e barras, deixa o fundo preto absoluto e mostra só as páginas. |
 | **Spread** | Par de páginas exibidas lado a lado no modo página dupla. |
 | **Cache de páginas** | Imagens extraídas dos arquivos compactados, guardadas em disco para leitura rápida. |
 | **Main / Renderer / Preload** | Processos do Electron: Node.js (main), UI React (renderer) e a ponte segura entre eles (preload). |

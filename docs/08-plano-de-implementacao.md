@@ -79,7 +79,7 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 | 4.3 | Rota do leitor, `reader-store`, barras superior/inferior, slider e "Ir para página" | RF-30, 39 |
 | 4.4 | Modo **página única** com fit, zoom ancorado, pan e pré-carregamento | RF-31, 34, 43 |
 | 4.5 | Navegação por teclado (tabela completa) e mouse (zonas, roda com cooldown, botões laterais) | RF-35, 36 |
-| 4.6 | Tela cheia (IPC + evento) e **modo foco** com auto-ocultar das barras e do cursor | RF-37, 38 |
+| 4.6 | Tela cheia (IPC + evento) com auto-ocultar das barras e do cursor | RF-37, 38 |
 | 4.7 | Modo **vertical** virtualizado com largura ajustável e cálculo da página atual | RF-33 |
 | 4.8 | Modo **página dupla** (`computeSpreads` com testes, deslocamento) | RF-32 |
 | 4.9 | Suporte a **PDF** nos 3 modos (canvas pdf.js, descarte fora da janela) | RF-01 |

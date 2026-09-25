@@ -28,7 +28,6 @@ Definidos em `src/renderer/src/styles/globals.css` via `@theme` do Tailwind v4 e
 | `--color-success` | `#4CC38A` | Selo "Lida", scan concluído |
 | `--color-danger` | `#EF5B5B` | Excluir, erros |
 | `--color-reader-bg` | `#08080A` | Fundo do leitor |
-| (modo foco) | `#000000` | Fundo do leitor em modo foco |
 
 O contraste de `--color-text-muted` sobre `--color-bg` deve ser ≥ 4.5:1 (RNF-10), e esse valor precisa ser validado na implementação.
 

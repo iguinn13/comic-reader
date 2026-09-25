@@ -39,6 +39,15 @@ export function watchFullscreenChanges(window: BrowserWindow): void {
   const send = (isFullscreen: boolean): void => {
     if (!window.isDestroyed()) window.webContents.send(CH.app.onFullscreenChanged, isFullscreen)
   }
-  window.on('enter-full-screen', () => send(true))
-  window.on('leave-full-screen', () => send(false))
+  // No Windows, com `titleBarStyle: 'hidden'` (e maximizada), a barra de tarefas
+  // pode continuar por cima da tela cheia. Manter a janela acima dela (como o F11
+  // do Chrome) garante que a barra de tarefas some.
+  window.on('enter-full-screen', () => {
+    window.setAlwaysOnTop(true, 'screen-saver')
+    send(true)
+  })
+  window.on('leave-full-screen', () => {
+    window.setAlwaysOnTop(false)
+    send(false)
+  })
 }

@@ -35,33 +35,45 @@ export function EndPanel({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('reader.endPanel.title', { title: comicTitle })}</DialogTitle>
+      <DialogContent className="max-w-lg gap-5">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="line-clamp-3 break-words text-lg leading-snug">
+            {t('reader.endPanel.title', { title: comicTitle })}
+          </DialogTitle>
         </DialogHeader>
 
         {nextInFolder && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 rounded-lg border border-border bg-surface p-3">
             {nextInFolder.coverUrl ? (
-              <img src={nextInFolder.coverUrl} alt="" className="h-16 w-11 rounded object-cover" />
+              <img
+                src={nextInFolder.coverUrl}
+                alt=""
+                className="aspect-2/3 w-16 shrink-0 rounded object-cover"
+              />
             ) : (
-              <div className="h-16 w-11 rounded bg-surface-2" />
+              <div className="aspect-2/3 w-16 shrink-0 rounded bg-surface-2" />
             )}
             <div className="min-w-0 flex-1">
               <p className="text-xs text-text-muted">{t('reader.endPanel.nextInFolder')}</p>
-              <p className="truncate text-sm font-medium text-text">{nextInFolder.title}</p>
+              <p className="mt-1 line-clamp-3 break-words text-sm font-medium text-text">
+                {nextInFolder.title}
+              </p>
             </div>
-            <Button onClick={() => onReadNext(nextInFolder.id)}>{t('reader.endPanel.read')}</Button>
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="sm:items-center">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('reader.endPanel.stayHere')}
           </Button>
-          <Button variant={nextInFolder ? 'outline' : 'default'} onClick={onBackToLibrary}>
+          <Button variant="outline" onClick={onBackToLibrary}>
             {t('reader.endPanel.backToLibrary')}
           </Button>
+          {nextInFolder && (
+            <Button autoFocus onClick={() => onReadNext(nextInFolder.id)}>
+              {t('reader.endPanel.read')}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

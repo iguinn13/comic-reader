@@ -22,7 +22,6 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: '0', action: 'zoomReset' },
   { keys: 'O', action: 'doubleOffset' },
   { keys: 'F / F11', action: 'fullscreen' },
-  { keys: 'L', action: 'focusMode' },
   { keys: 'S', action: 'favorite' },
   { keys: 'Esc', action: 'escape' },
   { keys: 'Backspace', action: 'exit' },

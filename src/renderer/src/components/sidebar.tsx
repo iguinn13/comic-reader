@@ -40,6 +40,19 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps): React.J
       )}
       style={{ width: collapsed ? 64 : 232 }}
     >
+      <button
+        type="button"
+        onClick={onToggleCollapsed}
+        aria-label={t(collapsed ? 'nav.expand' : 'nav.collapse')}
+        title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
+        className="flex h-9 items-center justify-center rounded-md text-text-muted transition-colors duration-150 ease-out hover:bg-surface-2 hover:text-text"
+      >
+        {collapsed ? (
+          <PanelLeftOpen className="size-5" aria-hidden />
+        ) : (
+          <PanelLeftClose className="size-5" aria-hidden />
+        )}
+      </button>
       <div className="flex flex-1 flex-col gap-1">
         {NAV_ITEMS.map(({ to, labelKey, icon: Icon }) => (
           <NavLink
@@ -75,20 +88,6 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps): React.J
           <Settings className="size-5 shrink-0" aria-hidden />
           {!collapsed && <span className="truncate">{t('nav.settings')}</span>}
         </NavLink>
-
-        <button
-          type="button"
-          onClick={onToggleCollapsed}
-          aria-label={t(collapsed ? 'nav.expand' : 'nav.collapse')}
-          title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
-          className="flex h-9 items-center justify-center rounded-md text-text-muted transition-colors duration-150 ease-out hover:bg-surface-2 hover:text-text"
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="size-5" aria-hidden />
-          ) : (
-            <PanelLeftClose className="size-5" aria-hidden />
-          )}
-        </button>
       </div>
     </nav>
   )

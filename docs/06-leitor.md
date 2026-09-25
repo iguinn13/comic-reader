@@ -24,10 +24,10 @@ Cobre RF-30 a RF-44. O leitor é a tela mais importante do app e deve ser rápid
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Barra superior:** voltar; título (clicável → renomear); seletor de modo (`single` / `double` / `vertical`); controles de ajuste/zoom (dependem do modo); favoritar (RF-44); menu `⋯` (Marcar como não lida, Restaurar padrões de leitura); modo foco (☾); tela cheia (⛶).
+- **Barra superior:** voltar; título (clicável → renomear); seletor de modo (`single` / `double` / `vertical`); controles de ajuste/zoom (dependem do modo); favoritar (RF-44); menu `⋯` (Marcar como não lida, Restaurar padrões de leitura); tela cheia (⛶).
 - **Barra inferior:** slider de páginas (arrastar mostra o preview "página N"), indicador `N / total` (clicável → campo "Ir para página") e setas de navegação.
-- **Área de leitura:** fundo `--reader-bg` (quase preto), ou `#000` no modo foco.
-- **Auto-ocultar:** em **tela cheia** ou **modo foco**, as barras somem após 2,5 s sem movimento do mouse e reaparecem ao mover o mouse ou aproximá-lo das bordas. A transição de opacidade/posição das barras é suave (`150ms ease-out`, `transition-[opacity,transform]`), não um corte abrupto. A scrollbar da área de leitura também some junto (`scrollbar-width: none` / `::-webkit-scrollbar`), e o cursor some quando as barras estão ocultas. Fora desses modos, as barras ficam sempre visíveis.
+- **Área de leitura:** fundo `--reader-bg` (quase preto).
+- **Auto-ocultar:** em **tela cheia**, as barras somem após 2,5 s sem movimento do mouse e reaparecem ao mover o mouse ou aproximá-lo das bordas. A transição de opacidade/posição das barras é suave (`150ms ease-out`, `transition-[opacity,transform]`), não um corte abrupto. A scrollbar da área de leitura também some junto (`scrollbar-width: none` / `::-webkit-scrollbar`), e o cursor some quando as barras estão ocultas. Fora da tela cheia, as barras ficam sempre visíveis.
 
 ## 3. Modos de leitura
 
@@ -78,7 +78,7 @@ Funciona nos três modos. O renderer carrega `comic://file/{id}` com o pdf.js (`
 |---|---|---|
 | Clique no terço esquerdo da área | Voltar | — (sem zonas; o clique não navega) |
 | Clique no terço direito | Avançar | — |
-| Clique no centro | Mostrar/ocultar barras (em tela cheia/foco) | Mostrar/ocultar barras |
+| Clique no centro | Mostrar/ocultar barras (em tela cheia) | Mostrar/ocultar barras |
 | Roda ↓ / ↑ | Se a página cabe inteira: avançar/voltar (1 troca por gesto, com cooldown de 250 ms). Se excede: rola; no fim/início, mais um gesto troca de página. | Rola normalmente |
 | `Ctrl` + roda | Zoom | Largura da coluna |
 | Botões laterais do mouse (4/5) | Voltar / Avançar | Voltar / Avançar página |
@@ -106,21 +106,16 @@ Os atalhos ficam ativos apenas na rota do leitor e são ignorados quando o foco 
 | `0` | Resetar zoom (100%, ou largura padrão no vertical) |
 | `O` | Alternar "Deslocar pares" (double) |
 | `F` / `F11` | Tela cheia |
-| `L` | Modo foco ("desligar a luz") |
 | `S` | Favoritar/desfavoritar |
-| `Esc` | Na ordem: fecha o diálogo/menu aberto → sai da tela cheia → sai do modo foco → sai do leitor |
+| `Esc` | Na ordem: fecha o diálogo/menu aberto → sai da tela cheia → sai do leitor |
 | `Backspace` | Sair do leitor |
 | `?` | Mostrar painel de atalhos |
 
 A tabela de atalhos também aparece num diálogo (`?`) e em Configurações.
 
-## 6. Tela cheia e modo foco — RF-37, RF-38
+## 6. Tela cheia — RF-37
 
-| | Tela cheia | Modo foco |
-|---|---|---|
-| O que faz | `BrowserWindow.setFullScreen(true)` (via `app.toggleFullscreen`) | Fundo `#000`, barras auto-ocultas, sem bordas nem sombras ao redor da página |
-| Persistência | Não persiste (sempre abre em janela) | Persiste globalmente (`reader.focusMode`) |
-| Combinável | Sim. A combinação dos dois é a experiência "cinema" |
+`BrowserWindow.setFullScreen(true)` (via `app.toggleFullscreen`), com a janela acima da barra de tarefas do Windows. Não persiste (sempre abre em janela). O modo foco (RF-38) foi removido (ADR em `10`).
 
 O renderer escuta `onFullscreenChanged`, porque o usuário pode sair da tela cheia por meios do SO.
 
@@ -173,7 +168,6 @@ interface ReaderState {
   spreads: number[][];          // derivado (double)
   chromeVisible: boolean;       // barras visíveis
   isFullscreen: boolean;
-  focusMode: boolean;
   endPanelOpen: boolean;
   goTo(page: number): void;     // clamp + setPage IPC
   next(): void; prev(): void;
@@ -190,7 +184,7 @@ Os componentes de modo (`SingleView`, `DoubleView`, `VerticalView`, e `PdfPage` 
 - [ ] `←`/`→` funcionam nos 3 modos. Clique nas zonas funciona em single/double.
 - [ ] Página larga aparece sozinha no modo duplo. "Deslocar pares" altera o pareamento.
 - [ ] No vertical, `+`/`-` muda a largura e a página visível não "pula".
-- [ ] Modo foco: fundo preto, barras somem em 2,5 s e voltam com o mouse. Continua ativo ao reabrir o app.
+- [ ] Tela cheia: barras somem em 2,5 s e voltam com o mouse; a barra de tarefas do Windows também some.
 - [ ] Chegar à última página marca como lida, e avançar mostra o painel com o próximo arquivo da pasta (quando existir).
 - [ ] Sair do leitor em tela cheia devolve a janela ao estado normal.
 - [ ] HQ de 300 páginas no vertical: uso de memória dentro do RNF-03.

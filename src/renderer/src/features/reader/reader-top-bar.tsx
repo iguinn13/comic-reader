@@ -6,7 +6,6 @@ import {
   Maximize,
   Minimize,
   MoreHorizontal,
-  Moon,
   RectangleVertical,
   ZoomIn,
   ZoomOut,
@@ -33,7 +32,6 @@ interface ReaderTopBarProps {
   doubleOffset: boolean
   isFavorite: boolean
   isFullscreen: boolean
-  focusMode: boolean
   onBack: () => void
   onModeChange: (mode: ReaderMode) => void
   onFitChange: (fit: FitMode) => void
@@ -42,7 +40,6 @@ interface ReaderTopBarProps {
   onToggleDoubleOffset: () => void
   onToggleFavorite: () => void
   onToggleFullscreen: () => void
-  onToggleFocusMode: () => void
   onMarkUnread: () => void
   onResetPrefs: () => void
 }
@@ -63,7 +60,6 @@ export function ReaderTopBar({
   doubleOffset,
   isFavorite,
   isFullscreen,
-  focusMode,
   onBack,
   onModeChange,
   onFitChange,
@@ -72,7 +68,6 @@ export function ReaderTopBar({
   onToggleDoubleOffset,
   onToggleFavorite,
   onToggleFullscreen,
-  onToggleFocusMode,
   onMarkUnread,
   onResetPrefs,
 }: ReaderTopBarProps): React.JSX.Element {
@@ -225,16 +220,6 @@ export function ReaderTopBar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-pressed={focusMode}
-          aria-label={t('reader.focusMode')}
-          onClick={onToggleFocusMode}
-        >
-          <Moon className={cn('size-4', focusMode && 'text-accent')} />
-        </Button>
 
         <Button
           variant="ghost"

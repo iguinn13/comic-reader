@@ -40,7 +40,6 @@ export function VerticalView({
   const verticalWidth = useReaderStore((s) => s.prefs.verticalWidth)
   const chromeVisible = useReaderStore((s) => s.chromeVisible)
   const isFullscreen = useReaderStore((s) => s.isFullscreen)
-  const focusMode = useReaderStore((s) => s.focusMode)
   const showChrome = useShowChrome()
   const goTo = useReaderStore((s) => s.goTo)
   const setChromeVisible = useReaderStore((s) => s.setChromeVisible)
@@ -145,7 +144,7 @@ export function VerticalView({
     // docs §4.1: sem zonas de avançar/voltar no vertical — só o centro alterna as barras.
     const rect = event.currentTarget.getBoundingClientRect()
     const xRatio = (event.clientX - rect.left) / rect.width
-    if (xRatio >= 1 / 3 && xRatio <= 2 / 3 && (isFullscreen || focusMode)) {
+    if (xRatio >= 1 / 3 && xRatio <= 2 / 3 && isFullscreen) {
       setChromeVisible(!chromeVisible)
     }
   }

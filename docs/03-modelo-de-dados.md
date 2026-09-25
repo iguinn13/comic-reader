@@ -129,7 +129,8 @@ CASE
   ELSE 'unread'
 END
 ```
-- Marcar **lida**: `completed_at = now`. `current_page` é mantido (reabrir continua de onde estava; se estava na última página, o leitor abre na última).
+- Marcar **lida** manualmente (biblioteca): `completed_at = now` e `current_page = 0` (reabrir começa na 1ª página).
+- Concluir a leitura no leitor (chegou ao fim): `completed_at = now`, `current_page` é mantido (o leitor abre na última).
 - Marcar **não lida**: `completed_at = NULL, current_page = 0, last_read_at = NULL`.
 - Salvar uma página **diferente** da `current_page` (voltar a ler uma HQ lida) zera `completed_at`: a HQ passa a "em andamento". Reabrir e salvar a mesma página não altera o status. Chegar de novo à última página marca como lida (RF-42).
 
@@ -155,7 +156,6 @@ Chave/valor com `value` em JSON. As chaves e os defaults ficam em `src/shared/co
 | Chave | Tipo | Default | RF |
 |---|---|---|---|
 | `reader.defaults` | `ReaderPrefs` | `{mode:'single', fit:'height', zoom:1, verticalWidth:0.6, doubleOffset:false}` | RF-50 |
-| `reader.focusMode` | boolean | `false` | RF-38 |
 | `cache.maxBytes` | number | `2147483648` (2 GB) | RF-51 |
 | `library.view` | `{sort, order, status, favoritesOnly}` | `{sort:'createdAt', order:'desc', status:'all', favoritesOnly:false}` | RF-13 |
 | `ui.sidebarCollapsed` | boolean | `false` | RF-60 |

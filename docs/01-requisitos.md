@@ -14,7 +14,7 @@ Um leitor de HQs desktop, **offline e local**, pensado para o fã que já organi
 
 ### Dentro do escopo (v1)
 - Apontar uma ou mais pastas-raiz (CBZ, CBR, PDF e ZIP), escaneadas recursivamente.
-- Ler em três modos: página única, página dupla e vertical contínuo, com zoom, tela cheia e modo foco.
+- Ler em três modos: página única, página dupla e vertical contínuo, com zoom, tela cheia.
 - Salvar o progresso automaticamente e oferecer a seção "Continuar lendo".
 - Ao terminar uma HQ, sugerir o próximo arquivo (ordem natural) da mesma pasta.
 - Buscar, filtrar e ordenar a biblioteca, com status lido/não lido e favoritos.
@@ -123,7 +123,7 @@ Clique direito (ou botão "⋯" no hover) no card de HQ: *Ler*, *Marcar como lid
 
 **RF-64 — Navegação por pastas (P1)**
 A Biblioteca tem duas visualizações, alternadas por um botão: **Pastas** (padrão) e **Todas as HQs** (a grade única com busca/filtros/ordenação de RF-10..13).
-- Em **Pastas**, a tela mostra a estrutura de pastas do próprio usuário: no nível-topo, uma pasta por pasta-raiz configurada (RF-01/RF-03); dentro dela, as subpastas (com a contagem de HQs) e as HQs que estão diretamente ali, na mesma grade — clicar numa subpasta entra nela, com um caminho (breadcrumb) no topo para voltar.
+- Em **Pastas**, a tela mostra a estrutura de pastas do próprio usuário: no nível-topo, cada pasta-raiz configurada (RF-01/RF-03) que tem subpastas não aparece: só as suas filhas (e as HQs soltas dela); uma pasta-raiz sem subpastas aparece ela mesma. Dentro de uma pasta, as subpastas (com a contagem de HQs) e as HQs que estão diretamente ali, na mesma grade — clicar numa subpasta entra nela, com um caminho (breadcrumb) no topo para voltar.
 - Uma pasta sem subpastas nem HQs mostra um estado vazio simples.
 - Esta navegação é só de leitura: criar/renomear/mover pastas continua sendo feito pelo usuário fora do app (docs/10 ADR).
 
@@ -155,8 +155,7 @@ Clique na zona esquerda/direita da página volta/avança, a roda do mouse navega
 **RF-37 — Tela cheia (P1)**
 Alternar tela cheia com `F11`/`F` ou botão, e sair com `Esc`.
 
-**RF-38 — Modo foco, "desligar a luz" (P1)**
-Alternar com `L` ou botão: esconde sidebar e barras, fundo preto absoluto (`#000`). Mover o mouse mostra os controles por 2,5 s. O estado do modo foco persiste globalmente.
+**RF-38 — (removido)** Modo foco descartado, ver ADR-019.
 
 **RF-39 — Indicador e salto de página (P1)**
 Barra inferior com slider de progresso, "página X de Y" e campo "Ir para página". `Home`/`End` vão para a primeira/última.

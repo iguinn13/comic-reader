@@ -50,7 +50,6 @@ export const zFolderLocation = z.object({
 export const zSettingsPatch = z
   .object({
     'reader.defaults': zReaderPrefs,
-    'reader.focusMode': z.boolean(),
     'cache.maxBytes': z.number().int().min(CACHE_MIN_BYTES).max(CACHE_MAX_BYTES),
     'library.view': z.object({
       sort: z.enum(['title', 'createdAt', 'lastReadAt']),

@@ -15,7 +15,6 @@ interface ReaderState {
   prefs: ReaderPrefs
   chromeVisible: boolean
   isFullscreen: boolean
-  focusMode: boolean
   endPanelOpen: boolean
   completedThisSession: boolean
   /** docs/06-leitor.md §3.4: página de PDF não tem `comic_pages` — a dimensão medida no render vive só aqui. */
@@ -31,7 +30,6 @@ interface ReaderState {
   applyPrefsFromMain: (prefs: ReaderPrefs) => void
   setChromeVisible: (visible: boolean) => void
   setFullscreen: (value: boolean) => void
-  setFocusMode: (value: boolean) => void
   setEndPanelOpen: (value: boolean) => void
   reset: () => void
 }
@@ -42,7 +40,6 @@ const INITIAL_STATE = {
   prefs: DEFAULT_READER_PREFS,
   chromeVisible: true,
   isFullscreen: false,
-  focusMode: false,
   endPanelOpen: false,
   completedThisSession: false,
   pdfPageSizes: {},
@@ -166,7 +163,6 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
 
   setChromeVisible: (chromeVisible) => set({ chromeVisible }),
   setFullscreen: (isFullscreen) => set({ isFullscreen }),
-  setFocusMode: (focusMode) => set({ focusMode }),
   setEndPanelOpen: (endPanelOpen) => set({ endPanelOpen }),
 
   reset: () => {
@@ -177,5 +173,5 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
 
 /** Se as barras/scrollbar do leitor devem estar visíveis (docs/06-leitor.md §2). */
 export function useShowChrome(): boolean {
-  return useReaderStore((s) => s.chromeVisible || (!s.isFullscreen && !s.focusMode))
+  return useReaderStore((s) => s.chromeVisible || !s.isFullscreen)
 }

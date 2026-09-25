@@ -83,11 +83,12 @@ export interface FolderEntry {
   folderId: string;
   relativePath: string;
   comicCount: number;                                 // recursivo
+  coverUrl: string | null;                            // capa da 1ª HQ direto na pasta; null se só tem subpastas
 }
 
 export interface FolderContents {
   subfolders: FolderEntry[];
-  comics: ComicSummary[];                              // vazio no nível-topo
+  comics: ComicSummary[];                              // no nível-topo: só HQs soltas de pastas-raiz que têm subpastas
 }
 ```
 
@@ -152,7 +153,7 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppErrorPayl
 
 `delete` com `deleteFile: true` só apaga o arquivo do disco se ele ainda estiver dentro de alguma pasta-raiz configurada (checagem de segurança no `LibraryService`); fora disso, o arquivo é preservado e só o registro é removido, silenciosamente.
 
-`browseFolder` não tem uma tabela de subpastas: agrupa as HQs da pasta-raiz em memória pelo primeiro segmento do caminho relativo a `relativePath` (docs/10 ADR-018). Com `folderId: null`, devolve as pastas-raiz configuradas como `subfolders` (e `comics: []`).
+`browseFolder` não tem uma tabela de subpastas: agrupa as HQs da pasta-raiz em memória pelo primeiro segmento do caminho relativo a `relativePath` (docs/10 ADR-018). Com `folderId: null`, devolve, para cada pasta-raiz com subpastas, essas subpastas (e as HQs soltas dela em `comics`); para uma pasta-raiz sem subpastas, ela mesma como `subfolder`.
 
 **Eventos**
 | Evento | Payload | Quando |

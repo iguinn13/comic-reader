@@ -35,7 +35,7 @@ export function LibraryPage(): React.JSX.Element {
     isLoading,
     fetchNextPage,
   } = useLibraryComics({
-    // "Ver tudo" da Início (docs/07 §4.1): chega com `?status=reading&sort=lastReadAt`.
+    // "Ver tudo" da Início (docs/07 §4.1): chega com `?view=flat&status=reading&sort=lastReadAt`.
     initialStatus: (searchParams.get('status') as LibraryQuery['status']) ?? undefined,
     initialSortOption: (searchParams.get('sort') as LibrarySortOption) ?? undefined,
   })
@@ -53,7 +53,10 @@ export function LibraryPage(): React.JSX.Element {
   const isFilteredEmpty = !isLoading && total === 0 && !isEmptyLibrary
 
   // RF-64: local, como o resto dos filtros desta tela (`use-library-comics.ts`) — não persiste entre sessões.
-  const [mode, setMode] = useState<BrowseMode>(SETTINGS_DEFAULTS['library.view'].mode)
+  // "Ver tudo" da Início chega com `?view=flat`: abre direto em "Todas as HQs".
+  const [mode, setMode] = useState<BrowseMode>(
+    searchParams.get('view') === 'flat' ? 'flat' : SETTINGS_DEFAULTS['library.view'].mode,
+  )
 
   async function handleAddFolder(): Promise<void> {
     const folder = await api.libraryFolders.add()
