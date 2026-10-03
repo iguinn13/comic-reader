@@ -25,9 +25,9 @@ import { createMainWindow } from './window'
 // ser registrado antes de `app.ready`, então fica fora de `bootstrap()`.
 registerComicProtocolAsPrivileged()
 
-// A v1 tem como alvo só o Windows (ADR-012): esta trava de GPU só serve para
-// permitir desenvolvimento em Linux/WSL, onde o processo de GPU do Chromium
-// costuma falhar (WSLg sem suporte completo). Não afeta o build de produção.
+// Esta trava de GPU só serve para permitir desenvolvimento em Linux/WSL,
+// onde o processo de GPU do Chromium costuma falhar (WSLg sem suporte
+// completo). Não afeta o build de produção em nenhum SO (ADR-021).
 if (process.platform === 'linux') {
   app.disableHardwareAcceleration()
 }
@@ -137,8 +137,10 @@ if (!gotSingleInstanceLock) {
     openWindow()
 
     app.on('activate', () => {
-      // No Windows/Linux o app fecha com a última janela (ver window-all-closed
-      // abaixo), então isto só é relevante se algo recriar o app sem sair.
+      // No macOS, clicar no ícone do dock dispara 'activate' com o app ainda
+      // vivo (window-all-closed não chama app.quit() nesse SO) — aqui é onde
+      // a janela é reaberta. Em Windows/Linux isto é inatingível na prática,
+      // porque o app já teria saído (ADR-021).
       if (BrowserWindow.getAllWindows().length === 0) openWindow()
     })
   }
@@ -154,8 +156,12 @@ if (!gotSingleInstanceLock) {
     })
 
   app.on('window-all-closed', () => {
-    // A v1 tem como alvo só o Windows (ADR-012): sempre sai com a última janela.
-    app.quit()
+    // Windows/Linux: a convenção é sair com a última janela. macOS: a
+    // convenção é o app continuar vivo (dock) até Cmd+Q — 'activate' (acima)
+    // reabre a janela ao clicar no ícone do dock (ADR-021).
+    if (process.platform !== 'darwin') {
+      app.quit()
+    }
   })
 
   app.on('before-quit', () => {

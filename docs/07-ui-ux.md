@@ -70,7 +70,7 @@ O contraste de `--color-text-muted` sobre `--color-bg` deve ser ≥ 4.5:1 (RNF-1
 - Item ativo: fundo `surface-2`, texto `text` e barra de 3 px accent à esquerda.
 - Contadores discretos à direita de Biblioteca e Favoritas (`text-subtle`, só no modo expandido).
 
-**Barra de título:** usa a moldura nativa do Windows com `titleBarStyle: 'hidden'` + `titleBarOverlay` na cor `--color-bg`, para que a área superior se funda ao app. Os controles nativos (min/max/fechar) ficam visíveis.
+**Barra de título:** `titleBarStyle: 'hidden'` + `titleBarOverlay` na cor `--color-bg`, aplicado igual nos três SOs (Windows, macOS e Linux) — API suportada oficialmente pelo Electron nas três plataformas (ADR-021), para que a área superior se funda ao app. No Windows, substitui a moldura padrão pelos controles customizados min/max/fechar na cor do app. No macOS, mantém os "traffic lights" nativos reposicionados dentro da área do overlay (pendente validação visual manual num Mac real). No Linux, o resultado pode variar entre window managers (GNOME/KDE/outros).
 
 ## 4. Telas
 

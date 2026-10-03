@@ -163,7 +163,7 @@ Chave/valor com `value` em JSON. As chaves e os defaults ficam em `src/shared/co
 
 ## 3. Layout em disco
 
-Raiz: `app.getPath('userData')` (Windows: `%APPDATA%\Comic Reader\`). Todos os caminhos são construídos **só** em `src/main/utils/paths.ts`. Não existe mais uma pasta `library/`: as HQs continuam nas pastas do próprio usuário, referenciadas por `comics.file_path`.
+Raiz: `app.getPath('userData')` — Windows: `%APPDATA%\Comic Reader\`; macOS: `~/Library/Application Support/Comic Reader/`; Linux: `~/.config/Comic Reader/`. Todos os caminhos são construídos **só** em `src/main/utils/paths.ts`. Não existe mais uma pasta `library/`: as HQs continuam nas pastas do próprio usuário, referenciadas por `comics.file_path`.
 
 ```
 userData/

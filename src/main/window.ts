@@ -103,6 +103,10 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
       symbolColor: '#ECECEF',
       height: 40,
     },
+    // `icon` só precisa ser passado manualmente no Linux: Windows/macOS usam
+    // o ícone do executável/bundle automaticamente (electron-builder cuida
+    // disso no empacotamento); no Linux, sem isso a janela herda o ícone
+    // genérico (ADR-021).
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

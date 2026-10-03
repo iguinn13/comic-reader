@@ -4,6 +4,7 @@
   "description": "Leitor de HQs desktop, offline e local, para importar, ler e organizar CBZ/CBR/PDF.",
   "main": "./out/main/index.js",
   "author": "iguinn13",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "format": "prettier --write .",
@@ -17,7 +18,10 @@
     "postinstall": "electron-builder install-app-deps",
     "test": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/vitest/vitest.mjs run",
     "test:watch": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/vitest/vitest.mjs",
-    "dist": "npm run build && electron-builder --win",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist": "npm run build && electron-builder",
     "db:generate": "drizzle-kit generate",
     "seed:dev": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/tsx/dist/cli.mjs scripts/seed-dev.ts",
     "test:e2e": "electron-vite build && playwright test"

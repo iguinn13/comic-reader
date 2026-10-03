@@ -1,6 +1,6 @@
 # Comic Reader
 
-App desktop (Electron + electron-vite + React + TypeScript) para importar, ler e organizar HQs (CBZ/CBR/PDF/ZIP) localmente. É offline, sem login e só tem tema escuro. A UI está em pt-BR via i18next, e a v1 tem como alvo só o Windows.
+App desktop (Electron + electron-vite + React + TypeScript) para importar, ler e organizar HQs (CBZ/CBR/PDF/ZIP) localmente. É offline, sem login e só tem tema escuro. A UI está em pt-BR via i18next, e o app tem como alvo Windows, macOS e Linux (ver ADR-021 em `docs/10-decisoes.md`).
 
 ## A especificação é a fonte da verdade
 

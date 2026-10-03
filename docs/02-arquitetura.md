@@ -21,7 +21,7 @@
 | Miniaturas | `nativeImage` do Electron | Resize + JPEG, sem dependência nativa extra |
 | Validação | **zod** | Todos os payloads de IPC |
 | Logs | **electron-log** | Arquivo em `userData/logs` |
-| Empacotamento | **electron-builder** (NSIS x64) | Faz o rebuild do `better-sqlite3` |
+| Empacotamento | **electron-builder** (NSIS no Windows; dmg/zip no macOS; AppImage/deb no Linux) | Rebuild do `better-sqlite3` por SO/arch via CI |
 | Testes | **Vitest** + **Playwright** (`_electron`) | Ver [09](09-testes-e-qualidade.md) |
 
 As justificativas de cada escolha estão em [10-decisoes.md](10-decisoes.md).

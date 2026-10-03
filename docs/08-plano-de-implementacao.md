@@ -21,7 +21,7 @@ Os milestones são **verticais e incrementais**: cada um termina com o app rodan
 | 0.4 | Tailwind v4 + tokens de [07 §2](07-ui-ux.md#2-design-tokens) + fonte Inter local + shadcn/ui inicializado | Página de teste com botão/inputs no tema |
 | 0.5 | Segurança da janela ([02 §6](02-arquitetura.md#6-segurança)): webPreferences, CSP, bloqueio de navegação, single instance, `backgroundColor` e `show` em `ready-to-show` | Checklist marcado |
 | 0.6 | Vitest configurado (projeto `main`, ambiente node) + 1 teste de exemplo | `npm test` ok |
-| 0.7 | electron-builder (NSIS x64) com ícone placeholder e script `npm run dist` | Instalador gerado e app abre instalado |
+| 0.7 | electron-builder (NSIS x64 no Windows; dmg/zip no macOS; AppImage/deb no Linux — ADR-021) com ícone placeholder e scripts `npm run dist:win`/`dist:mac`/`dist:linux` | Instalador gerado e app abre instalado |
 | 0.8 | electron-log configurado e `paths.ts` com todos os diretórios de [03 §3](03-modelo-de-dados.md#3-layout-em-disco) | Log escrito em `userData/logs` |
 
 ## M1 — Dados e contratos
@@ -97,7 +97,7 @@ Este milestone implementava Listas e Sagas (coleções manuais: criar/editar/exc
 | 6.2 | Toasts com Desfazer (remover da coleção, marcar lida) | — |
 | 6.3 | Painel de atalhos `?` no leitor | RF-35 |
 | 6.4 | Revisão de acessibilidade (foco, labels, contraste, teclado nas grades) | RNF-10 |
-| 6.5 | Barra de título integrada (`titleBarOverlay`) e ícone definitivo do app | — |
+| 6.5 | Barra de título integrada (`titleBarOverlay`) e ícone definitivo do app, validados nos três SOs (ADR-021) | — |
 | 6.6 | Revisão de todos os textos pt-BR e estados vazios | RNF-09, RF-62 |
 
 ## M7 — Desempenho, robustez e testes E2E
@@ -112,8 +112,8 @@ Este milestone implementava Listas e Sagas (coleções manuais: criar/editar/exc
 ## M8 — Release v1.0
 | # | Tarefa |
 |---|---|
-| 8.1 | Build NSIS final (instalação por usuário, atalho no Menu Iniciar/Desktop, desinstalador que **pergunta** se remove os dados do usuário) |
-| 8.2 | Teste do instalador numa VM Windows 10 e numa Windows 11 limpas |
+| 8.1 | Build final por SO via CI: NSIS no Windows (instalação por usuário, atalho no Menu Iniciar/Desktop, desinstalador que **pergunta** se remove os dados do usuário); dmg/zip no macOS; AppImage/deb no Linux (ADR-021) |
+| 8.2 | Teste do instalador numa máquina/VM limpa por SO (Windows 10/11, macOS, Ubuntu/Debian) |
 | 8.3 | README do projeto (como rodar, build e onde ficam os dados) |
 | 8.4 | Tag `v1.0.0` + CHANGELOG |
 

@@ -1,6 +1,6 @@
-# v1 tem como alvo só o Windows (ADR-012 em docs/10-decisoes.md). O código em
-# si evita APIs exclusivas de plataforma, então adicionar mac/linux aqui numa
-# v2 é só configuração, sem mudar src/.
+# Empacotamento multiplataforma (ADR-021 em docs/10-decisoes.md, que
+# substitui a ADR-012). O código evita APIs exclusivas de plataforma; os
+# blocos abaixo são só configuração do electron-builder, sem mudar src/.
 appId: com.comicreader.app
 productName: Comic Reader
 directories:
@@ -31,6 +31,42 @@ nsis:
   perMachine: false
   createStartMenuShortcut: true
   # Pergunta se remove os dados do usuário (build/installer.nsh); nunca apaga sem perguntar.
+  # Hook exclusivo do NSIS/Windows — não existe equivalente no .dmg/.AppImage/
+  # .deb (ver ADR-021 e README "Onde ficam os dados" para remoção manual).
   include: build/installer.nsh
   deleteAppDataOnUninstall: false
+mac:
+  executableName: comic-reader
+  category: public.app-category.graphics-and-design
+  # PNG único (>= 512x512); o electron-builder converte para .icns no build,
+  # sem precisar gerar/comitar o .icns manualmente.
+  icon: build/icon.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  # Sem assinatura/notarização por ora (decisão aceita — ADR-021): o
+  # Gatekeeper vai bloquear/avisar ao abrir.
+  hardenedRuntime: false
+  gatekeeperAssess: false
+dmg:
+  artifactName: ${name}-${version}-${arch}.${ext}
+linux:
+  executableName: comic-reader
+  category: Graphics
+  # PNG único (>= 512x512); o electron-builder gera o conjunto de tamanhos
+  # necessário para o AppImage/deb automaticamente.
+  icon: build/icon.png
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
 npmRebuild: false

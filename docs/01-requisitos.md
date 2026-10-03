@@ -19,7 +19,7 @@ Um leitor de HQs desktop, **offline e local**, pensado para o fã que já organi
 - Ao terminar uma HQ, sugerir o próximo arquivo (ordem natural) da mesma pasta.
 - Buscar, filtrar e ordenar a biblioteca, com status lido/não lido e favoritos.
 - Interface em pt-BR, estruturada para i18n.
-- Empacotamento para Windows 10/11 x64.
+- Empacotamento para Windows 10/11 x64, macOS (x64/arm64) e Linux x64 (AppImage/deb).
 
 ### Fora do escopo
 - Rede social, comentários, compartilhamento.
@@ -33,7 +33,6 @@ Um leitor de HQs desktop, **offline e local**, pensado para o fã que já organi
 - Download/scraping de HQs ou de metadados da internet.
 - Edição das imagens das HQs.
 - Monitoramento em tempo real das pastas (file watcher). **(v2)** — o app escaneia no boot e sob demanda.
-- Builds para Linux/macOS. **(v2)** A arquitetura não deve impedi-las.
 - Auto-update. **(v2)**
 
 ## 3. Personas
@@ -219,7 +218,7 @@ Contém: "Continuar lendo" (RF-11) e "Adicionadas recentemente" (últimas 20 HQs
 | RNF-08 | Responsividade | Layout funcional de 960×600 até 4K. A grade ajusta colunas automaticamente e a sidebar recolhe sozinha abaixo de 1100 px de largura. | Teste manual redimensionando |
 | RNF-09 | i18n | Nenhum texto de UI hardcoded: todos em `locales/pt-BR.json` via i18next. Datas e números formatados com `Intl` em `pt-BR`. | Lint/revisão |
 | RNF-10 | Acessibilidade | Foco de teclado visível, contraste de texto ≥ AA (4.5:1), todos os controles alcançáveis por teclado, `aria-label` em botões só-ícone. | Revisão + axe no DevTools |
-| RNF-11 | Plataforma | Windows 10/11 x64, com instalador NSIS e atalho no menu Iniciar. O código não deve usar APIs exclusivas de Windows sem abstração. | Build no CI/local |
+| RNF-11 | Plataforma | Windows 10/11 x64 (NSIS, com atalho no menu Iniciar), macOS 12+ (dmg/zip, x64 e arm64) e Linux x64 (AppImage/deb). O código não deve usar APIs exclusivas de uma plataforma sem abstração (`process.platform` isolado em pontos pontuais, documentados). Builds sem assinatura de código: SmartScreen/Gatekeeper avisam o usuário na primeira execução. | Build no CI (matriz Windows/macOS/Linux) |
 | RNF-12 | Integridade | Escritas no banco usam WAL. Uma queda de energia durante a leitura perde no máximo 1 s de progresso. | Revisão |
 | RNF-13 | Manutenibilidade | TypeScript `strict`, sem `any` implícito, contratos IPC tipados ponta a ponta a partir de `src/shared`. | `tsc --noEmit` no CI |
 
