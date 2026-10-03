@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Leitor de HQs desktop, offline e local, para importar, ler e organizar CBZ/CBR/PDF.",
   "main": "./out/main/index.js",
-  "author": "iguinn13",
+  "author": "iguinn13 <igoor182@hotmail.com>",
   "license": "MIT",
   "private": true,
   "scripts": {
