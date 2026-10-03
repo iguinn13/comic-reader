@@ -4,29 +4,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
-
-/**
- * Gestão das pastas-raiz da biblioteca (docs/05-importacao.md): o usuário
- * aponta para onde já organiza suas HQs, escaneadas recursivamente. Fica na
- * tela Configurações — não existe mais fluxo de "importar" arquivo a arquivo.
- */
 export function LibraryFoldersSection(): React.JSX.Element {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-
   const { data: folders } = useQuery({
     queryKey: queryKeys.libraryFolders.all(),
     queryFn: api.libraryFolders.list,
   })
-
   function invalidate(): void {
     void queryClient.invalidateQueries({ queryKey: queryKeys.libraryFolders.all() })
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
   }
-
   const add = useMutation({ mutationFn: api.libraryFolders.add, onSuccess: invalidate })
   const remove = useMutation({ mutationFn: api.libraryFolders.remove, onSuccess: invalidate })
-
   return (
     <div className="flex flex-col gap-3">
       {folders && folders.length === 0 && (

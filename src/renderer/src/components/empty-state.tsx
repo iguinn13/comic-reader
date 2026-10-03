@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react'
-
-/** Estado vazio genérico (docs/07-ui-ux.md §6, RF-62): título + descrição opcional + ação opcional. */
 export function EmptyState({
   title,
   description,

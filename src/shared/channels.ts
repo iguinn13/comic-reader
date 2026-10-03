@@ -1,4 +1,3 @@
-/** Nomes dos canais IPC, agrupados por domínio (docs/04-contratos-ipc.md §4). */
 export const CH = {
   library: {
     home: 'library:home',

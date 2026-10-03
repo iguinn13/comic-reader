@@ -1,250 +1,250 @@
-# 01 — Requisitos
+# 01 — Requirements
 
-## 1. Visão
+## 1. Vision
 
-Um leitor de HQs desktop, **offline e local**, pensado para o fã que já organiza seus arquivos CBZ/CBR/PDF em pastas no computador. O usuário só aponta o app para uma ou mais pastas-raiz — escaneadas recursivamente, subpastas incluídas — e o app indexa as HQs encontradas ali mesmo, sem copiá-las: organizar em pastas continua sendo trabalho do usuário, fora do app (nos moldes do "Cover" do Windows). O app cuida só da leitura confortável e do progresso.
+A desktop comic reader, **offline and local**, built for the fan who already organizes their CBZ/CBR/PDF files in folders on their computer. The user just points the app at one or more root folders — scanned recursively, including subfolders — and the app indexes the comics found there, without copying them: organizing into folders remains the user's job, outside the app (similar to Windows' "Cover"). The app only takes care of comfortable reading and progress tracking.
 
-**Princípios**
+**Principles**
 
-1. **Leitura primeiro:** abrir e ler uma HQ deve ser rápido e sem atrito, e o app lembra onde você parou.
-2. **Clean e escuro:** visual minimalista e escuro, com a capa das HQs como protagonista.
-3. **Local e privado:** sem conta, sem servidor, sem telemetria.
+1. **Reading first:** opening and reading a comic should be fast and frictionless, and the app remembers where you left off.
+2. **Clean and dark:** minimalist, dark visuals, with comic covers as the protagonist.
+3. **Local and private:** no account, no server, no telemetry.
 
-## 2. Escopo
+## 2. Scope
 
-### Dentro do escopo (v1)
-- Apontar uma ou mais pastas-raiz (CBZ, CBR, PDF e ZIP), escaneadas recursivamente.
-- Ler em três modos: página única, página dupla e vertical contínuo, com zoom, tela cheia.
-- Salvar o progresso automaticamente e oferecer a seção "Continuar lendo".
-- Ao terminar uma HQ, sugerir o próximo arquivo (ordem natural) da mesma pasta.
-- Buscar, filtrar e ordenar a biblioteca, com status lido/não lido e favoritos.
-- Interface em pt-BR, estruturada para i18n.
-- Empacotamento para Windows 10/11 x64, macOS (x64/arm64) e Linux x64 (AppImage/deb).
+### In scope (v1)
+- Pointing to one or more root folders (CBZ, CBR, PDF, and ZIP), scanned recursively.
+- Reading in three modes: single page, double page, and continuous vertical, with zoom and fullscreen.
+- Automatically saving progress and offering the "Continue reading" section.
+- When finishing a comic, suggesting the next file (natural order) from the same folder.
+- Searching, filtering, and sorting the library, with read/unread status and favorites.
+- Bilingual interface (pt-BR default, en-US) via i18next, with a selector in Settings.
+- Packaging for Windows 10/11 x64, macOS (x64/arm64), and Linux x64 (AppImage/deb).
 
-### Fora do escopo
-- Rede social, comentários, compartilhamento.
-- Login, contas, sincronização em nuvem.
+### Out of scope
+- Social network features, comments, sharing.
+- Login, accounts, cloud sync.
 - Light mode.
-- Organização manual em listas/sagas/coleções — a organização é a estrutura de pastas do próprio usuário (ver `docs/10-decisoes.md`).
-- Navegação por árvore de pastas na UI — a biblioteca é uma lista/grade única (ver §4.2).
-- Leitura direita→esquerda (mangá). **(v2)**
-- Formatos CB7/7z, CBT, EPUB, pasta de imagens. **(v2)**
-- Leitura de metadados `ComicInfo.xml`. **(v2)**
-- Download/scraping de HQs ou de metadados da internet.
-- Edição das imagens das HQs.
-- Monitoramento em tempo real das pastas (file watcher). **(v2)** — o app escaneia no boot e sob demanda.
+- Manual organization into lists/sagas/collections — organization is the user's own folder structure (see `docs/10-decisoes.md`).
+- Folder-tree navigation in the UI — the library is a single list/grid (see §4.2).
+- Right-to-left reading (manga). **(v2)**
+- CB7/7z, CBT, EPUB formats, image folders. **(v2)**
+- Reading `ComicInfo.xml` metadata. **(v2)**
+- Downloading/scraping comics or metadata from the internet.
+- Editing comic images.
+- Real-time folder monitoring (file watcher). **(v2)** — the app scans on boot and on demand.
 - Auto-update. **(v2)**
 
 ## 3. Personas
 
-- **Leitor colecionador:** tem centenas ou milhares de arquivos já organizados em pastas por saga/arco e quer retomar a leitura sem procurar a página.
-- **Leitor casual:** aponta o app pra pasta onde já tem suas HQs e só quer abrir e ler com conforto, muitas vezes em tela cheia à noite.
+- **Collector reader:** has hundreds or thousands of files already organized into folders by saga/arc and wants to resume reading without hunting for the page.
+- **Casual reader:** points the app at the folder where they already keep their comics and just wants to open and read comfortably, often fullscreen at night.
 
-## 4. Requisitos funcionais
+## 4. Functional requirements
 
-Convenção: cada requisito tem um ID estável `RF-xx` e critérios de aceite no formato *Dado / Quando / Então*. Prioridade: **P1** (obrigatório v1) e **P2** (desejável v1, pode ir para o fim do cronograma).
+Convention: each requirement has a stable ID `RF-xx` and acceptance criteria in *Given / When / Then* format. Priority: **P1** (mandatory for v1) and **P2** (desirable for v1, may slip to the end of the schedule).
 
-### 4.1 Pastas da biblioteca
+### 4.1 Library folders
 
-Detalhamento completo do algoritmo de scan em [05-importacao.md](05-importacao.md).
+Full detail of the scan algorithm in [05-importacao.md](05-importacao.md).
 
-**RF-01 — Adicionar pasta-raiz (P1)**
-O usuário adiciona uma pasta-raiz pela tela Configurações (ou pelo estado vazio da Biblioteca/Início), que abre o diálogo nativo de escolha de pasta.
-- Dado que o usuário escolhe uma pasta, quando confirma o diálogo, então a pasta é salva e escaneada imediatamente.
-- Dado que o usuário cancela o diálogo, então nada acontece.
-- Adicionar uma pasta já configurada não a duplica (erro silencioso na UI).
+**RF-01 — Add root folder (P1)**
+The user adds a root folder from the Settings screen (or from the empty state of Library/Home), which opens the native folder-picker dialog.
+- Given the user picks a folder, when they confirm the dialog, then the folder is saved and scanned immediately.
+- Given the user cancels the dialog, then nothing happens.
+- Adding an already-configured folder does not duplicate it (silent error in the UI).
 
-**RF-02 — Escaneamento recursivo (P1)**
-Cada pasta-raiz é percorrida recursivamente — "pode estar em cadeia", ou seja, subpastas dentro de subpastas — em busca de arquivos `.cbz`, `.cbr`, `.pdf` e `.zip`.
-- Dado um arquivo `.zip` contendo só imagens, quando escaneado, então é tratado como uma única HQ (equivalente a CBZ).
-- Arquivos com extensão não reconhecida, ou corrompidos/vazios, são ignorados silenciosamente (log interno, sem interromper o scan).
+**RF-02 — Recursive scanning (P1)**
+Each root folder is walked recursively — "it may be chained," i.e., subfolders inside subfolders — looking for `.cbz`, `.cbr`, `.pdf`, and `.zip` files.
+- Given a `.zip` file containing only images, when scanned, then it is treated as a single comic (equivalent to a CBZ).
+- Files with an unrecognized extension, or corrupted/empty files, are silently ignored (internal log, without interrupting the scan).
 
-**RF-03 — Múltiplas pastas-raiz (P1)**
-O usuário pode configurar várias pastas-raiz independentes (ex.: um HD e um SSD) e removê-las a qualquer momento pela tela Configurações.
-- Remover uma pasta-raiz tira do índice todas as HQs encontradas nela (nunca apaga os arquivos originais) — ver RF-06.
+**RF-03 — Multiple root folders (P1)**
+The user can configure several independent root folders (e.g., an HDD and an SSD) and remove them at any time from the Settings screen.
+- Removing a root folder takes all comics found in it out of the index (never deletes the original files) — see RF-06.
 
-**RF-04 — Atualização automática e manual (P1)**
-Todas as pastas-raiz são re-escaneadas automaticamente ao abrir o app, e o usuário pode forçar uma atualização a qualquer momento pelo botão "Atualizar biblioteca" da sidebar.
-- Um HQ cujo arquivo sumiu de uma pasta desde o último scan é removida do índice silenciosamente (progresso, capa e cache também são limpos).
-- O scan roda em segundo plano; o usuário pode continuar navegando e lendo durante o scan.
+**RF-04 — Automatic and manual update (P1)**
+All root folders are automatically re-scanned when the app opens, and the user can force an update at any time via the "Refresh library" button in the sidebar.
+- A comic whose file has disappeared from a folder since the last scan is silently removed from the index (progress, cover, and cache are also cleared).
+- The scan runs in the background; the user can keep browsing and reading during the scan.
 
-**RF-05 — Detecção de duplicatas (P1)**
-Uma HQ é duplicada se o hash SHA-1 do arquivo já existe na biblioteca (por exemplo, o mesmo arquivo alcançável por duas pastas-raiz sobrepostas).
-- Dado um arquivo duplicado, quando encontrado no scan, então ele é ignorado silenciosamente (sem diálogo — o scan é automático e não interativo); a primeira ocorrência indexada é a que permanece.
+**RF-05 — Duplicate detection (P1)**
+A comic is a duplicate if the file's SHA-1 hash already exists in the library (for example, the same file reachable through two overlapping root folders).
+- Given a duplicate file, when found during the scan, then it is silently ignored (no dialog — the scan is automatic and non-interactive); the first indexed occurrence is the one that remains.
 
-**RF-06 — Indexação in-place (P1)**
-As HQs nunca são copiadas, movidas ou alteradas: o app lê o arquivo original, no lugar onde está.
-- O título inicial é o nome do arquivo sem extensão, com `_` e `.` repetidos trocados por espaço e espaços aparados.
-- Uma capa (miniatura da primeira página) é gerada e mantida à parte, na pasta de dados do app.
-- Dado que o usuário move ou renomeia o arquivo original fora do app, então a HQ some do índice no próximo scan (nada quebra; um novo scan reencontra o arquivo no caminho novo como uma HQ "nova").
+**RF-06 — In-place indexing (P1)**
+Comics are never copied, moved, or altered: the app reads the original file in place.
+- The initial title is the file name without the extension, with repeated `_` and `.` characters replaced with spaces and trimmed spaces.
+- A cover (thumbnail of the first page) is generated and kept separately, in the app's data folder.
+- Given the user moves or renames the original file outside the app, then the comic disappears from the index on the next scan (nothing breaks; a new scan finds the file at the new path as a "new" comic).
 
-### 4.2 Biblioteca
+### 4.2 Library
 
-**RF-10 — Biblioteca: todas as HQs (P1)**
-A tela "Biblioteca" exibe todas as HQs numa grade de capas (virtualizada) com título, barra de progresso (se em andamento), selo "Lida" e ícone de favorito.
-- Clicar no card abre a HQ no leitor, na página salva.
+**RF-10 — Library: all comics (P1)**
+The "Library" screen displays all comics in a (virtualized) cover grid with title, progress bar (if in progress), a "Read" badge, and a favorite icon.
+- Clicking the card opens the comic in the reader, at the saved page.
 
-**RF-11 — Continuar lendo (P1)**
-A tela "Início" mostra uma faixa "Continuar lendo" com as HQs **em andamento** (página atual > 0 e não lida), ordenadas pela última leitura (mais recente primeiro), com no máximo 20 itens.
-- Dado que o usuário terminou uma HQ, então ela sai da faixa.
-- Cada card da faixa pode ser removido da faixa com "Remover de Continuar lendo". Isso zera o progresso para 0 (a HQ volta a "não lida").
+**RF-11 — Continue reading (P1)**
+The "Home" screen shows a "Continue reading" row with comics **in progress** (current page > 0 and not read), ordered by last read (most recent first), with a maximum of 20 items.
+- Given the user finished a comic, then it leaves the row.
+- Each card in the row can be removed from the row via "Remove from Continue reading." This resets progress to 0 (the comic goes back to "unread").
 
-**RF-12 — Busca (P1)**
-Campo de busca na Biblioteca que filtra por título, sem diferenciar maiúsculas nem acentos ("acao" encontra "Ação"), com debounce de 200 ms.
+**RF-12 — Search (P1)**
+Search field in the Library that filters by title, case- and accent-insensitive ("acao" finds "Ação"), with a 200 ms debounce.
 
-**RF-13 — Ordenação e filtros (P1)**
-- Ordenar por: **Título (A–Z / Z–A)**, **Adicionadas recentemente** (padrão), **Lidas recentemente**.
-- Filtrar por status: **Todas / Não lidas / Em andamento / Lidas**, e por **Somente favoritas**.
-- A escolha de ordenação/filtro persiste entre sessões.
+**RF-13 — Sorting and filters (P1)**
+- Sort by: **Title (A–Z / Z–A)**, **Recently added** (default), **Recently read**.
+- Filter by status: **All / Unread / In progress / Read**, and by **Favorites only**.
+- The sort/filter choice persists between sessions.
 
-**RF-14 — Status de leitura (P1)**
-Toda HQ tem um status derivado: **não lida** (página 0 e nunca concluída), **em andamento** (página > 0, não concluída) ou **lida** (concluída).
-- A HQ fica "lida" automaticamente ao chegar à última página (ver RF-42).
-- Voltar a ler uma HQ lida (mudar de página) remove o status de lida e a deixa **em andamento**, até chegar de novo à última página.
-- O usuário pode marcar manualmente como **lida** ou **não lida** (uma ou várias). "Não lida" zera o progresso.
+**RF-14 — Read status (P1)**
+Every comic has a derived status: **unread** (page 0 and never completed), **in progress** (page > 0, not completed), or **read** (completed).
+- The comic automatically becomes "read" upon reaching the last page (see RF-42).
+- Going back to read a comic marked as read (changing the page) removes the read status and leaves it **in progress**, until it reaches the last page again.
+- The user can manually mark as **read** or **unread** (one or several). "Unread" resets progress.
 
-**RF-15 — Favoritos (P1)**
-O usuário pode favoritar/desfavoritar uma HQ pelo card, menu de contexto ou leitor. A sidebar tem a entrada "Favoritas", com a grade das HQs favoritas (mesmos controles da Biblioteca).
+**RF-15 — Favorites (P1)**
+The user can favorite/unfavorite a comic from the card, context menu, or reader. The sidebar has a "Favorites" entry, with the grid of favorite comics (same controls as the Library).
 
-**RF-16 — Renomear HQ (P1)**
-O usuário pode editar o título de exibição de uma HQ. O arquivo em disco não muda. O título não pode ser vazio (máx. 200 caracteres).
+**RF-16 — Rename comic (P1)**
+The user can edit a comic's display title. The file on disk does not change. The title cannot be empty (max. 200 characters).
 
-**RF-17 — Excluir HQ (P1)**
-O usuário pode excluir uma ou várias HQs, com diálogo de confirmação e uma opção explícita **"Apagar também o arquivo do disco"**, desmarcada por padrão.
-- Sem a opção marcada: remove o registro, a capa e o cache de páginas; o arquivo original continua na pasta do usuário e reaparece no próximo scan, a menos que a pasta-raiz seja removida antes (RF-03).
-- Com a opção marcada: além do acima, apaga o arquivo original do disco — só se ele ainda estiver dentro de alguma pasta-raiz configurada (checagem de segurança; fora disso, o arquivo é preservado e só o registro é removido).
+**RF-17 — Delete comic (P1)**
+The user can delete one or several comics, with a confirmation dialog and an explicit **"Also delete the file from disk"** option, unchecked by default.
+- Without the option checked: removes the record, the cover, and the page cache; the original file remains in the user's folder and reappears on the next scan, unless the root folder is removed first (RF-03).
+- With the option checked: in addition to the above, deletes the original file from disk — only if it is still within a configured root folder (safety check; otherwise, the file is preserved and only the record is removed).
 
-**RF-18 — Seleção múltipla (P1)**
-Nas grades de HQs é possível selecionar várias (checkbox ao passar o mouse, `Ctrl+clique`, `Shift+clique` para intervalo, `Ctrl+A`). Com seleção ativa, uma barra de ações mostra: *Marcar como lida*, *Marcar como não lida*, *Favoritar*, *Excluir*, *Cancelar seleção* (`Esc`).
+**RF-18 — Multiple selection (P1)**
+In the comic grids, several comics can be selected (checkbox on hover, `Ctrl+click`, `Shift+click` for a range, `Ctrl+A`). With a selection active, an action bar shows: *Mark as read*, *Mark as unread*, *Favorite*, *Delete*, *Cancel selection* (`Esc`).
 
-**RF-19 — Menu de contexto do card (P1)**
-Clique direito (ou botão "⋯" no hover) no card de HQ: *Ler*, *Marcar como lida/não lida*, *Favoritar/Desfavoritar*, *Renomear*, *Excluir*.
+**RF-19 — Card context menu (P1)**
+Right-click (or the "⋯" button on hover) on a comic card: *Read*, *Mark as read/unread*, *Favorite/Unfavorite*, *Rename*, *Delete*.
 
-**RF-64 — Navegação por pastas (P1)**
-A Biblioteca tem duas visualizações, alternadas por um botão: **Pastas** (padrão) e **Todas as HQs** (a grade única com busca/filtros/ordenação de RF-10..13).
-- Em **Pastas**, a tela mostra a estrutura de pastas do próprio usuário: no nível-topo, cada pasta-raiz configurada (RF-01/RF-03) que tem subpastas não aparece: só as suas filhas (e as HQs soltas dela); uma pasta-raiz sem subpastas aparece ela mesma. Dentro de uma pasta, as subpastas (com a contagem de HQs) e as HQs que estão diretamente ali, na mesma grade — clicar numa subpasta entra nela, com um caminho (breadcrumb) no topo para voltar.
-- Uma pasta sem subpastas nem HQs mostra um estado vazio simples.
-- Esta navegação é só de leitura: criar/renomear/mover pastas continua sendo feito pelo usuário fora do app (docs/10 ADR).
+**RF-64 — Folder navigation (P1)**
+The Library has two views, toggled by a button: **Folders** (default) and **All comics** (the single grid with search/filters/sorting from RF-10..13).
+- In **Folders**, the screen shows the user's own folder structure: at the top level, each configured root folder (RF-01/RF-03) that has subfolders does not appear itself — only its children (and its loose comics); a root folder with no subfolders appears by itself. Inside a folder, the subfolders (with their comic count) and the comics directly in it appear in the same grid — clicking a subfolder enters it, with a breadcrumb at the top to go back.
+- A folder with no subfolders and no comics shows a simple empty state.
+- This navigation is read-only: creating/renaming/moving folders remains something the user does outside the app (docs/10 ADR).
 
-### 4.4 Leitor
+### 4.4 Reader
 
-Detalhamento completo em [06-leitor.md](06-leitor.md).
+Full detail in [06-leitor.md](06-leitor.md).
 
-**RF-30 — Abrir HQ (P1)**
-Abrir uma HQ mostra o leitor na **página salva**, com o modo e o zoom lembrados para aquela HQ (ou os padrões globais).
+**RF-30 — Open comic (P1)**
+Opening a comic shows the reader at the **saved page**, with the mode and zoom remembered for that comic (or the global defaults).
 
-**RF-31 — Modo página única (P1)**
-Uma página por vez, com os ajustes *Ajustar à altura* (padrão), *Ajustar à largura* e *Tamanho original*.
+**RF-31 — Single page mode (P1)**
+One page at a time, with the *Fit to height* (default), *Fit to width*, and *Original size* adjustments.
 
-**RF-32 — Modo página dupla (P1)**
-Duas páginas lado a lado. A capa (página 1) fica sozinha, e páginas largas (largura > altura) ficam sozinhas. Uma opção "Deslocar pares" corrige spreads desalinhados.
+**RF-32 — Double page mode (P1)**
+Two pages side by side. The cover (page 1) stands alone, and wide pages (width > height) stand alone. A "Shift pairs" option fixes misaligned spreads.
 
-**RF-33 — Modo vertical contínuo / "portrait com zoom" (P1)**
-As páginas ficam empilhadas verticalmente, com scroll contínuo (estilo webtoon). A **largura da coluna** é ajustável (20%–100% da área de leitura, padrão 60%) e fica lembrada por HQ. Esse é o modo para "ler com zoom" de forma confortável.
+**RF-33 — Continuous vertical / "zoomed portrait" mode (P1)**
+Pages are stacked vertically, with continuous scrolling (webtoon-style). The **column width** is adjustable (20%–100% of the reading area, default 60%) and is remembered per comic. This is the mode for comfortably "reading zoomed in."
 
 **RF-34 — Zoom (P1)**
-Nos modos de página: zoom de 25% a 400% por `Ctrl+roda`, `+`/`-` e botões, com reset (`0`). Com zoom maior que a área, a página pode ser arrastada (pan). No modo vertical, o zoom altera a largura da coluna.
+In page modes: zoom from 25% to 400% via `Ctrl+wheel`, `+`/`-`, and buttons, with reset (`0`). When zoomed beyond the viewing area, the page can be dragged (pan). In vertical mode, zoom changes the column width.
 
-**RF-35 — Navegação por teclado (P1)**
-Setas ←/→ trocam de página (ou spread), além dos demais atalhos da [tabela do leitor](06-leitor.md#5-atalhos-de-teclado).
+**RF-35 — Keyboard navigation (P1)**
+Left/right arrows change the page (or spread), plus the other shortcuts in the [reader table](06-leitor.md#5-keyboard-shortcuts).
 
-**RF-36 — Navegação por mouse (P1)**
-Clique na zona esquerda/direita da página volta/avança, a roda do mouse navega, os botões laterais do mouse (voltar/avançar) trocam de página e há botões de seta visíveis na barra do leitor.
+**RF-36 — Mouse navigation (P1)**
+Clicking the left/right zone of the page goes back/forward, the mouse wheel navigates, the mouse's side buttons (back/forward) change pages, and there are visible arrow buttons in the reader bar.
 
-**RF-37 — Tela cheia (P1)**
-Alternar tela cheia com `F11`/`F` ou botão, e sair com `Esc`.
+**RF-37 — Fullscreen (P1)**
+Toggle fullscreen with `F11`/`F` or a button, and exit with `Esc`.
 
-**RF-38 — (removido)** Modo foco descartado, ver ADR-019.
+**RF-38 — (removed)** Focus mode dropped, see ADR-019.
 
-**RF-39 — Indicador e salto de página (P1)**
-Barra inferior com slider de progresso, "página X de Y" e campo "Ir para página". `Home`/`End` vão para a primeira/última.
+**RF-39 — Page indicator and jump (P1)**
+Bottom bar with a progress slider, "page X of Y," and a "Go to page" field. `Home`/`End` go to the first/last page.
 
-**RF-40 — Salvamento automático do progresso (P1)**
-A página atual é persistida a cada mudança e garantidamente ao fechar o leitor, ao fechar o app ou em crash do renderer. Reabrir o app e a HQ volta à mesma página.
+**RF-40 — Automatic progress saving (P1)**
+The current page is persisted on every change and guaranteed on closing the reader, closing the app, or a renderer crash. Reopening the app brings the comic back to the same page.
 
-**RF-41 — Preferências por HQ (P1)**
-O modo de leitura, o ajuste/zoom e a largura vertical escolhidos numa HQ ficam lembrados para ela. HQs nunca abertas usam os padrões globais (RF-50).
+**RF-41 — Per-comic preferences (P1)**
+The reading mode, fit/zoom, and vertical width chosen for a comic are remembered for it. Comics never opened use the global defaults (RF-50).
 
-**RF-42 — Fim da HQ (P1)**
-- Ao exibir a última página (ou último spread; no vertical, ao rolar até o fim), a HQ é marcada como **lida**.
-- Tentar avançar além da última página exibe o painel de fim: "Você terminou *Título*", com **"Continuar: *Título do próximo arquivo*"** (se houver outro arquivo na mesma pasta, em ordem natural, depois do atual), "Voltar à biblioteca" e "Continuar lendo aqui".
-- O "próximo arquivo" é puramente posicional (ordem natural dos nomes de arquivo dentro da pasta) — não depende de nenhuma organização manual do usuário.
+**RF-42 — End of comic (P1)**
+- When showing the last page (or last spread; in vertical mode, upon scrolling to the end), the comic is marked as **read**.
+- Trying to advance past the last page shows the end panel: "You finished *Title*," with **"Continue: *Next file's title*"** (if there is another file in the same folder, in natural order, after the current one), "Back to library," and "Keep reading here."
+- The "next file" is purely positional (natural order of file names within the folder) — it does not depend on any manual organization by the user.
 
-**RF-43 — Pré-carregamento (P1)**
-Páginas vizinhas são pré-carregadas para que a troca de página seja instantânea (ver RNF-01).
+**RF-43 — Preloading (P1)**
+Neighboring pages are preloaded so that changing pages is instantaneous (see RNF-01).
 
-**RF-44 — Ações da HQ dentro do leitor (P2)**
-Favoritar também está acessível na barra superior do leitor.
+**RF-44 — Comic actions inside the reader (P2)**
+Favoriting is also accessible from the reader's top bar.
 
-### 4.5 Configurações
+### 4.5 Settings
 
-**RF-50 — Padrões de leitura (P1)**
-Modo de leitura padrão, ajuste padrão (página única), largura padrão do vertical e "Aplicar a todas as HQs" (limpa as preferências por HQ).
+**RF-50 — Reading defaults (P1)**
+Default reading mode, default fit (single page), default vertical width, and "Apply to all comics" (clears per-comic preferences).
 
 **RF-51 — Cache (P1)**
-Mostra o uso atual do cache de páginas, permite definir o limite (512 MB – 20 GB, padrão 2 GB) e o botão "Limpar cache".
+Shows the current page cache usage, allows setting the limit (512 MB – 20 GB, default 2 GB), and a "Clear cache" button.
 
-**RF-52 — Biblioteca em disco (P1)**
-Mostra o tamanho total da biblioteca e a quantidade de HQs, com o botão "Abrir pasta de dados".
+**RF-52 — Library on disk (P1)**
+Shows the total library size and the number of comics, with an "Open data folder" button.
 
-**RF-53 — Sobre (P2)**
-Versão do app e caminho da pasta de dados.
+**RF-53 — About (P2)**
+App version and data folder path.
 
-### 4.6 Geral / Shell
+### 4.6 General / Shell
 
 **RF-60 — Sidebar (P1)**
-Menu lateral esquerdo fixo com: **Início**, **Biblioteca**, **Favoritas**, botão **Atualizar biblioteca** (re-escaneia as pastas-raiz, RF-04) e **Configurações** (rodapé, onde ficam as pastas-raiz, RF-01/03). Pode ser recolhida para ícones (botão ou `Ctrl+B`) e o estado persiste. O item ativo fica destacado.
+Fixed left-hand menu with: **Home**, **Library**, **Favorites**, a **Refresh library** button (re-scans the root folders, RF-04), and **Settings** (footer, where root folders live, RF-01/03). Can be collapsed to icons (button or `Ctrl+B`), and the state persists. The active item is highlighted.
 
-**RF-61 — Estado da janela (P1)**
-Tamanho, posição e estado maximizado da janela são restaurados ao reabrir. A janela mínima é de 960×600.
+**RF-61 — Window state (P1)**
+The window's size, position, and maximized state are restored when reopening. The minimum window size is 960×600.
 
-**RF-62 — Estados vazios e de erro (P1)**
-Toda tela tem um estado vazio com orientação (ex.: biblioteca vazia → "Arraste suas HQs aqui ou clique em Importar"). Uma HQ cujo arquivo sumiu ou corrompeu mostra um erro no leitor com a opção "Excluir da biblioteca".
+**RF-62 — Empty and error states (P1)**
+Every screen has an empty state with guidance (e.g., empty library → "Drag your comics here or click Import"). A comic whose file disappeared or is corrupted shows an error in the reader with the option "Remove from library."
 
-**RF-63 — Tela Início (P1)**
-Contém: "Continuar lendo" (RF-11) e "Adicionadas recentemente" (últimas 20 HQs).
+**RF-63 — Home screen (P1)**
+Contains: "Continue reading" (RF-11) and "Recently added" (last 20 comics).
 
-## 5. Requisitos não funcionais
+## 5. Non-functional requirements
 
-| ID | Categoria | Requisito | Como medir |
+| ID | Category | Requirement | How to measure |
 |---|---|---|---|
-| RNF-01 | Desempenho | Troca de página < 100 ms com pré-carregamento. Primeira página de um CBZ de até 150 MB visível em < 2 s na primeira abertura, e < 500 ms quando já está em cache. | Log de tempos em dev + teste manual com fixture grande |
-| RNF-02 | Escala | Biblioteca com 5.000 HQs: grade rolando a 60 fps (virtualizada), busca/filtro respondendo em < 200 ms e boot até a tela Início em < 3 s. | Script de seed com 5.000 registros |
-| RNF-03 | Memória | Renderer < 600 MB lendo uma HQ de 300 páginas no modo vertical (virtualização: só páginas próximas montadas no DOM). | Gerenciador de tarefas / `process.getProcessMemoryInfo` |
-| RNF-04 | Fluidez | Scroll do modo vertical e das grades a 60 fps em hardware médio (i5, 8 GB, SSD). | DevTools Performance |
-| RNF-05 | Robustez | Uma falha num arquivo não interrompe o scan. Operações de banco que tocam várias tabelas são transacionais. O boot limpa capas órfãs (sem HQ correspondente) e remove do índice HQs cujo arquivo sumiu da pasta. | Testes unitários + teste de scan interrompido |
-| RNF-06 | Segurança | `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`, CSP estrita, sem `remote`, todo input de IPC validado com zod e caminhos de arquivo nunca montados a partir de strings do renderer (só IDs). | Checklist em [02-arquitetura.md](02-arquitetura.md#6-segurança) |
-| RNF-07 | Privacidade | 100% offline, sem requisições de rede e sem telemetria. Fontes e ícones empacotados localmente. | CSP `connect-src` sem hosts externos |
-| RNF-08 | Responsividade | Layout funcional de 960×600 até 4K. A grade ajusta colunas automaticamente e a sidebar recolhe sozinha abaixo de 1100 px de largura. | Teste manual redimensionando |
-| RNF-09 | i18n | Nenhum texto de UI hardcoded: todos em `locales/pt-BR.json` via i18next. Datas e números formatados com `Intl` em `pt-BR`. | Lint/revisão |
-| RNF-10 | Acessibilidade | Foco de teclado visível, contraste de texto ≥ AA (4.5:1), todos os controles alcançáveis por teclado, `aria-label` em botões só-ícone. | Revisão + axe no DevTools |
-| RNF-11 | Plataforma | Windows 10/11 x64 (NSIS, com atalho no menu Iniciar), macOS 12+ (dmg/zip, x64 e arm64) e Linux x64 (AppImage/deb). O código não deve usar APIs exclusivas de uma plataforma sem abstração (`process.platform` isolado em pontos pontuais, documentados). Builds sem assinatura de código: SmartScreen/Gatekeeper avisam o usuário na primeira execução. | Build no CI (matriz Windows/macOS/Linux) |
-| RNF-12 | Integridade | Escritas no banco usam WAL. Uma queda de energia durante a leitura perde no máximo 1 s de progresso. | Revisão |
-| RNF-13 | Manutenibilidade | TypeScript `strict`, sem `any` implícito, contratos IPC tipados ponta a ponta a partir de `src/shared`. | `tsc --noEmit` no CI |
+| RNF-01 | Performance | Page change < 100 ms with preloading. First page of a CBZ up to 150 MB visible in < 2 s on first open, and < 500 ms when already cached. | Timing logs in dev + manual test with a large fixture |
+| RNF-02 | Scale | Library with 5,000 comics: grid scrolling at 60 fps (virtualized), search/filter responding in < 200 ms, and boot to the Home screen in < 3 s. | Seed script with 5,000 records |
+| RNF-03 | Memory | Renderer < 600 MB when reading a 300-page comic in vertical mode (virtualization: only nearby pages mounted in the DOM). | Task manager / `process.getProcessMemoryInfo` |
+| RNF-04 | Fluidity | Vertical mode and grid scrolling at 60 fps on mid-range hardware (i5, 8 GB, SSD). | DevTools Performance |
+| RNF-05 | Robustness | A failure on one file does not interrupt the scan. Database operations touching several tables are transactional. Boot cleans up orphaned covers (with no matching comic) and removes from the index comics whose file disappeared from the folder. | Unit tests + interrupted-scan test |
+| RNF-06 | Security | `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`, strict CSP, no `remote`, every IPC input validated with zod, and file paths never built from renderer strings (only IDs). | Checklist in [02-arquitetura.md](02-arquitetura.md#6-security) |
+| RNF-07 | Privacy | 100% offline, no network requests, and no telemetry. Fonts and icons bundled locally. | CSP `connect-src` with no external hosts |
+| RNF-08 | Responsiveness | Functional layout from 960×600 up to 4K. The grid adjusts columns automatically and the sidebar collapses on its own below 1100 px width. | Manual test by resizing |
+| RNF-09 | i18n | No hardcoded UI text: everything lives in `locales/{pt-BR,en-US}.json` via i18next, with key parity guaranteed by a test (`src/renderer/src/i18n/locales.test.ts`). pt-BR is the default language; the user switches it in Settings, without needing to restart the app. Dates and numbers formatted with `Intl` in the active language. | Automated test + review |
+| RNF-10 | Accessibility | Visible keyboard focus, text contrast ≥ AA (4.5:1), all controls reachable by keyboard, `aria-label` on icon-only buttons. | Review + axe in DevTools |
+| RNF-11 | Platform | Windows 10/11 x64 (NSIS, with a Start menu shortcut), macOS 12+ (dmg/zip, x64 and arm64), and Linux x64 (AppImage/deb). The code must not use platform-exclusive APIs without abstraction (`process.platform` isolated to specific, documented points). Unsigned builds: SmartScreen/Gatekeeper warn the user on first run. | CI build (Windows/macOS/Linux matrix) |
+| RNF-12 | Integrity | Database writes use WAL. A power loss during reading loses at most 1 s of progress. | Review |
+| RNF-13 | Maintainability | TypeScript `strict`, no implicit `any`, IPC contracts typed end-to-end from `src/shared`. | `tsc --noEmit` in CI |
 
-## 6. Rastreabilidade com o documento original
+## 6. Traceability with the original document
 
-| Item em `general.md` | Requisito(s) |
+| Item in `general.md` | Requirement(s) |
 |---|---|
-| Upload e leitura de HQs | RF-01, RF-02, RF-06, RF-30 |
-| Organizar em pastas (decisão de produto: fora do app) | RF-01 a RF-06, RF-64, `docs/10-decisoes.md` |
-| Opção de zoom | RF-34, RF-33 |
-| Trocar página por setas e mouse | RF-35, RF-36 |
-| Tela cheia | RF-37 |
-| Portrait com zoom | RF-33 |
-| Desligar a luz | RF-38 |
-| Salvar página ao sair | RF-40 |
-| CBR, CBZ e ZIP com vários arquivos | RF-01, RF-02 |
-| Deleção de HQs | RF-17 |
-| "Continuar onde parou" | RF-11, RF-42, RF-63 |
-| Lista de todas as HQs | RF-10 |
-| Design moderno, clean, intuitivo | [07-ui-ux.md](07-ui-ux.md), RF-62 |
-| Responsividade | RNF-08 |
-| Sidebar à esquerda | RF-60 |
-| Tema escuro, sem light mode | [07-ui-ux.md](07-ui-ux.md) |
+| Upload and reading of comics | RF-01, RF-02, RF-06, RF-30 |
+| Organize into folders (product decision: outside the app) | RF-01 to RF-06, RF-64, `docs/10-decisoes.md` |
+| Zoom option | RF-34, RF-33 |
+| Change page via arrows and mouse | RF-35, RF-36 |
+| Fullscreen | RF-37 |
+| Zoomed portrait | RF-33 |
+| Turn off the light | RF-38 |
+| Save page on exit | RF-40 |
+| CBR, CBZ, and ZIP with multiple files | RF-01, RF-02 |
+| Comic deletion | RF-17 |
+| "Continue where you left off" | RF-11, RF-42, RF-63 |
+| List of all comics | RF-10 |
+| Modern, clean, intuitive design | [07-ui-ux.md](07-ui-ux.md), RF-62 |
+| Responsiveness | RNF-08 |
+| Sidebar on the left | RF-60 |
+| Dark theme, no light mode | [07-ui-ux.md](07-ui-ux.md) |
 | Electron (Vite/TypeScript) | [02-arquitetura.md](02-arquitetura.md) |
-| Não é rede social / sem login | Seção 2 (fora do escopo), RNF-07 |
+| Not a social network / no login | Section 2 (out of scope), RNF-07 |
 
-**Adições combinadas no refinamento:** PDF (RF-01/RF-02), página dupla (RF-32), busca/filtros (RF-12, RF-13), status lido (RF-14), favoritos (RF-15), duplicatas (RF-05), scan automático e manual (RF-04), renomear HQ (RF-16), fim da HQ/próximo arquivo da pasta (RF-42).
+**Additions combined during refinement:** PDF (RF-01/RF-02), double page (RF-32), search/filters (RF-12, RF-13), read status (RF-14), favorites (RF-15), duplicates (RF-05), automatic and manual scan (RF-04), rename comic (RF-16), end of comic/next file in folder (RF-42).
 
-**Revisão pós-v1 (ver `docs/10-decisoes.md`):** o modelo de importação manual (RF-01–06 originais) e as coleções manuais Listas/Sagas (antigo §4.3, RF-20–26) foram substituídos por escaneamento de pastas-raiz configuradas pelo usuário — sem cópia de arquivos e sem organização dentro do app. Em seguida, a Biblioteca ganhou de volta uma visualização por pastas (RF-64, ADR-018): a estrutura de pastas do usuário passou a ser navegável dentro do app (só leitura), ao lado da lista única (RF-10..13).
+**Post-v1 review (see `docs/10-decisoes.md`):** the manual import model (original RF-01–06) and the manual Lists/Sagas collections (former §4.3, RF-20–26) were replaced with scanning of user-configured root folders — with no file copying and no organization within the app. Later, the Library regained a folder view (RF-64, ADR-018): the user's own folder structure became navigable within the app (read-only), alongside the single list (RF-10..13).

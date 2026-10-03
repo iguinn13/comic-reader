@@ -15,12 +15,6 @@ import type {
   ReaderSession,
   Settings,
 } from '@shared/types'
-
-/**
- * Desembrulha um `Result<T>` vindo de `window.api`: devolve `data` no
- * sucesso e lança `AppError` na falha, para o TanStack Query tratar a chamada
- * como uma rejeição normal (docs/04-contratos-ipc.md §1 e §3).
- */
 async function unwrap<T>(promise: Promise<Result<T>>): Promise<T> {
   const result = await promise
   if (!result.ok) {
@@ -28,13 +22,6 @@ async function unwrap<T>(promise: Promise<Result<T>>): Promise<T> {
   }
   return result.data
 }
-
-/**
- * Wrapper fino sobre `window.api`, na mesma forma de `ComicReaderApi`
- * (src/shared/api.ts): todo método que devolvia `Promise<Result<T>>` agora
- * devolve `Promise<T>` direto (ou lança `AppError`) via `unwrap`. Métodos
- * síncronos, fire-and-forget e assinantes de evento passam direto.
- */
 export const api = {
   library: {
     home: () => unwrap(window.api.library.home()),
@@ -60,13 +47,11 @@ export const api = {
     clearFolderCover: (location: FolderLocation) =>
       unwrap(window.api.library.clearFolderCover(location)),
   },
-
   libraryFolders: {
     list: () => unwrap(window.api.libraryFolders.list()),
     add: () => unwrap(window.api.libraryFolders.add()),
     remove: (id: string) => unwrap(window.api.libraryFolders.remove(id)),
   },
-
   reader: {
     open: (comicId: ComicId) => unwrap(window.api.reader.open(comicId)),
     setPage: (comicId: ComicId, page: number): void => window.api.reader.setPage(comicId, page),
@@ -78,13 +63,11 @@ export const api = {
       window.api.reader.reportPageSize(comicId, index, width, height),
     close: (comicId: ComicId) => unwrap(window.api.reader.close(comicId)),
   },
-
   settings: {
     get: () => unwrap(window.api.settings.get()),
     update: (patch: Partial<Settings>) => unwrap(window.api.settings.update(patch)),
     resetAllReaderPrefs: () => unwrap(window.api.settings.resetAllReaderPrefs()),
   },
-
   app: {
     info: () => unwrap(window.api.app.info()),
     openDataFolder: () => unwrap(window.api.app.openDataFolder()),
@@ -94,9 +77,6 @@ export const api = {
       window.api.app.onFullscreenChanged(callback),
   },
 }
-
-// Tipos re-exportados por conveniência para quem consumir `lib/api.ts` sem
-// precisar importar `@shared/types` separadamente.
 export type {
   ComicDetail,
   ComicSummary,

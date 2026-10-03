@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from '@renderer/components/ui/dialog'
 import type { ComicId, ComicSummary } from '@shared/types'
-
 interface EndPanelProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -17,12 +16,6 @@ interface EndPanelProps {
   onReadNext: (comicId: ComicId) => void
   onBackToLibrary: () => void
 }
-
-/**
- * Painel de fim (docs/06-leitor.md §8, RF-42): "Continuar" para o próximo
- * arquivo (ordem natural) da mesma pasta, quando existe, e os botões de
- * baixo. Sem próximo arquivo, só os botões de baixo aparecem.
- */
 export function EndPanel({
   open,
   onOpenChange,
@@ -32,7 +25,6 @@ export function EndPanel({
   onBackToLibrary,
 }: EndPanelProps): React.JSX.Element {
   const { t } = useTranslation()
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-5">
@@ -70,8 +62,6 @@ export function EndPanel({
             {t('reader.endPanel.backToLibrary')}
           </Button>
           {nextInFolder && (
-            // Foco intencional na ação principal deste diálogo modal (Enter/Space lê a
-            // próxima HQ direto); o foco já fica contido no diálogo pelo Radix.
             // eslint-disable-next-line jsx-a11y/no-autofocus
             <Button autoFocus onClick={() => onReadNext(nextInFolder.id)}>
               {t('reader.endPanel.read')}

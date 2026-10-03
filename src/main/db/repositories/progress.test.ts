@@ -14,10 +14,8 @@ import {
   resetAllReaderPrefs,
   setCurrentPage,
 } from './progress'
-
 let db: Db
 let folderId: string
-
 function makeInput(overrides: Partial<InsertComicInput> = {}): InsertComicInput {
   const id = overrides.id ?? randomUUID()
   return {
@@ -38,18 +36,15 @@ function makeInput(overrides: Partial<InsertComicInput> = {}): InsertComicInput 
     ...overrides,
   }
 }
-
 beforeEach(() => {
   db = createDb(':memory:')
   folderId = randomUUID()
   insertLibraryFolder(db, { id: folderId, path: '/comics' })
 })
-
 describe('getProgress', () => {
   it('devolve a linha de progresso criada junto com a HQ', () => {
     const input = makeInput()
     insertComic(db, input)
-
     const progress = getProgress(db, input.id)
     expect(progress).toEqual({
       comicId: input.id,
@@ -59,70 +54,54 @@ describe('getProgress', () => {
       readerPrefs: null,
     })
   })
-
   it('devolve null para uma HQ inexistente', () => {
     expect(getProgress(db, randomUUID())).toBeNull()
   })
 })
-
 describe('setCurrentPage', () => {
   it('atualiza a página atual e last_read_at', () => {
     const input = makeInput()
     insertComic(db, input)
-
     setCurrentPage(db, input.id, 5)
-
     const progress = getProgress(db, input.id)
     expect(progress?.currentPage).toBe(5)
     expect(progress?.lastReadAt).not.toBeNull()
   })
-
   it('remove completed_at quando a página muda (HQ lida volta a "em andamento")', () => {
     const input = makeInput()
     insertComic(db, input)
     setCurrentPage(db, input.id, 7)
     markRead(db, input.id)
-
     setCurrentPage(db, input.id, 6)
-
     expect(getProgress(db, input.id)?.completedAt).toBeNull()
   })
-
   it('mantém completed_at quando a mesma página é salva de novo', () => {
     const input = makeInput()
     insertComic(db, input)
     setCurrentPage(db, input.id, 7)
     markRead(db, input.id)
-
     setCurrentPage(db, input.id, 7)
-
     expect(getProgress(db, input.id)?.completedAt).not.toBeNull()
   })
 })
-
 describe('markRead', () => {
   it('define completed_at e mantém current_page', () => {
     const input = makeInput()
     insertComic(db, input)
     setCurrentPage(db, input.id, 7)
-
     markRead(db, input.id)
-
     const progress = getProgress(db, input.id)
     expect(progress?.completedAt).not.toBeNull()
     expect(progress?.currentPage).toBe(7)
   })
 })
-
 describe('markUnread', () => {
   it('zera completed_at, current_page e last_read_at', () => {
     const input = makeInput()
     insertComic(db, input)
     setCurrentPage(db, input.id, 7)
     markRead(db, input.id)
-
     markUnread(db, input.id)
-
     const progress = getProgress(db, input.id)
     expect(progress).toEqual({
       comicId: input.id,
@@ -133,7 +112,6 @@ describe('markUnread', () => {
     })
   })
 })
-
 describe('getContinueReading', () => {
   it('filtra HQs em andamento (não lidas, com página > 0) e ordena por last_read_at desc', async () => {
     const neverOpened = makeInput()
@@ -144,42 +122,33 @@ describe('getContinueReading', () => {
     insertComic(db, finished)
     insertComic(db, older)
     insertComic(db, newer)
-
     setCurrentPage(db, finished.id, 3)
     markRead(db, finished.id)
-
     setCurrentPage(db, older.id, 1)
     await new Promise((resolve) => setTimeout(resolve, 5))
     setCurrentPage(db, newer.id, 1)
-
     const result = getContinueReading(db, 20)
-
     expect(result.map((c) => c.id)).toEqual([newer.id, older.id])
   })
-
   it('respeita o limite', () => {
     for (let i = 0; i < 3; i++) {
       const input = makeInput()
       insertComic(db, input)
       setCurrentPage(db, input.id, 1)
     }
-
     expect(getContinueReading(db, 2)).toHaveLength(2)
   })
 })
-
 describe('getRecentlyAdded', () => {
   it('ordena pelas HQs mais recentes primeiro', () => {
     const first = makeInput({ createdAt: 1000 })
     const second = makeInput({ createdAt: 2000 })
     insertComic(db, first)
     insertComic(db, second)
-
     const result = getRecentlyAdded(db, 20)
     expect(result.map((c) => c.id)).toEqual([second.id, first.id])
   })
 })
-
 describe('resetAllReaderPrefs', () => {
   it('limpa reader_prefs de todas as HQs (RF-50 "Aplicar a todas")', () => {
     const a = makeInput()
@@ -194,9 +163,7 @@ describe('resetAllReaderPrefs', () => {
       .set({ readerPrefs: '{"mode":"double"}' })
       .where(eq(readingProgress.comicId, b.id))
       .run()
-
     resetAllReaderPrefs(db)
-
     expect(getProgress(db, a.id)?.readerPrefs).toBeNull()
     expect(getProgress(db, b.id)?.readerPrefs).toBeNull()
   })

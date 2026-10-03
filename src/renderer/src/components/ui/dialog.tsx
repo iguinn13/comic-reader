@@ -3,17 +3,10 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@renderer/lib/utils'
-
-/**
- * Componente na convenção shadcn/ui (wrapping de @radix-ui/react-dialog),
- * temado com os tokens de docs/07-ui-ux.md (raio de 12px para diálogos,
- * superfície `surface-2`). Segue o mesmo padrão de button.tsx/input.tsx.
- */
 export const Dialog = DialogPrimitive.Root
 export const DialogTrigger = DialogPrimitive.Trigger
 export const DialogPortal = DialogPrimitive.Portal
 export const DialogClose = DialogPrimitive.Close
-
 export const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -28,7 +21,6 @@ export const DialogOverlay = React.forwardRef<
   />
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
-
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
@@ -55,14 +47,12 @@ export const DialogContent = React.forwardRef<
   )
 })
 DialogContent.displayName = DialogPrimitive.Content.displayName
-
 export function DialogHeader({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element {
   return <div className={cn('flex flex-col gap-1.5 text-left', className)} {...props} />
 }
-
 export function DialogFooter({
   className,
   ...props
@@ -74,7 +64,6 @@ export function DialogFooter({
     />
   )
 }
-
 export const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
@@ -86,7 +75,6 @@ export const DialogTitle = React.forwardRef<
   />
 ))
 DialogTitle.displayName = DialogPrimitive.Title.displayName
-
 export const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>

@@ -14,10 +14,7 @@ import { LibraryToolbar } from './library-toolbar'
 import type { LibrarySortOption } from './library-sort'
 import { SelectionBar } from './selection-bar'
 import { useLibraryComics } from './use-library-comics'
-
 type BrowseMode = 'flat' | 'folders'
-
-/** Tela Biblioteca (RF-10, 12, 13, 18, docs/07-ui-ux.md §4.2). */
 export function LibraryPage(): React.JSX.Element {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
@@ -35,34 +32,24 @@ export function LibraryPage(): React.JSX.Element {
     isLoading,
     fetchNextPage,
   } = useLibraryComics({
-    // "Ver tudo" da Início (docs/07 §4.1): chega com `?view=flat&status=reading&sort=lastReadAt`.
     initialStatus: (searchParams.get('status') as LibraryQuery['status']) ?? undefined,
     initialSortOption: (searchParams.get('sort') as LibrarySortOption) ?? undefined,
   })
-
   const hasSelection = useSelectionStore((state) => state.selectedIds.size > 0)
   const clearSelection = useSelectionStore((state) => state.clear)
-
-  // Sai da tela ou muda o filtro → a seleção não se aplica mais ao que está visível.
   useEffect(() => clearSelection, [clearSelection])
   useEffect(() => {
     clearSelection()
   }, [search, status, favoritesOnly, sortOption, clearSelection])
-
   const isEmptyLibrary = !isLoading && total === 0 && !search && status === 'all' && !favoritesOnly
   const isFilteredEmpty = !isLoading && total === 0 && !isEmptyLibrary
-
-  // RF-64: local, como o resto dos filtros desta tela (`use-library-comics.ts`) — não persiste entre sessões.
-  // "Ver tudo" da Início chega com `?view=flat`: abre direto em "Todas as HQs".
   const [mode, setMode] = useState<BrowseMode>(
     searchParams.get('view') === 'flat' ? 'flat' : SETTINGS_DEFAULTS['library.view'].mode,
   )
-
   async function handleAddFolder(): Promise<void> {
     const folder = await api.libraryFolders.add()
     if (folder) await api.library.scan()
   }
-
   return (
     <div className="flex h-full flex-col gap-4 p-8 mt-4">
       <div className="flex items-center justify-between">

@@ -4,10 +4,8 @@ import { Input } from '@renderer/components/ui/input'
 import { cn } from '@renderer/lib/utils'
 import type { LibraryQuery } from '@shared/types'
 import type { LibrarySortOption } from './library-sort'
-
 const STATUS_OPTIONS: LibraryQuery['status'][] = ['all', 'unread', 'reading', 'read']
 const SORT_OPTIONS: LibrarySortOption[] = ['createdAt', 'lastReadAt', 'titleAsc', 'titleDesc']
-
 interface LibraryToolbarProps {
   search: string
   onSearchChange: (value: string) => void
@@ -17,10 +15,8 @@ interface LibraryToolbarProps {
   onFavoritesOnlyChange: (value: boolean) => void
   sortOption: LibrarySortOption
   onSortOptionChange: (value: LibrarySortOption) => void
-  /** Esconde o segmented control de status e o toggle de favoritas (tela Favoritas). */
   hideFilters?: boolean
 }
-
 export function LibraryToolbar({
   search,
   onSearchChange,
@@ -33,7 +29,6 @@ export function LibraryToolbar({
   hideFilters,
 }: LibraryToolbarProps): React.JSX.Element {
   const { t } = useTranslation()
-
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="relative min-w-56 flex-1 max-w-sm">

@@ -200,6 +200,9 @@
     "shortcuts": {
       "title": "Atalhos"
     },
+    "language": {
+      "title": "Idioma"
+    },
     "about": {
       "title": "Sobre",
       "version": "Versão {{version}}",

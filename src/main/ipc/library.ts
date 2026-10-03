@@ -15,8 +15,6 @@ import type { FolderCoverService } from '../services/folder-cover-service'
 import type { LibraryScanService } from '../services/library-scan-service'
 import type { LibraryService } from '../services/library-service'
 import { handle } from './handle'
-
-/** Seletor de imagem (adaptador de SO, como `pickFolder` em library-folders.ts). */
 async function pickImage(): Promise<string | null> {
   const result = await dialog.showOpenDialog({
     properties: ['openFile'],
@@ -24,7 +22,6 @@ async function pickImage(): Promise<string | null> {
   })
   return result.canceled ? null : (result.filePaths[0] ?? null)
 }
-
 export function registerLibraryIpc(
   service: LibraryService,
   scanService: LibraryScanService,
@@ -51,7 +48,10 @@ export function registerLibraryIpc(
     if (location.folderId === null) throw new AppError('VALIDATION', 'errors.validation')
     const imagePath = await pickImage()
     if (!imagePath) return false
-    await folderCovers.set({ folderId: location.folderId, relativePath: location.relativePath }, imagePath)
+    await folderCovers.set(
+      { folderId: location.folderId, relativePath: location.relativePath },
+      imagePath,
+    )
     return true
   })
   handle(CH.library.clearFolderCover, z.tuple([zFolderLocation]), async ([location]) => {

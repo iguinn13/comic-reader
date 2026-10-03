@@ -14,15 +14,12 @@ import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
 import { TITLE_MAX_LENGTH } from '@shared/constants'
 import type { ComicId } from '@shared/types'
-
 interface RenameDialogProps {
   comicId: ComicId
   initialTitle: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
-
-/** Diálogo "Renomear" (RF-16, docs/07-ui-ux.md §5). */
 export function RenameDialog({
   comicId,
   initialTitle,
@@ -33,11 +30,9 @@ export function RenameDialog({
   const queryClient = useQueryClient()
   const [title, setTitle] = useState(initialTitle)
   const inputRef = useRef<HTMLInputElement>(null)
-
   useEffect(() => {
     if (open) inputRef.current?.focus()
   }, [open])
-
   const { mutate: rename, isPending } = useMutation({
     mutationFn: () => api.library.rename(comicId, title.trim()),
     onSuccess: () => {
@@ -45,7 +40,6 @@ export function RenameDialog({
       onOpenChange(false)
     },
   })
-
   return (
     <Dialog
       open={open}

@@ -1,172 +1,172 @@
-# 06 — Leitor
+# 06 — Reader
 
-Cobre RF-30 a RF-44. O leitor é a tela mais importante do app e deve ser rápido, silencioso e previsível.
+Covers RF-30 through RF-44. The reader is the app's most important screen and must be fast, quiet, and predictable.
 
-## 1. Rota e ciclo de vida
+## 1. Route and lifecycle
 
-- Rota: `#/read/:comicId`.
-- O leitor ocupa a área toda: a sidebar é **escondida** no leitor, que tem o próprio botão "Voltar".
-- **Entrada:** `reader.open(comicId)` → `ReaderSession`. Enquanto carrega, a tela mostra a capa desfocada + spinner.
-- **Saída** (botão Voltar, `Esc` sem nada ativo, ou `Backspace`): `reader.close(comicId)` e volta para a rota anterior (`navigate(-1)`, ou `/library` se não houver histórico).
-- **Erros:** `FILE_MISSING` e `CORRUPTED_FILE` mostram um estado de erro com "Voltar" e "Excluir da biblioteca" (RF-62). Uma página individual que falha mostra um placeholder "Não foi possível carregar a página N", e a navegação continua.
+- Route: `#/read/:comicId`.
+- The reader occupies the entire area: the sidebar is **hidden** in the reader, which has its own "Back" button.
+- **Entry:** `reader.open(comicId)` → `ReaderSession`. While loading, the screen shows a blurred cover + spinner.
+- **Exit** (Back button, `Esc` with nothing else active, or `Backspace`): `reader.close(comicId)` and returns to the previous route (`navigate(-1)`, or `/library` if there's no history).
+- **Errors:** `FILE_MISSING` and `CORRUPTED_FILE` show an error state with "Back" and "Remove from library" (RF-62). An individual page that fails to load shows a "Couldn't load page N" placeholder, and navigation continues.
 
 ## 2. Layout
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ ←  Batman: Ano Um #1                                ▣ ▥ ≡  − 100% +  ♡ ⋯  ☾  ⛶ │  ← barra superior
+│ ←  Batman: Year One #1                               ▣ ▥ ≡  − 100% +  ♡ ⋯  ☾  ⛶ │  ← top bar
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│   ‹                        [ PÁGINA ]                           ›    │  ← área de leitura
+│   ‹                        [ PAGE ]                             ›    │  ← reading area
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────┤
-│  ━━━━━━━━━━━━━━━━━━━●──────────────────────────   12 / 48   [Ir…]    │  ← barra inferior
+│  ━━━━━━━━━━━━━━━━━━━●──────────────────────────   12 / 48   [Go…]    │  ← bottom bar
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Barra superior:** voltar; título (clicável → renomear); seletor de modo (`single` / `double` / `vertical`); controles de ajuste/zoom (dependem do modo); favoritar (RF-44); menu `⋯` (Marcar como não lida, Restaurar padrões de leitura); tela cheia (⛶).
-- **Barra inferior:** slider de páginas (arrastar mostra o preview "página N"), indicador `N / total` (clicável → campo "Ir para página") e setas de navegação.
-- **Área de leitura:** fundo `--reader-bg` (quase preto).
-- **Auto-ocultar:** em **tela cheia**, as barras somem após 1,5 s sem movimento do mouse e reaparecem ao mover o mouse ou aproximá-lo das bordas. A transição de opacidade/posição das barras é suave (`150ms ease-out`, `transition-[opacity,transform]`), não um corte abrupto. A scrollbar da área de leitura também some junto (`scrollbar-width: none` / `::-webkit-scrollbar`), e o cursor some quando as barras estão ocultas. Fora da tela cheia, as barras ficam sempre visíveis.
+- **Top bar:** back; title (clickable → rename); mode selector (`single` / `double` / `vertical`); fit/zoom controls (depend on mode); favorite (RF-44); `⋯` menu (Mark as unread, Restore reading defaults); fullscreen (⛶).
+- **Bottom bar:** page slider (dragging shows the "page N" preview), `N / total` indicator (clickable → "Go to page" field), and navigation arrows.
+- **Reading area:** `--reader-bg` background (near-black).
+- **Auto-hide:** in **fullscreen**, the bars disappear after 1.5 s of no mouse movement and reappear when the mouse moves or approaches the edges. The opacity/position transition of the bars is smooth (`150ms ease-out`, `transition-[opacity,transform]`), not an abrupt cut. The reading area's scrollbar also disappears along with them (`scrollbar-width: none` / `::-webkit-scrollbar`), and the cursor disappears when the bars are hidden. Outside of fullscreen, the bars are always visible.
 
-## 3. Modos de leitura
+## 3. Reading modes
 
-### 3.1 Página única (`single`) — RF-31
+### 3.1 Single page (`single`) — RF-31
 
-Mostra uma página centralizada. Os ajustes (`fit`) são:
-- **Altura** (padrão): a página inteira cabe na altura da área.
-- **Largura**: a largura ocupa a área e o excedente vertical é rolável.
-- **Original**: 100% dos pixels da imagem.
+Shows one centered page. The fit options are:
+- **Height** (default): the whole page fits within the area's height.
+- **Width**: the width fills the area and the vertical overflow is scrollable.
+- **Original**: 100% of the image's pixels.
 
-O **zoom** (RF-34) multiplica o tamanho resultante do `fit` (25%–400%, passos de 10% até 100% e de 25% acima), com o indicador "100%" clicável para resetar.
-- Quando a página excede a área, ela pode ser arrastada (pan) com o mouse (cursor `grab`) e rolada com a roda/`↑`/`↓`.
-- O zoom com `Ctrl+roda` é ancorado no ponteiro do mouse.
-- Ao trocar de página, a rolagem volta ao **topo** da nova página. O zoom/fit se mantém.
+**Zoom** (RF-34) multiplies the resulting `fit` size (25%–400%, in steps of 10% up to 100% and 25% above that), with the "100%" indicator clickable to reset.
+- When the page exceeds the area, it can be dragged (pan) with the mouse (`grab` cursor) and scrolled with the wheel/`↑`/`↓`.
+- Zoom with `Ctrl+wheel` is anchored to the mouse pointer.
+- When changing pages, the scroll position returns to the **top** of the new page. Zoom/fit is preserved.
 
-### 3.2 Página dupla (`double`) — RF-32
+### 3.2 Double page (`double`) — RF-32
 
-Monta os **spreads** a partir da lista de páginas:
-1. A página 0 (capa) fica sempre sozinha.
-2. Uma página **larga** (`width > height`, conhecida via `comic_pages` ou medida ao carregar) fica sozinha.
-3. As demais formam pares em ordem: `[1,2]`, `[3,4]`, …
-4. Com `doubleOffset = true`, a capa passa a ter par e os pares se deslocam em 1 (corrige HQs com páginas duplas "quebradas").
-5. Uma página final sem par fica sozinha.
+Builds the **spreads** from the page list:
+1. Page 0 (cover) is always alone.
+2. A **wide** page (`width > height`, known via `comic_pages` or measured on load) is alone.
+3. The remaining pages form pairs in order: `[1,2]`, `[3,4]`, …
+4. With `doubleOffset = true`, the cover gets paired and the pairs shift by 1 (fixes comics with "broken" double pages).
+5. A final unpaired page is alone.
 
-A exibição é **esquerda→direita**, com as duas páginas juntas (sem gap), escaladas com a mesma altura, e o spread inteiro respeita o `fit`/zoom como no modo single. A navegação avança por spread. `current_page` salvo = índice da **primeira** página do spread.
+Display is **left-to-right**, with the two pages side by side (no gap), scaled to the same height, and the whole spread respects `fit`/zoom as in single mode. Navigation advances by spread. The saved `current_page` = index of the **first** page of the spread.
 
-Se as dimensões de uma página ainda não são conhecidas, a montagem assume retrato e é **recalculada** quando a imagem carrega, preservando a página atual visível.
+If a page's dimensions aren't known yet, the layout assumes portrait and is **recalculated** when the image loads, preserving the currently visible page.
 
-### 3.3 Vertical contínuo (`vertical`) — RF-33 ("portrait com zoom")
+### 3.3 Continuous vertical (`vertical`) — RF-33 ("portrait with zoom")
 
-- As páginas ficam empilhadas numa coluna centralizada, com gap de 0 px (webtoon), rolagem contínua.
-- **Largura da coluna** = `verticalWidth × largura da área` (20%–100%, padrão 60%). É o "zoom" deste modo: `+`/`-`, `Ctrl+roda` e o slider na barra superior alteram a largura em passos de 5%.
-- **Virtualização** com `@tanstack/react-virtual`: só as páginas dentro de ±2 viewports ficam montadas (RNF-03). A altura estimada de cada item vem de `width/height` conhecidos (ou 1.5× a largura), e ela é medida e corrigida ao carregar.
-- **Página atual** = a página que cruza a linha a 1/3 da altura da viewport. Ela é atualizada durante o scroll (throttle de 150 ms) e reportada via `setPage`.
-- Ao abrir ou trocar para este modo, a rolagem posiciona o topo da página atual no topo da viewport.
-- Mudar a largura preserva a página atual e a posição relativa dentro dela.
+- Pages are stacked in a centered column, with 0 px gap (webtoon style), continuous scroll.
+- **Column width** = `verticalWidth × area width` (20%–100%, default 60%). This is this mode's "zoom": `+`/`-`, `Ctrl+wheel`, and the slider in the top bar change the width in 5% steps.
+- **Virtualization** with `@tanstack/react-virtual`: only pages within ±2 viewports are mounted (RNF-03). Each item's estimated height comes from known `width/height` (or 1.5× the width), and it is measured and corrected on load.
+- **Current page** = the page crossing the line at 1/3 of the viewport height. It's updated during scroll (150 ms throttle) and reported via `setPage`.
+- When opening or switching to this mode, scrolling positions the top of the current page at the top of the viewport.
+- Changing the width preserves the current page and the relative position within it.
 
 ### 3.4 PDF
 
-Funciona nos três modos. O renderer carrega `comic://file/{id}` com o pdf.js (`pdfjs-dist`, worker empacotado localmente) e renderiza cada página num `<canvas>` na resolução `larguraExibida × devicePixelRatio`. Renders fora da janela de pré-carregamento são descartados para liberar memória. Na primeira renderização de cada página, o renderer reporta `reportPageSize` (usado pelo spread e pelos placeholders).
+Works in all three modes. The renderer loads `comic://file/{id}` with pdf.js (`pdfjs-dist`, locally bundled worker) and renders each page onto a `<canvas>` at `displayWidth × devicePixelRatio` resolution. Renders outside the preload window are discarded to free up memory. On the first render of each page, the renderer reports `reportPageSize` (used by the spread layout and placeholders).
 
-## 4. Navegação — RF-35, RF-36
+## 4. Navigation — RF-35, RF-36
 
-"Avançar" = próxima página (single), próximo spread (double) ou próxima página alinhada ao topo (vertical).
+"Advance" = next page (single), next spread (double), or next page aligned to the top (vertical).
 
 ### 4.1 Mouse
-| Ação | single / double | vertical |
+| Action | single / double | vertical |
 |---|---|---|
-| Clique no terço esquerdo da área | Voltar | — (sem zonas; o clique não navega) |
-| Clique no terço direito | Avançar | — |
-| Clique no centro | Mostrar/ocultar barras (em tela cheia) | Mostrar/ocultar barras |
-| Roda ↓ / ↑ | Se a página cabe inteira: avançar/voltar (1 troca por gesto, com cooldown de 250 ms). Se excede: rola; no fim/início, mais um gesto troca de página. | Rola normalmente |
-| `Ctrl` + roda | Zoom | Largura da coluna |
-| Botões laterais do mouse (4/5) | Voltar / Avançar | Voltar / Avançar página |
-| Arrastar (com zoom) | Pan | — |
-| Duplo clique | Alterna entre `fit` atual e zoom 200% no ponto | Alterna tela cheia |
+| Click on the left third of the area | Back | — (no zones; click doesn't navigate) |
+| Click on the right third | Advance | — |
+| Click in the center | Show/hide bars (in fullscreen) | Show/hide bars |
+| Wheel ↓ / ↑ | If the page fits entirely: advance/back (1 change per gesture, with a 250 ms cooldown). If it overflows: scrolls; at the end/start, one more gesture changes the page. | Scrolls normally |
+| `Ctrl` + wheel | Zoom | Column width |
+| Mouse side buttons (4/5) | Back / Advance | Back / Advance page |
+| Drag (with zoom) | Pan | — |
+| Double click | Toggles between current `fit` and 200% zoom at the point | Toggles fullscreen |
 
-Os cliques nas zonas não disparam quando o gesto foi um arrasto (pan).
+Clicks in the zones don't trigger when the gesture was a drag (pan).
 
-## 5. Atalhos de teclado
+## 5. Keyboard shortcuts
 
-Os atalhos ficam ativos apenas na rota do leitor e são ignorados quando o foco está num input.
+Shortcuts are only active on the reader route and are ignored when focus is on an input.
 
-| Tecla | Ação |
+| Key | Action |
 |---|---|
-| `→` / `PageDown` | Avançar |
-| `←` / `PageUp` | Voltar |
-| `Espaço` | Rolar ~85% da viewport para baixo; se já está no fim da página (ou a página cabe), avança |
-| `Shift+Espaço` | Inverso do Espaço |
-| `↓` / `↑` | Rolar 15% da viewport (quando há excedente) |
-| `Home` / `End` | Primeira / última página |
-| `G` | Abrir "Ir para página" |
-| `1` / `2` / `3` | Modo página única / dupla / vertical |
-| `W` | Alternar `fit` Altura ↔ Largura (single/double) |
-| `+` / `=` e `-` | Zoom in/out (ou largura, no vertical) |
-| `0` | Resetar zoom (100%, ou largura padrão no vertical) |
-| `O` | Alternar "Deslocar pares" (double) |
-| `F` / `F11` | Tela cheia |
-| `S` | Favoritar/desfavoritar |
-| `Esc` | Na ordem: fecha o diálogo/menu aberto → sai da tela cheia → sai do leitor |
-| `Backspace` | Sair do leitor |
-| `?` | Mostrar painel de atalhos |
+| `→` / `PageDown` | Advance |
+| `←` / `PageUp` | Back |
+| `Space` | Scroll ~85% of the viewport down; if already at the end of the page (or the page fits), advances |
+| `Shift+Space` | Reverse of Space |
+| `↓` / `↑` | Scroll 15% of the viewport (when there's overflow) |
+| `Home` / `End` | First / last page |
+| `G` | Open "Go to page" |
+| `1` / `2` / `3` | Single / double / vertical page mode |
+| `W` | Toggle `fit` Height ↔ Width (single/double) |
+| `+` / `=` and `-` | Zoom in/out (or width, in vertical) |
+| `0` | Reset zoom (100%, or default width in vertical) |
+| `O` | Toggle "Offset pairs" (double) |
+| `F` / `F11` | Fullscreen |
+| `S` | Favorite/unfavorite |
+| `Esc` | In order: closes the open dialog/menu → exits fullscreen → exits the reader |
+| `Backspace` | Exit the reader |
+| `?` | Show shortcuts panel |
 
-A tabela de atalhos também aparece num diálogo (`?`) e em Configurações.
+The shortcuts table also appears in a dialog (`?`) and in Settings.
 
-## 6. Tela cheia — RF-37
+## 6. Fullscreen — RF-37
 
-`BrowserWindow.setFullScreen(true)` (via `app.toggleFullscreen`), com a janela acima da barra de tarefas/dock do sistema. O leitor entra em tela cheia automaticamente ao abrir uma HQ (com as barras já em modo ocioso, auto-ocultando após 1,5 s) e sai dela ao sair do leitor. O modo foco (RF-38) foi removido (ADR em `10`).
+`BrowserWindow.setFullScreen(true)` (via `app.toggleFullscreen`), with the window above the system's taskbar/dock. The reader enters fullscreen automatically when a comic is opened (with the bars already in idle mode, auto-hiding after 1.5 s) and exits it when leaving the reader. Focus mode (RF-38) was removed (see ADR in `10`).
 
-O renderer escuta `onFullscreenChanged`, porque o usuário pode sair da tela cheia por meios do SO.
+The renderer listens to `onFullscreenChanged`, because the user may exit fullscreen through OS means.
 
-Sair do leitor (voltar, `Esc`, ou desmontagem por qualquer outro motivo) enquanto a janela está em tela cheia também sai da tela cheia — a janela nunca fica presa em tela cheia fora do leitor, já que o toggle é exclusivo dessa tela.
+Leaving the reader (back, `Esc`, or unmount for any other reason) while the window is in fullscreen also exits fullscreen — the window never gets stuck in fullscreen outside the reader, since the toggle is exclusive to this screen.
 
-## 7. Pré-carregamento e cache — RF-43, RNF-01
+## 7. Preloading and cache — RF-43, RNF-01
 
 **Main (`PageCacheService`)**
-- `reader.open` chama `ensure(comicId, startPage)`: se `cache/pages/{id}/.complete` não existe, inicia a extração completa em segundo plano, **a partir da página atual** (ordem: atual → fim → início).
-- `comic://page/{id}/{n}`: se o arquivo da página existe no cache, serve direto. Senão, no ZIP lê a entrada direto do arquivo (acesso aleatório) e grava no cache. No RAR, aguarda a extração em andamento chegar à página (a extração RAR é sequencial).
-- Na extração, mede a página com `image-size` e grava `width/height` em `comic_pages` (em lote).
-- **LRU:** a data de acesso de cada diretório `cache/pages/{id}` fica registrada em memória e persistida no `mtime` do marcador. Quando o total passa de `cache.maxBytes`, remove as HQs menos recentes, nunca a HQ aberta.
+- `reader.open` calls `ensure(comicId, startPage)`: if `cache/pages/{id}/.complete` doesn't exist, it starts full extraction in the background, **starting from the current page** (order: current → end → start).
+- `comic://page/{id}/{n}`: if the page file already exists in the cache, serves it directly. Otherwise, for ZIP it reads the entry directly from the file (random access) and writes it to the cache. For RAR, it waits for the ongoing extraction to reach the page (RAR extraction is sequential).
+- During extraction, it measures the page with `image-size` and writes `width/height` to `comic_pages` (in batches).
+- **LRU:** the access date of each `cache/pages/{id}` directory is recorded in memory and persisted in the marker's `mtime`. When the total exceeds `cache.maxBytes`, it removes the least recently used comics, never the one currently open.
 
 **Renderer**
-- single/double: pré-carrega (`new Image().src = url` + `decode()`) as **3 próximas** e **1 anterior** páginas/spreads.
-- vertical: a virtualização monta ±2 viewports, e as imagens usam `loading="eager"` dentro dessa janela.
-- Todas as `<img>` usam `decoding="async"` e `draggable={false}`.
+- single/double: preloads (`new Image().src = url` + `decode()`) the **3 next** and **1 previous** pages/spreads.
+- vertical: virtualization mounts ±2 viewports, and images use `loading="eager"` within that window.
+- All `<img>` elements use `decoding="async"` and `draggable={false}`.
 
-## 8. Progresso — RF-40, RF-41, RF-42
+## 8. Progress — RF-40, RF-41, RF-42
 
-- A cada mudança de página, o renderer chama `reader.setPage(comicId, page)`. O debounce e o flush ficam no main ([04 §4.4](04-contratos-ipc.md#44-reader)).
-- `last_read_at` é atualizado em cada gravação.
-- **Preferências:** qualquer mudança de modo, fit, zoom, largura ou deslocamento chama `reader.savePrefs` (debounce de 500 ms no renderer). "Restaurar padrões de leitura" (menu `⋯`) chama `resetPrefs`.
-- **Conclusão:** quando a última página fica visível (single: exibida; double: último spread exibido; vertical: a última página cruza a linha de 1/3 **ou** o scroll chega ao fim), o renderer chama `reader.complete` uma vez por sessão.
-- **Painel de fim:** "avançar" estando no fim abre um overlay centralizado:
+- On every page change, the renderer calls `reader.setPage(comicId, page)`. Debounce and flush live in main ([04 §4.4](04-contratos-ipc.md#44-reader)).
+- `last_read_at` is updated on every write.
+- **Preferences:** any change to mode, fit, zoom, width, or offset calls `reader.savePrefs` (500 ms debounce in the renderer). "Restore reading defaults" (`⋯` menu) calls `resetPrefs`.
+- **Completion:** when the last page becomes visible (single: displayed; double: last spread displayed; vertical: the last page crosses the 1/3 line **or** scroll reaches the end), the renderer calls `reader.complete` once per session.
+- **End panel:** "advancing" while at the end opens a centered overlay:
 
 ```
 ┌──────────────────────────────────────────────┐
-│  ✓ Você terminou "Batman: Ano Um #1"         │
+│  ✓ You finished "Batman: Year One #1"        │
 │                                              │
-│  Próximo arquivo desta pasta:                │
-│  [capa]  Batman: Ano Um #2        [ Ler → ]  │
+│  Next file in this folder:                   │
+│  [cover]  Batman: Year One #2      [ Read → ] │
 │                                              │
-│  [ Voltar à biblioteca ]   [ Ficar aqui ]    │
+│  [ Back to library ]       [ Stay here ]     │
 └──────────────────────────────────────────────┘
 ```
 
-- A sugestão vem de `nextInFolder` (`ReaderSession`, docs/04 §2): o próximo arquivo em ordem natural dentro da mesma pasta (docs/05 §6) — puramente posicional, sem depender de nenhuma organização manual.
-- **Ler →** chama `reader.open(nextId)` sem sair da rota (`replace`).
-- Sem próximo arquivo na pasta (última ou única HQ do diretório): só os botões de baixo aparecem.
-- `→` no painel ativa o botão focado (padrão: "Ler →" se existir); `Esc` fecha.
+- The suggestion comes from `nextInFolder` (`ReaderSession`, docs/04 §2): the next file in natural order within the same folder (docs/05 §6) — purely positional, with no dependency on any manual organization.
+- **Read →** calls `reader.open(nextId)` without leaving the route (`replace`).
+- When there's no next file in the folder (last or only comic in the directory): only the bottom buttons appear.
+- `→` in the panel activates the focused button (default: "Read →" if it exists); `Esc` closes it.
 
-## 9. Estado (Zustand `reader-store`)
+## 9. State (Zustand `reader-store`)
 
 ```ts
 interface ReaderState {
   session: ReaderSession | null;
   currentPage: number;
   prefs: ReaderPrefs;
-  spreads: number[][];          // derivado (double)
-  chromeVisible: boolean;       // barras visíveis
+  spreads: number[][];          // derived (double)
+  chromeVisible: boolean;       // bars visible
   isFullscreen: boolean;
   endPanelOpen: boolean;
   goTo(page: number): void;     // clamp + setPage IPC
@@ -175,17 +175,17 @@ interface ReaderState {
 }
 ```
 
-Os componentes de modo (`SingleView`, `DoubleView`, `VerticalView`, e `PdfPage` para páginas de PDF) só consomem o estado. A lógica de navegação fica em hooks testáveis (`useReaderKeyboard`, `useWheelPaging`, `computeSpreads`).
+The mode components (`SingleView`, `DoubleView`, `VerticalView`, and `PdfPage` for PDF pages) only consume state. The navigation logic lives in testable hooks (`useReaderKeyboard`, `useWheelPaging`, `computeSpreads`).
 
-## 10. Critérios de aceite do leitor (resumo para QA)
+## 10. Reader acceptance criteria (QA summary)
 
-- [ ] Abrir uma HQ em andamento mostra exatamente a página salva, no modo salvo.
-- [ ] Fechar o app com `Alt+F4` no meio da leitura e reabrir volta à mesma página.
-- [ ] `←`/`→` funcionam nos 3 modos. Clique nas zonas funciona em single/double.
-- [ ] Página larga aparece sozinha no modo duplo. "Deslocar pares" altera o pareamento.
-- [ ] No vertical, `+`/`-` muda a largura e a página visível não "pula".
-- [ ] Tela cheia: barras somem em 1,5 s e voltam com o mouse; a barra de tarefas/dock também some.
-- [ ] Chegar à última página marca como lida, e avançar mostra o painel com o próximo arquivo da pasta (quando existir).
-- [ ] Sair do leitor em tela cheia devolve a janela ao estado normal.
-- [ ] HQ de 300 páginas no vertical: uso de memória dentro do RNF-03.
-- [ ] PDF abre e navega nos 3 modos.
+- [ ] Opening a comic in progress shows exactly the saved page, in the saved mode.
+- [ ] Closing the app with `Alt+F4` mid-read and reopening returns to the same page.
+- [ ] `←`/`→` work in all 3 modes. Clicking the zones works in single/double.
+- [ ] A wide page appears alone in double mode. "Offset pairs" changes the pairing.
+- [ ] In vertical mode, `+`/`-` changes the width and the visible page doesn't "jump".
+- [ ] Fullscreen: bars disappear after 1.5 s and return with the mouse; the taskbar/dock also disappears.
+- [ ] Reaching the last page marks it as read, and advancing shows the panel with the next file in the folder (when one exists).
+- [ ] Leaving the reader in fullscreen returns the window to its normal state.
+- [ ] A 300-page comic in vertical mode: memory usage within RNF-03.
+- [ ] PDF opens and navigates in all 3 modes.

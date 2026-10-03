@@ -7,26 +7,19 @@ import { insertLibraryFolder } from '../db/repositories/library-folders'
 import { markRead, setCurrentPage } from '../db/repositories/progress'
 import { createAppPaths } from '../utils/paths'
 import { LibraryService } from './library-service'
-
-/**
- * RNF-02 (docs/01 §5): com 5.000 HQs, busca/filtro respondem em < 200 ms e a
- * consulta do Início é rápida. Mede só o backend (SQLite + DTOs); a rolagem a
- * 60 fps da grade é garantida pela virtualização no renderer. Os limites
- * abaixo são o do requisito, com folga de máquina lenta no CI.
- */
 const COUNT = 5000
 const SEARCH_LIMIT_MS = 200
 const HOME_LIMIT_MS = 300
-
 let db: Db
 let service: LibraryService
-
-function timed<T>(fn: () => T): { result: T; ms: number } {
+function timed<T>(fn: () => T): {
+  result: T
+  ms: number
+} {
   const start = performance.now()
   const result = fn()
   return { result, ms: performance.now() - start }
 }
-
 beforeAll(() => {
   db = createDb(':memory:')
   service = new LibraryService(db, createAppPaths(tmpdir()))
@@ -58,8 +51,7 @@ beforeAll(() => {
     if (i % 5 === 0) markRead(db, id)
     else if (i % 3 === 0) setCurrentPage(db, id, 4)
   }
-}, 60_000)
-
+}, 60000)
 const baseQuery = {
   sort: 'createdAt',
   order: 'desc',
@@ -68,19 +60,16 @@ const baseQuery = {
   limit: 60,
   offset: 0,
 } as const
-
 describe(`Biblioteca com ${COUNT} HQs (RNF-02)`, () => {
   it('busca sem acento responde em < 200 ms', () => {
     const { result, ms } = timed(() => service.list({ ...baseQuery, search: 'acao' }))
     expect(result.total).toBeGreaterThan(0)
     expect(ms).toBeLessThan(SEARCH_LIMIT_MS)
   })
-
   it.each(['title', 'createdAt', 'lastReadAt'] as const)('ordenar por %s em < 200 ms', (sort) => {
     const { ms } = timed(() => service.list({ ...baseQuery, sort }))
     expect(ms).toBeLessThan(SEARCH_LIMIT_MS)
   })
-
   it('filtro de status e paginação profunda em < 200 ms', () => {
     const filtered = timed(() => service.list({ ...baseQuery, status: 'reading' }))
     const deep = timed(() => service.list({ ...baseQuery, offset: 4900 }))
@@ -88,7 +77,6 @@ describe(`Biblioteca com ${COUNT} HQs (RNF-02)`, () => {
     expect(deep.result.items.length).toBeGreaterThan(0)
     expect(deep.ms).toBeLessThan(SEARCH_LIMIT_MS)
   })
-
   it('consulta do Início (boot) rápida', () => {
     const { ms } = timed(() => service.home())
     expect(ms).toBeLessThan(HOME_LIMIT_MS)

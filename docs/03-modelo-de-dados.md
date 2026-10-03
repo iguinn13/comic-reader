@@ -1,12 +1,12 @@
-# 03 — Modelo de dados
+# 03 — Data model
 
-## 1. Visão geral
+## 1. Overview
 
 ```mermaid
 erDiagram
-  library_folders ||--o{ comics : "contém"
-  comics ||--o{ comic_pages : "tem"
-  comics ||--|| reading_progress : "tem"
+  library_folders ||--o{ comics : "contains"
+  comics ||--o{ comic_pages : "has"
+  comics ||--|| reading_progress : "has"
 
   library_folders {
     text id PK
@@ -50,78 +50,78 @@ erDiagram
   }
 ```
 
-Convenções:
+Conventions:
 - **IDs:** UUID v4 (`crypto.randomUUID()`), `TEXT`.
-- **Datas:** epoch em milissegundos, `INTEGER`.
-- **Booleanos:** `INTEGER` 0/1 (Drizzle `mode: 'boolean'`).
-- **`*_normalized`:** minúsculas, sem acentos (`normalize('NFD').replace(/\p{Diacritic}/gu, '')`) e espaços colapsados. Usado em busca e unicidade.
+- **Dates:** epoch in milliseconds, `INTEGER`.
+- **Booleans:** `INTEGER` 0/1 (Drizzle `mode: 'boolean'`).
+- **`*_normalized`:** lowercase, no accents (`normalize('NFD').replace(/\p{Diacritic}/gu, '')`) and collapsed spaces. Used for search and uniqueness.
 
-## 2. Tabelas
+## 2. Tables
 
 ### 2.1 `library_folders`
 
-Pastas-raiz configuradas pelo usuário (RF-01/RF-03), escaneadas recursivamente pelo `LibraryScanService` (docs/05-importacao.md). O app nunca copia arquivos: as HQs são lidas in-place, a partir do caminho salvo em `comics.file_path` (ver ADR de `docs/10-decisoes.md`).
+Root folders configured by the user (RF-01/RF-03), scanned recursively by `LibraryScanService` (docs/05-importacao.md). The app never copies files: comics are read in place, from the path saved in `comics.file_path` (see the ADR in `docs/10-decisoes.md`).
 
-| Coluna | Tipo | Regras |
+| Column | Type | Rules |
 |---|---|---|
 | `id` | TEXT PK | UUID |
-| `path` | TEXT NOT NULL | Caminho absoluto, `UNIQUE` |
+| `path` | TEXT NOT NULL | Absolute path, `UNIQUE` |
 | `created_at` | INTEGER NOT NULL | |
 
-Índice: `idx_folders_path(path)` (único).
+Index: `idx_folders_path(path)` (unique).
 
-Remover uma pasta-raiz apaga em cascata todas as HQs indexadas sob ela (`comics.folder_id` `ON DELETE CASCADE`) — nunca os arquivos originais.
+Removing a root folder cascades to delete all comics indexed under it (`comics.folder_id` `ON DELETE CASCADE`) — never the original files.
 
 ### 2.2 `comics`
 
-| Coluna | Tipo | Regras |
+| Column | Type | Rules |
 |---|---|---|
 | `id` | TEXT PK | UUID |
-| `title` | TEXT NOT NULL | 1–200 caracteres (RF-16) |
-| `title_normalized` | TEXT NOT NULL | Atualizada junto com `title` |
-| `format` | TEXT NOT NULL | `'zip' \| 'rar' \| 'pdf'`, formato **real** detectado por magic bytes |
-| `file_path` | TEXT NOT NULL | Caminho absoluto do arquivo original, `UNIQUE`. **Nunca** exposto ao renderer — só IDs cruzam o IPC (docs/02 §4) |
-| `dir_path` | TEXT NOT NULL | Pasta-pai de `file_path`; usado para achar o "próximo arquivo da pasta" (RF-42) |
-| `folder_id` | TEXT NOT NULL FK → library_folders ON DELETE CASCADE | Pasta-raiz sob a qual o arquivo foi encontrado |
-| `original_file_name` | TEXT NOT NULL | Nome original (para exibição em "Detalhes"/erros) |
+| `title` | TEXT NOT NULL | 1–200 characters (RF-16) |
+| `title_normalized` | TEXT NOT NULL | Updated together with `title` |
+| `format` | TEXT NOT NULL | `'zip' \| 'rar' \| 'pdf'`, the **real** format detected via magic bytes |
+| `file_path` | TEXT NOT NULL | Absolute path of the original file, `UNIQUE`. **Never** exposed to the renderer — only IDs cross the IPC boundary (docs/02 §4) |
+| `dir_path` | TEXT NOT NULL | Parent folder of `file_path`; used to find the "next file in the folder" (RF-42) |
+| `folder_id` | TEXT NOT NULL FK → library_folders ON DELETE CASCADE | Root folder under which the file was found |
+| `original_file_name` | TEXT NOT NULL | Original name (for display in "Details"/errors) |
 | `file_size` | INTEGER NOT NULL | Bytes |
-| `file_hash` | TEXT NOT NULL | SHA-1 hex do arquivo (RF-05), usado pra pular duplicatas entre pastas sobrepostas |
+| `file_hash` | TEXT NOT NULL | SHA-1 hex of the file (RF-05), used to skip duplicates between overlapping folders |
 | `page_count` | INTEGER NOT NULL | ≥ 1 |
-| `cover_version` | INTEGER NOT NULL DEFAULT 0 | Incrementado quando a capa é (re)gerada; 0 = capa ainda não gerada (placeholder) |
+| `cover_version` | INTEGER NOT NULL DEFAULT 0 | Incremented when the cover is (re)generated; 0 = cover not yet generated (placeholder) |
 | `is_favorite` | INTEGER NOT NULL DEFAULT 0 | RF-15 |
-| `created_at` | INTEGER NOT NULL | Data em que a HQ foi indexada |
+| `created_at` | INTEGER NOT NULL | Date the comic was indexed |
 | `updated_at` | INTEGER NOT NULL | |
 
-Índices: `idx_comics_title_norm(title_normalized)`, `idx_comics_created(created_at)`, `idx_comics_hash(file_hash)`, `idx_comics_fav(is_favorite)`, `idx_comics_dir(dir_path)`, `idx_comics_file_path(file_path)` (único).
+Indexes: `idx_comics_title_norm(title_normalized)`, `idx_comics_created(created_at)`, `idx_comics_hash(file_hash)`, `idx_comics_fav(is_favorite)`, `idx_comics_dir(dir_path)`, `idx_comics_file_path(file_path)` (unique).
 
 ### 2.3 `comic_pages`
 
-Ordem canônica das páginas de CBZ/CBR. Para PDF não há linhas (o pdf.js fornece as páginas), e `page_count` vem do `pdf-lib`.
+Canonical page order for CBZ/CBR. For PDF there are no rows (pdf.js provides the pages), and `page_count` comes from `pdf-lib`.
 
-| Coluna | Tipo | Regras |
+| Column | Type | Rules |
 |---|---|---|
 | `comic_id` | TEXT FK → comics ON DELETE CASCADE | |
-| `page_index` | INTEGER | 0-based, contínuo |
-| `entry_name` | TEXT NOT NULL | Caminho da entrada dentro do arquivo compactado |
-| `width` | INTEGER NULL | Preenchido na extração para o cache (via `image-size`) |
-| `height` | INTEGER NULL | Idem |
+| `page_index` | INTEGER | 0-based, contiguous |
+| `entry_name` | TEXT NOT NULL | Path of the entry inside the archive |
+| `width` | INTEGER NULL | Filled in during extraction into the cache (via `image-size`) |
+| `height` | INTEGER NULL | Same |
 
 PK: `(comic_id, page_index)`.
-As dimensões servem para o modo página dupla (detectar páginas largas) e para os placeholders do modo vertical (evitar saltos de layout). Enquanto estão nulas, o renderer assume a proporção 2:3 e corrige ao carregar a imagem.
+The dimensions are used for double-page mode (detecting wide pages) and for placeholders in vertical mode (avoiding layout jumps). While they are null, the renderer assumes a 2:3 ratio and corrects it once the image loads.
 
 ### 2.4 `reading_progress`
 
-Uma linha por HQ, criada junto com a HQ.
+One row per comic, created together with the comic.
 
-| Coluna | Tipo | Regras |
+| Column | Type | Rules |
 |---|---|---|
 | `comic_id` | TEXT PK FK → comics ON DELETE CASCADE | |
-| `current_page` | INTEGER NOT NULL DEFAULT 0 | 0-based. Em página dupla, é a página da esquerda do spread |
-| `last_read_at` | INTEGER NULL | Atualizado a cada salvamento de progresso |
-| `completed_at` | INTEGER NULL | Não nulo = lida |
-| `reader_prefs` | TEXT NULL | JSON `ReaderPrefs` (RF-41); nulo = usa os padrões globais |
+| `current_page` | INTEGER NOT NULL DEFAULT 0 | 0-based. In double-page mode, this is the left page of the spread |
+| `last_read_at` | INTEGER NULL | Updated on every progress save |
+| `completed_at` | INTEGER NULL | Not null = read |
+| `reader_prefs` | TEXT NULL | `ReaderPrefs` JSON (RF-41); null = uses the global defaults |
 
-**Status derivado** (RF-14), calculado em SQL:
+**Derived status** (RF-14), computed in SQL:
 ```sql
 CASE
   WHEN completed_at IS NOT NULL THEN 'read'
@@ -129,61 +129,62 @@ CASE
   ELSE 'unread'
 END
 ```
-- Marcar **lida** manualmente (biblioteca): `completed_at = now` e `current_page = 0` (reabrir começa na 1ª página).
-- Concluir a leitura no leitor (chegou ao fim): `completed_at = now`, `current_page` é mantido (o leitor abre na última).
-- Marcar **não lida**: `completed_at = NULL, current_page = 0, last_read_at = NULL`.
-- Salvar uma página **diferente** da `current_page` (voltar a ler uma HQ lida) zera `completed_at`: a HQ passa a "em andamento". Reabrir e salvar a mesma página não altera o status. Chegar de novo à última página marca como lida (RF-42).
+- Manually marking as **read** (library): `completed_at = now` and `current_page = 0` (reopening starts at page 1).
+- Completing the read in the reader (reaching the end): `completed_at = now`, `current_page` is kept as is (the reader opens at the last page).
+- Marking as **unread**: `completed_at = NULL, current_page = 0, last_read_at = NULL`.
+- Saving a page **different** from `current_page` (resuming a comic marked as read) resets `completed_at`: the comic becomes "in progress." Reopening and saving the same page does not change the status. Reaching the last page again marks it as read (RF-42).
 
-`ReaderPrefs` (JSON, validado por zod):
+`ReaderPrefs` (JSON, validated via zod):
 ```ts
 type ReaderMode = 'single' | 'double' | 'vertical';
 type FitMode = 'height' | 'width' | 'original';
 interface ReaderPrefs {
   mode: ReaderMode;
   fit: FitMode;            // single/double
-  zoom: number;            // 0.25–4.0, multiplicador sobre o fit (single/double)
-  verticalWidth: number;   // 0.2–1.0, fração da área de leitura (vertical)
-  doubleOffset: boolean;   // "Deslocar pares" (double)
+  zoom: number;            // 0.25–4.0, multiplier over the fit (single/double)
+  verticalWidth: number;   // 0.2–1.0, fraction of the reading area (vertical)
+  doubleOffset: boolean;   // "Shift pairs" (double)
 }
 ```
 
-Índices: `idx_progress_last_read(last_read_at)`, `idx_progress_completed(completed_at)`.
+Indexes: `idx_progress_last_read(last_read_at)`, `idx_progress_completed(completed_at)`.
 
 ### 2.5 `settings`
 
-Chave/valor com `value` em JSON. As chaves e os defaults ficam em `src/shared/constants.ts`:
+Key/value with `value` as JSON. The keys and defaults live in `src/shared/constants.ts`:
 
-| Chave | Tipo | Default | RF |
+| Key | Type | Default | RF |
 |---|---|---|---|
 | `reader.defaults` | `ReaderPrefs` | `{mode:'single', fit:'height', zoom:1, verticalWidth:0.6, doubleOffset:false}` | RF-50 |
 | `cache.maxBytes` | number | `2147483648` (2 GB) | RF-51 |
 | `library.view` | `{sort, order, status, favoritesOnly}` | `{sort:'createdAt', order:'desc', status:'all', favoritesOnly:false}` | RF-13 |
 | `ui.sidebarCollapsed` | boolean | `false` | RF-60 |
-| `window.bounds` | `{x,y,width,height,maximized}` | 1280×800 centralizada | RF-61 |
+| `ui.language` | `'pt-BR' \| 'en-US'` | `'pt-BR'` | RNF-09 |
+| `window.bounds` | `{x,y,width,height,maximized}` | 1280×800 centered | RF-61 |
 
-## 3. Layout em disco
+## 3. Disk layout
 
-Raiz: `app.getPath('userData')` — Windows: `%APPDATA%\Comic Reader\`; macOS: `~/Library/Application Support/Comic Reader/`; Linux: `~/.config/Comic Reader/`. Todos os caminhos são construídos **só** em `src/main/utils/paths.ts`. Não existe mais uma pasta `library/`: as HQs continuam nas pastas do próprio usuário, referenciadas por `comics.file_path`.
+Root: `app.getPath('userData')` — Windows: `%APPDATA%\Comic Reader\`; macOS: `~/Library/Application Support/Comic Reader/`; Linux: `~/.config/Comic Reader/`. All paths are built **only** in `src/main/utils/paths.ts`. There is no longer a `library/` folder: comics remain in the user's own folders, referenced via `comics.file_path`.
 
 ```
 userData/
 ├─ comic-reader.db            # SQLite (+ -wal, -shm)
 ├─ covers/
-│  ├─ comics/{comicId}.jpg    # 400 px de largura, JPEG q=82
-│  └─ folders/{key}.jpg       # capa escolhida pelo usuário p/ pasta sem HQs; key = sha1(folderId:relativePath)
+│  ├─ comics/{comicId}.jpg    # 400 px wide, JPEG q=82
+│  └─ folders/{key}.jpg       # cover chosen by the user for a folder with no comics; key = sha1(folderId:relativePath)
 ├─ cache/
 │  └─ pages/{comicId}/
-│     ├─ 0000.jpg|png|webp|gif      # índice com 4+ dígitos, extensão original
-│     └─ .complete                  # marcador: extração total concluída
+│     ├─ 0000.jpg|png|webp|gif      # index with 4+ digits, original extension
+│     └─ .complete                  # marker: full extraction completed
 └─ logs/
    └─ main.log
 ```
 
-- O **cache** é descartável: apagar `cache/` nunca perde dados.
-- As **capas** são dados derivados do app; podem ser regeneradas a partir das HQs.
-- As HQs em si **não** vivem em `userData` — um backup do app (banco + capas) não substitui um backup das pastas do usuário.
+- The **cache** is disposable: deleting `cache/` never loses data.
+- **Covers** are derived data from the app; they can be regenerated from the comics.
+- The comics themselves **do not** live in `userData` — an app backup (database + covers) does not replace a backup of the user's folders.
 
-## 4. Pragmas e migrations
+## 4. Pragmas and migrations
 
 ```sql
 PRAGMA journal_mode = WAL;
@@ -192,13 +193,13 @@ PRAGMA foreign_keys = ON;
 PRAGMA busy_timeout = 5000;
 ```
 
-- As migrations são geradas pelo `drizzle-kit generate` e aplicadas no boot com `migrate()` do Drizzle, lendo a pasta de migrations empacotada via `extraResources` do electron-builder.
-- Nunca se edita uma migration já publicada. Toda mudança é uma nova migration. (Exceção pontual: a virada de `library`/coleções para pastas in-place, antes do lançamento da v1 e sem nenhum banco de usuário em produção, consolidou a baseline `0000` — ver ADR em `docs/10-decisoes.md`.)
-- Os seeds de desenvolvimento (5.000 HQs falsas para RNF-02) ficam num script separado, `scripts/seed-dev.ts`, que nunca roda em produção.
+- Migrations are generated via `drizzle-kit generate` and applied on boot with Drizzle's `migrate()`, reading the migrations folder bundled via electron-builder's `extraResources`.
+- An already-published migration is never edited. Every change is a new migration. (One-off exception: the switch from `library`/collections to in-place folders, before the v1 release and with no production user database, consolidated the `0000` baseline — see the ADR in `docs/10-decisoes.md`.)
+- Development seeds (5,000 fake comics for RNF-02) live in a separate script, `scripts/seed-dev.ts`, which never runs in production.
 
-## 5. Consultas principais (referência)
+## 5. Main queries (reference)
 
-**Biblioteca com filtros (RF-10, RF-12, RF-13)**
+**Library with filters (RF-10, RF-12, RF-13)**
 ```sql
 SELECT c.*, p.current_page, p.last_read_at, p.completed_at, <status CASE> AS status
 FROM comics c JOIN reading_progress p ON p.comic_id = c.id
@@ -209,24 +210,24 @@ ORDER BY <c.title_normalized | c.created_at | p.last_read_at NULLS LAST> <ASC|DE
 LIMIT :limit OFFSET :offset;
 ```
 
-**Continuar lendo (RF-11)**
+**Continue reading (RF-11)**
 ```sql
 ... WHERE p.completed_at IS NULL AND p.current_page > 0
 ORDER BY p.last_read_at DESC LIMIT 20;
 ```
 
-**Próximo arquivo da pasta (RF-42)**
+**Next file in the folder (RF-42)**
 
-SQLite não faz ordenação natural (`10` viria antes de `2`), então isto é resolvido em JS, não em SQL: busca todas as HQs da mesma `dir_path`, ordena com `naturalSort()` (`src/main/archive/natural-sort.ts`, já usado para ordenar páginas dentro de um arquivo) e pega a que vem depois de `file_path` na lista ordenada.
+SQLite does not do natural ordering (`10` would come before `2`), so this is resolved in JS, not SQL: it fetches all comics with the same `dir_path`, sorts them with `naturalSort()` (`src/main/archive/natural-sort.ts`, already used to sort pages within an archive), and takes the one that comes after `file_path` in the sorted list.
 ```sql
 SELECT id, file_path FROM comics WHERE dir_path = :dirPath;
--- ordenação e "próximo" resolvidos em JS com naturalSort()
+-- sorting and "next" resolved in JS with naturalSort()
 ```
 
-**Navegação por pastas (RF-64, docs/10 ADR-018)**
+**Folder navigation (RF-64, docs/10 ADR-018)**
 
-Não existe uma tabela de pastas intermediárias — só `library_folders` (pastas-raiz) e `comics.file_path`. `LibraryService.browseFolder` busca todas as HQs de uma pasta-raiz e agrupa em JS pelo primeiro segmento do caminho relativo ao nível pedido (`path.relative`): um segmento = HQ direta neste nível; mais de um = pertence à subpasta nomeada pelo primeiro segmento.
+There is no intermediate folder table — only `library_folders` (root folders) and `comics.file_path`. `LibraryService.browseFolder` fetches all comics in a root folder and groups them in JS by the first segment of the path relative to the requested level (`path.relative`): one segment = a comic directly at this level; more than one = it belongs to the subfolder named by the first segment.
 ```sql
 SELECT * FROM comics WHERE folder_id = :folderId;
--- agrupamento em subpastas x HQs diretas resolvido em JS (path.relative + split)
+-- grouping into subfolders vs. direct comics resolved in JS (path.relative + split)
 ```

@@ -9,14 +9,11 @@ import { getComicPage, listComicPages, updatePageDimensions } from '../db/reposi
 import { getSetting } from '../db/repositories/settings'
 import { logger } from '../utils/logger'
 import type { AppPaths } from '../utils/paths'
-
 const DEFAULT_PAGE_EXTENSION = 'jpg'
-
 export interface CachedPageFile {
   path: string
   contentType: string
 }
-
 const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
@@ -26,30 +23,16 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   bmp: 'image/bmp',
   avif: 'image/avif',
 }
-
 function contentTypeFor(extension: string): string {
   return CONTENT_TYPE_BY_EXTENSION[extension.toLowerCase()] ?? 'application/octet-stream'
 }
-
-/**
- * Extração e cache de páginas de CBZ/CBR sob demanda + em segundo plano
- * (docs/06-leitor.md §7, RF-43, RF-51). PDF não passa por aqui: pdf.js
- * renderiza direto de `comic://file/{id}` (M4.9).
- */
 export class PageCacheService {
   private readonly backgroundExtractions = new Map<string, Promise<void>>()
   private readonly inFlightPages = new Map<string, Promise<CachedPageFile>>()
-
   constructor(
     private readonly db: Db,
     private readonly paths: AppPaths,
   ) {}
-
-  /**
-   * Chamado por `ReaderService.open`: garante que a extração completa está
-   * em andamento (ou já terminou), sem bloquear quem chamou. A ordem de
-   * prioridade é a página atual → fim → início (docs/06 §7).
-   */
   ensure(comicId: string, startPage: number): void {
     if (this.backgroundExtractions.has(comicId)) {
       this.touchAccess(comicId)
@@ -59,43 +42,30 @@ export class PageCacheService {
       this.touchAccess(comicId)
       return
     }
-
     const task = this.extractAllInBackground(comicId, startPage).finally(() => {
       this.backgroundExtractions.delete(comicId)
     })
     this.backgroundExtractions.set(comicId, task)
   }
-
-  /** Usado pelo handler de `comic://page/{id}/{n}`. Extrai sob demanda se ainda não está no cache. */
   async getPage(comicId: string, pageIndex: number): Promise<CachedPageFile> {
     const key = `${comicId}:${pageIndex}`
     const inFlight = this.inFlightPages.get(key)
     if (inFlight) return inFlight
-
     const task = this.resolvePage(comicId, pageIndex).finally(() => {
       this.inFlightPages.delete(key)
     })
     this.inFlightPages.set(key, task)
     return task
   }
-
   private async resolvePage(comicId: string, pageIndex: number): Promise<CachedPageFile> {
     const page = getComicPage(this.db, comicId, pageIndex)
     if (!page) throw new Error(`página ${pageIndex} não encontrada para a HQ ${comicId}`)
-
     const extension = extname(page.entryName).replace('.', '') || DEFAULT_PAGE_EXTENSION
     const cacheFile = this.paths.comicPageCacheFile(comicId, pageIndex, extension)
-
     if (existsSync(cacheFile)) {
       this.touchAccess(comicId)
       return { path: cacheFile, contentType: contentTypeFor(extension) }
     }
-
-    // Uma extração em segundo plano (`ensure`) já pode estar descompactando
-    // este mesmo arquivo — abrir e descompactar de novo aqui dobraria o
-    // trabalho (e o tempo) toda vez que o leitor é aberto. Como a extração em
-    // segundo plano grava cada página assim que a decodifica, só espera o
-    // arquivo aparecer em vez de competir por outra leitura do zip/rar.
     const backgroundTask = this.backgroundExtractions.get(comicId)
     if (backgroundTask) {
       await waitForFile(cacheFile, backgroundTask)
@@ -104,10 +74,8 @@ export class PageCacheService {
         return { path: cacheFile, contentType: contentTypeFor(extension) }
       }
     }
-
     const meta = getComicFileMeta(this.db, comicId)
     if (!meta) throw new Error(`HQ ${comicId} não encontrada`)
-
     const archive = await this.openComicArchive(meta.filePath, meta.format)
     try {
       const buffer = await archive.readPage(page.entryName)
@@ -120,7 +88,6 @@ export class PageCacheService {
       await archive.close()
     }
   }
-
   private async openComicArchive(
     filePath: string,
     format: 'zip' | 'rar' | 'pdf',
@@ -129,17 +96,17 @@ export class PageCacheService {
     const buffer = await readFile(filePath)
     return openArchive(buffer, format)
   }
-
   private async extractAllInBackground(comicId: string, startPage: number): Promise<void> {
     try {
       const meta = getComicFileMeta(this.db, comicId)
       if (!meta || meta.format === 'pdf') return
-
       const pagesByIndex = new Map(listComicPages(this.db, comicId).map((p) => [p.pageIndex, p]))
       const order = buildExtractionOrder(startPage, pagesByIndex.size)
       const archive = await this.openComicArchive(meta.filePath, meta.format)
-      const measured: { pageIndex: number; buffer: Buffer }[] = []
-
+      const measured: {
+        pageIndex: number
+        buffer: Buffer
+      }[] = []
       try {
         for (const pageIndex of order) {
           const page = pagesByIndex.get(pageIndex)
@@ -147,7 +114,6 @@ export class PageCacheService {
           const extension = extname(page.entryName).replace('.', '') || DEFAULT_PAGE_EXTENSION
           const cacheFile = this.paths.comicPageCacheFile(comicId, pageIndex, extension)
           if (existsSync(cacheFile)) continue
-
           const buffer = await archive.readPage(page.entryName)
           await mkdir(this.paths.comicPagesCacheDir(comicId), { recursive: true })
           await writeFile(cacheFile, buffer)
@@ -156,7 +122,6 @@ export class PageCacheService {
       } finally {
         await archive.close()
       }
-
       this.measureAndStoreDimensions(comicId, measured)
       await mkdir(this.paths.comicPagesCacheDir(comicId), { recursive: true })
       await writeFile(this.paths.comicPagesCompleteMarker(comicId), '')
@@ -164,48 +129,42 @@ export class PageCacheService {
       logger.error(`[page-cache] falha ao extrair a HQ ${comicId} em segundo plano:`, error)
     }
   }
-
-  /** Mede com `image-size` e grava em lote; nunca lança (dimensão é só um extra pro modo duplo). */
   private measureAndStoreDimensions(
     comicId: string,
-    pages: { pageIndex: number; buffer: Buffer }[],
+    pages: {
+      pageIndex: number
+      buffer: Buffer
+    }[],
   ): void {
-    const updates: { pageIndex: number; width: number; height: number }[] = []
+    const updates: {
+      pageIndex: number
+      width: number
+      height: number
+    }[] = []
     for (const { pageIndex, buffer } of pages) {
       try {
         const { width, height } = imageSize(buffer)
         updates.push({ pageIndex, width, height })
       } catch {
-        // Página sem dimensão detectável: o modo duplo assume retrato (docs/06 §3.2).
+        continue
       }
     }
     updatePageDimensions(this.db, comicId, updates)
   }
-
-  /** Toque de acesso pro LRU (docs/06 §7): o `mtime` do marcador é a "última leitura" da HQ. */
   private touchAccess(comicId: string): void {
     const marker = this.paths.comicPagesCompleteMarker(comicId)
     if (!existsSync(marker)) return
     const now = new Date()
     void utimes(marker, now, now).catch(() => {})
   }
-
-  /**
-   * Boot passo 4 (docs/02-arquitetura.md §7): libera espaço até
-   * `cache.maxBytes`, removendo as HQs extraídas menos recentemente
-   * acessadas primeiro — nunca a HQ aberta no momento (`keepComicId`).
-   */
   async enforceLru(keepComicId: string | null): Promise<void> {
     const maxBytes = getSetting(this.db, 'cache.maxBytes')
     const entries = await this.listCachedComicEntries()
-
     let totalBytes = entries.reduce((sum, entry) => sum + entry.bytes, 0)
     if (totalBytes <= maxBytes) return
-
     const removable = entries
       .filter((entry) => entry.comicId !== keepComicId)
       .sort((a, b) => a.lastAccess - b.lastAccess)
-
     for (const entry of removable) {
       if (totalBytes <= maxBytes) break
       await rm(entry.dir, { recursive: true, force: true }).catch((error: unknown) => {
@@ -214,13 +173,9 @@ export class PageCacheService {
       totalBytes -= entry.bytes
     }
   }
-
-  /** RF-51: bytes usados pelo cache de páginas. */
   async usageBytes(): Promise<number> {
     return directorySize(this.paths.cachePagesDir)
   }
-
-  /** RF-51 "Limpar cache": apaga o cache de páginas (descartável), exceto `keepComicId`. Devolve os bytes liberados. */
   async clear(keepComicId: string | null = null): Promise<number> {
     let comicIds: string[]
     try {
@@ -237,9 +192,13 @@ export class PageCacheService {
     }
     return freed
   }
-
   private async listCachedComicEntries(): Promise<
-    { comicId: string; dir: string; bytes: number; lastAccess: number }[]
+    {
+      comicId: string
+      dir: string
+      bytes: number
+      lastAccess: number
+    }[]
   > {
     let comicIds: string[]
     try {
@@ -247,40 +206,25 @@ export class PageCacheService {
     } catch {
       return []
     }
-
     const entries = await Promise.all(
       comicIds.map(async (comicId) => {
         const dir = this.paths.comicPagesCacheDir(comicId)
         const marker = this.paths.comicPagesCompleteMarker(comicId)
         if (!existsSync(marker)) return null
-
         const [bytes, markerStat] = await Promise.all([directorySize(dir), stat(marker)])
         return { comicId, dir, bytes, lastAccess: markerStat.mtimeMs }
       }),
     )
-
     return entries.filter((entry): entry is NonNullable<typeof entry> => entry !== null)
   }
 }
-
-/** Página atual → fim → início (docs/06-leitor.md §7). */
 export function buildExtractionOrder(startPage: number, total: number): number[] {
   const order: number[] = []
   for (let i = startPage; i < total; i++) order.push(i)
   for (let i = startPage - 1; i >= 0; i--) order.push(i)
   return order
 }
-
-/** Intervalo do polling em `waitForFile` — a extração grava uma página por vez, não há evento pra assinar. */
 const WAIT_FOR_FILE_POLL_MS = 60
-
-/**
- * Espera `path` aparecer no disco, mas nunca além do fim de `until` (a
- * extração em segundo plano pode terminar sem ter chegado nesta página, por
- * exemplo se a HQ mudou de página muito rápido). Nunca lança: uma falha em
- * `until` só termina a espera, e quem chamou decide o que fazer se o arquivo
- * ainda não existir.
- */
 async function waitForFile(path: string, until: Promise<void>): Promise<void> {
   let settled = false
   void until.finally(() => {
@@ -290,7 +234,6 @@ async function waitForFile(path: string, until: Promise<void>): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, WAIT_FOR_FILE_POLL_MS))
   }
 }
-
 async function directorySize(dir: string): Promise<number> {
   let entries: Dirent[]
   try {

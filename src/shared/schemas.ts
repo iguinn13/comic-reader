@@ -1,21 +1,10 @@
 import { z } from 'zod'
 import { CACHE_MAX_BYTES, CACHE_MIN_BYTES, TITLE_MAX_LENGTH } from './constants'
-
-/**
- * Todo input de IPC passa por um destes schemas no handler do main (RNF-06,
- * docs/04-contratos-ipc.md). Os schemas descrevem só o formato do dado — a
- * regra de negócio (HQ não encontrada, pasta já configurada, …) fica nos
- * serviços, que lançam `AppError` com o código apropriado.
- */
-
 export const zComicId = z.uuid()
 export const zFolderId = z.uuid()
-
 export const zTitle = z.string().trim().min(1).max(TITLE_MAX_LENGTH)
-
 export const zReaderMode = z.enum(['single', 'double', 'vertical'])
 export const zFitMode = z.enum(['height', 'width', 'original'])
-
 export const zReaderPrefs = z.object({
   mode: zReaderMode,
   fit: zFitMode,
@@ -23,10 +12,8 @@ export const zReaderPrefs = z.object({
   verticalWidth: z.number().min(0.2).max(1),
   doubleOffset: z.boolean(),
 })
-
 export const zReadStatusFilter = z.enum(['all', 'unread', 'reading', 'read'])
 export const zReadStatus = z.enum(['read', 'unread'])
-
 export const zLibraryQuery = z.object({
   search: z.string().trim().max(100).optional(),
   sort: z.enum(['title', 'createdAt', 'lastReadAt']),
@@ -36,17 +23,12 @@ export const zLibraryQuery = z.object({
   limit: z.number().int().min(1).max(500),
   offset: z.number().int().min(0),
 })
-
 export const zComicIdList = z.array(zComicId).min(1).max(1000)
-
 export const zDeleteComicOptions = z.object({ deleteFile: z.boolean() })
-
-/** RF-64: nível-topo é `folderId: null` (lista as pastas-raiz); `relativePath` nunca é caminho absoluto. */
 export const zFolderLocation = z.object({
   folderId: zFolderId.nullable(),
   relativePath: z.string().max(4096),
 })
-
 export const zSettingsPatch = z
   .object({
     'reader.defaults': zReaderPrefs,
@@ -59,6 +41,7 @@ export const zSettingsPatch = z
       mode: z.enum(['flat', 'folders']),
     }),
     'ui.sidebarCollapsed': z.boolean(),
+    'ui.language': z.enum(['pt-BR', 'en-US']),
     'window.bounds': z
       .object({
         x: z.number(),

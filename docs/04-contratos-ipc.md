@@ -1,19 +1,19 @@
-# 04 — Contratos IPC
+# 04 — IPC contracts
 
-O renderer fala com o main **exclusivamente** por `window.api`, definido em `src/shared/api.ts` e implementado no preload. Esse contrato é a fronteira do sistema: mudou aqui → atualize este documento no mesmo commit.
+The renderer talks to the main process **exclusively** via `window.api`, defined in `src/shared/api.ts` and implemented in the preload. This contract is the system's boundary: if it changes here, update this document in the same commit.
 
-## 1. Convenções
+## 1. Conventions
 
-- **Canais:** `dominio:acao` (ex.: `library:list`), declarados em `src/shared/channels.ts`.
+- **Channels:** `domain:action` (e.g., `library:list`), declared in `src/shared/channels.ts`.
 - **Request/response:** `ipcRenderer.invoke` ↔ `ipcMain.handle`.
-- **Eventos main → renderer:** `webContents.send`. O preload expõe `on<Evento>(cb): () => void` (retorna a função de unsubscribe).
-- **Validação:** todo input passa por um schema zod (`src/shared/schemas.ts`) no handler. Falha gera o erro `VALIDATION`.
-- **Retorno:** o handler sempre devolve `Result<T>`. O wrapper `lib/api.ts` do renderer desembrulha e lança `AppError` para o TanStack Query tratar.
-- **Serialização:** apenas dados *structured-clone* (sem classes, sem `Date`). Datas são `number` (epoch ms).
-- **Imagens:** nunca vão por IPC. Os DTOs trazem URLs `comic://` prontas.
-- **Caminhos de arquivo:** nunca vão por IPC. O renderer só conhece IDs; a resolução de `comics.file_path` fica inteiramente no main (docs/02-arquitetura.md §6).
+- **Main → renderer events:** `webContents.send`. The preload exposes `on<Event>(cb): () => void` (returns the unsubscribe function).
+- **Validation:** every input goes through a zod schema (`src/shared/schemas.ts`) in the handler. Failure produces the `VALIDATION` error.
+- **Return value:** the handler always returns `Result<T>`. The renderer's `lib/api.ts` wrapper unwraps it and throws an `AppError` for TanStack Query to handle.
+- **Serialization:** only structured-clone data (no classes, no `Date`). Dates are `number` (epoch ms).
+- **Images:** never go over IPC. DTOs carry ready-made `comic://` URLs.
+- **File paths:** never go over IPC. The renderer only knows IDs; resolving `comics.file_path` happens entirely in the main process (docs/02-arquitetura.md §6).
 
-## 2. Tipos compartilhados (`src/shared/types.ts`)
+## 2. Shared types (`src/shared/types.ts`)
 
 ```ts
 export type ComicId = string;
@@ -25,11 +25,11 @@ export interface ComicSummary {
   title: string;
   format: ComicFormat;
   pageCount: number;
-  coverUrl: string | null;        // null → placeholder (capa ainda não gerada)
+  coverUrl: string | null;        // null → placeholder (cover not yet generated)
   isFavorite: boolean;
   status: ReadStatus;
   currentPage: number;            // 0-based
-  progress: number;               // 0..1 = (currentPage+1)/pageCount, 1 se lida
+  progress: number;               // 0..1 = (currentPage+1)/pageCount, 1 if read
   lastReadAt: number | null;
   createdAt: number;
 }
@@ -40,7 +40,7 @@ export interface ComicDetail extends ComicSummary {
 }
 
 export interface LibraryQuery {
-  search?: string;                                   // até 100 chars
+  search?: string;                                   // up to 100 chars
   sort: 'title' | 'createdAt' | 'lastReadAt';
   order: 'asc' | 'desc';
   status: 'all' | ReadStatus;
@@ -70,30 +70,30 @@ export interface LibraryScanState {
 }
 
 export interface DeleteComicOptions {
-  deleteFile: boolean;                                // RF-17: opt-in explícito
+  deleteFile: boolean;                                // RF-17: explicit opt-in
 }
 
 export interface FolderLocation {
-  folderId: string | null;                            // null = nível-topo (lista as pastas-raiz)
-  relativePath: string;                               // "" = raiz da pasta-raiz; "DC/Ano Um" = subpasta
+  folderId: string | null;                            // null = top level (lists the root folders)
+  relativePath: string;                               // "" = root of the root folder; "DC/Year One" = subfolder
 }
 
 export interface FolderEntry {
-  name: string;                                       // nome de exibição (basename da pasta)
+  name: string;                                       // display name (folder basename)
   folderId: string;
   relativePath: string;
-  comicCount: number;                                 // recursivo
-  coverUrl: string | null;                            // capa da 1ª HQ direto na pasta; sem HQs diretas, a imagem escolhida pelo usuário (ADR-020) ou null
-  hasDirectComics: boolean;                           // só pastas sem HQs diretas aceitam capa própria
+  comicCount: number;                                 // recursive
+  coverUrl: string | null;                            // cover of the 1st comic directly in the folder; with no direct comics, the user-chosen image (ADR-020) or null
+  hasDirectComics: boolean;                           // only folders with no direct comics accept their own cover
 }
 
 export interface FolderContents {
   subfolders: FolderEntry[];
-  comics: ComicSummary[];                              // no nível-topo: só HQs soltas de pastas-raiz que têm subpastas
+  comics: ComicSummary[];                              // at the top level: only loose comics from root folders that have subfolders
 }
 ```
 
-Os tipos do leitor (`ReaderPrefs`, `ReaderMode`, `FitMode`) estão definidos em [03 §2.4](03-modelo-de-dados.md#24-reading_progress).
+The reader types (`ReaderPrefs`, `ReaderMode`, `FitMode`) are defined in [03 §2.4](03-modelo-de-dados.md#24-reading_progress).
 
 ```ts
 export interface ReaderPage {
@@ -105,27 +105,27 @@ export interface ReaderPage {
 
 export interface ReaderSession {
   comic: ComicDetail;
-  source:                                            // como renderizar
+  source:                                            // how to render
     | { kind: 'images'; pages: ReaderPage[] }        // CBZ/CBR
     | { kind: 'pdf'; fileUrl: string };              // comic://file/{id}
   currentPage: number;
-  prefs: ReaderPrefs;                                // já mesclado: prefs da HQ ?? defaults
+  prefs: ReaderPrefs;                                // already merged: comic prefs ?? defaults
   hasCustomPrefs: boolean;
-  nextInFolder: ComicSummary | null;                 // próximo arquivo (ordem natural) da mesma pasta (RF-42)
+  nextInFolder: ComicSummary | null;                 // next file (natural order) in the same folder (RF-42)
 }
 ```
 
-## 3. Erros
+## 3. Errors
 
 ```ts
 export type AppErrorCode =
-  | 'VALIDATION'           // input inválido
-  | 'NOT_FOUND'            // id inexistente
-  | 'CONFLICT'             // ex.: pasta-raiz já configurada
+  | 'VALIDATION'           // invalid input
+  | 'NOT_FOUND'            // nonexistent id
+  | 'CONFLICT'             // e.g., root folder already configured
   | 'UNSUPPORTED_FORMAT'
-  | 'CORRUPTED_FILE'       // arquivo não abre / sem páginas
-  | 'FILE_MISSING'         // arquivo sumiu da pasta do usuário
-  | 'IO'                   // erro de disco (sem espaço, permissão)
+  | 'CORRUPTED_FILE'       // file won't open / has no pages
+  | 'FILE_MISSING'         // file disappeared from the user's folder
+  | 'IO'                   // disk error (no space, permission)
   | 'CANCELLED'
   | 'INTERNAL';
 
@@ -133,12 +133,12 @@ export interface AppErrorPayload { code: AppErrorCode; message: string; details?
 export type Result<T> = { ok: true; data: T } | { ok: false; error: AppErrorPayload };
 ```
 
-`message` é uma **chave i18n** (ex.: `errors.fileMissing`) e o renderer traduz. `INTERNAL` sempre é logado com stack no main.
+`message` is an **i18n key** (e.g., `errors.fileMissing`) and the renderer translates it. `INTERNAL` is always logged with a stack trace in the main process.
 
 ## 4. API (`window.api`)
 
 ### 4.1 `library`
-| Método | Canal | Input | Output | RF |
+| Method | Channel | Input | Output | RF |
 |---|---|---|---|---|
 | `home()` | `library:home` | — | `HomeData` | RF-11, RF-63 |
 | `list(q)` | `library:list` | `LibraryQuery` | `Page<ComicSummary>` | RF-10, 12, 13, 15 |
@@ -149,62 +149,62 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppErrorPayl
 | `removeFromContinue(id)` | `library:removeFromContinue` | `ComicId` | `void` | RF-11 |
 | `delete(ids, options)` | `library:delete` | `ComicId[] (1..1000), DeleteComicOptions` | `{ deleted: number }` | RF-17 |
 | `stats()` | `library:stats` | — | `{ comicCount; libraryBytes; cacheBytes }` | RF-51, 52 |
-| `scan()` | `library:scan` | — | `void` | RF-04 ("Atualizar biblioteca") |
+| `scan()` | `library:scan` | — | `void` | RF-04 ("Refresh library") |
 | `browseFolder(location)` | `library:browseFolder` | `FolderLocation` | `FolderContents` | RF-64 |
-| `setFolderCover(location)` | `library:setFolderCover` | `FolderLocation` (`folderId` ≠ null) | `boolean` (false = cancelou o seletor de imagem) | RF-64 |
+| `setFolderCover(location)` | `library:setFolderCover` | `FolderLocation` (`folderId` ≠ null) | `boolean` (false = the image picker was cancelled) | RF-64 |
 | `clearFolderCover(location)` | `library:clearFolderCover` | `FolderLocation` (`folderId` ≠ null) | `void` | RF-64 |
 
-`delete` com `deleteFile: true` só apaga o arquivo do disco se ele ainda estiver dentro de alguma pasta-raiz configurada (checagem de segurança no `LibraryService`); fora disso, o arquivo é preservado e só o registro é removido, silenciosamente.
+`delete` with `deleteFile: true` only deletes the file from disk if it is still within a configured root folder (safety check in `LibraryService`); otherwise, the file is preserved and only the record is removed, silently.
 
-`browseFolder` não tem uma tabela de subpastas: agrupa as HQs da pasta-raiz em memória pelo primeiro segmento do caminho relativo a `relativePath` (docs/10 ADR-018). Com `folderId: null`, devolve, para cada pasta-raiz com subpastas, essas subpastas (e as HQs soltas dela em `comics`); para uma pasta-raiz sem subpastas, ela mesma como `subfolder`.
+`browseFolder` has no subfolder table: it groups the root folder's comics in memory by the first segment of the path relative to `relativePath` (docs/10 ADR-018). With `folderId: null`, it returns, for each root folder that has subfolders, those subfolders (and its loose comics in `comics`); for a root folder with no subfolders, itself as a `subfolder`.
 
-**Eventos**
-| Evento | Payload | Quando |
+**Events**
+| Event | Payload | When |
 |---|---|---|
-| `onScanProgress(cb)` | `LibraryScanState` | A cada arquivo escaneado, e ao concluir |
-| `onChanged(cb)` | `{ reason: 'scan' \| 'delete' \| 'cover' }` | HQs indexadas/removidas/capa gerada → renderer invalida as queries |
+| `onScanProgress(cb)` | `LibraryScanState` | On every file scanned, and on completion |
+| `onChanged(cb)` | `{ reason: 'scan' \| 'delete' \| 'cover' }` | Comics indexed/removed/cover generated → renderer invalidates queries |
 
 ### 4.2 `libraryFolders`
-| Método | Canal | Input | Output | RF |
+| Method | Channel | Input | Output | RF |
 |---|---|---|---|---|
 | `list()` | `libraryFolders:list` | — | `LibraryFolder[]` | RF-01, 03 |
-| `add()` | `libraryFolders:add` | — | `LibraryFolder \| null` (`null` = diálogo cancelado) | RF-01 |
+| `add()` | `libraryFolders:add` | — | `LibraryFolder \| null` (`null` = dialog cancelled) | RF-01 |
 | `remove(id)` | `libraryFolders:remove` | `string` (UUID) | `void` | RF-03 |
 
-`add` abre o diálogo nativo de escolha de pasta (`dialog.showOpenDialog({ properties: ['openDirectory'] })`) e, ao confirmar, dispara e **espera** um scan completo antes de resolver — a UI já pode consultar `library:list` no retorno. Pasta repetida devolve `CONFLICT`.
+`add` opens the native folder-picker dialog (`dialog.showOpenDialog({ properties: ['openDirectory'] })`) and, upon confirmation, triggers and **awaits** a full scan before resolving — the UI can already query `library:list` on return. A repeated folder returns `CONFLICT`.
 
 ### 4.3 `reader`
-| Método | Canal | Input | Output | RF |
+| Method | Channel | Input | Output | RF |
 |---|---|---|---|---|
 | `open(comicId)` | `reader:open` | `ComicId` | `ReaderSession` | RF-30, 41, 42 |
-| `setPage(comicId, page)` | `reader:setPage` | `ComicId, int ≥ 0` | `void` (*fire-and-forget*, ver abaixo) | RF-40 |
+| `setPage(comicId, page)` | `reader:setPage` | `ComicId, int ≥ 0` | `void` (*fire-and-forget*, see below) | RF-40 |
 | `savePrefs(comicId, prefs)` | `reader:savePrefs` | `ComicId, ReaderPrefs` | `void` | RF-41 |
 | `resetPrefs(comicId)` | `reader:resetPrefs` | `ComicId` | `ReaderPrefs` (defaults) | RF-41 |
 | `complete(comicId)` | `reader:complete` | `ComicId` | `void` | RF-42 |
-| `reportPageSize(comicId, index, w, h)` | `reader:reportPageSize` | — | `void` | Dimensões de páginas de PDF ou não medidas |
-| `close(comicId)` | `reader:close` | `ComicId` | `void` | flush imediato do progresso |
+| `reportPageSize(comicId, index, w, h)` | `reader:reportPageSize` | — | `void` | Dimensions for PDF pages or unmeasured pages |
+| `close(comicId)` | `reader:close` | `ComicId` | `void` | immediate progress flush |
 
-**Semântica de `setPage`:** o renderer chama a cada mudança de página (sem debounce). O main guarda o valor em memória e grava no banco com debounce de 500 ms por HQ. `close`, `before-quit` e `render-process-gone` forçam o flush. Isso atende RF-40 e RNF-12.
+**`setPage` semantics:** the renderer calls this on every page change (no debounce). The main process holds the value in memory and writes it to the database with a 500 ms debounce per comic. `close`, `before-quit`, and `render-process-gone` force the flush. This satisfies RF-40 and RNF-12.
 
-`open` dispara em segundo plano a extração da HQ para o cache (`PageCacheService.ensure(comicId)`), priorizando a página atual e as seguintes. Se o arquivo não existe mais na pasta do usuário, retorna `FILE_MISSING`, e se não abre, `CORRUPTED_FILE` (RF-62).
+`open` triggers extraction of the comic into the cache in the background (`PageCacheService.ensure(comicId)`), prioritizing the current page and the following ones. If the file no longer exists in the user's folder, it returns `FILE_MISSING`, and if it won't open, `CORRUPTED_FILE` (RF-62).
 
 ### 4.4 `settings`
-| Método | Canal | Input | Output |
+| Method | Channel | Input | Output |
 |---|---|---|---|
-| `get()` | `settings:get` | — | `Settings` (todas as chaves com defaults aplicados) |
-| `update(patch)` | `settings:update` | `Partial<Settings>` (validado por chave) | `Settings` |
-| `resetAllReaderPrefs()` | `settings:resetAllReaderPrefs` | — | `void` (RF-50 "Aplicar a todas") |
+| `get()` | `settings:get` | — | `Settings` (all keys with defaults applied) |
+| `update(patch)` | `settings:update` | `Partial<Settings>` (validated per key) | `Settings` |
+| `resetAllReaderPrefs()` | `settings:resetAllReaderPrefs` | — | `void` (RF-50 "Apply to all") |
 
 ### 4.5 `app`
-| Método | Canal | Output |
+| Method | Channel | Output |
 |---|---|---|
 | `info()` | `app:info` | `{ version; userDataPath }` |
 | `openDataFolder()` | `app:openDataFolder` | `void` (`shell.openPath`) |
 | `clearCache()` | `app:clearCache` | `{ freedBytes }` |
-| `toggleFullscreen(force?: boolean)` | `app:toggleFullscreen` | `boolean` (novo estado; com `force` define o estado em vez de alternar) |
-| `onFullscreenChanged(cb)` | evento | `boolean` |
+| `toggleFullscreen(force?: boolean)` | `app:toggleFullscreen` | `boolean` (new state; with `force`, sets the state instead of toggling) |
+| `onFullscreenChanged(cb)` | event | `boolean` |
 
-## 5. Exemplo de implementação (padrão a seguir)
+## 5. Implementation example (pattern to follow)
 
 ```ts
 // src/main/ipc/library.ts
@@ -218,7 +218,7 @@ export function handle<I, O>(channel: string, schema: ZodType<I>, fn: (input: I)
     const parsed = schema.safeParse(args);
     if (!parsed.success) return err('VALIDATION', 'errors.validation', parsed.error.flatten());
     try { return ok(await fn(parsed.data)); }
-    catch (e) { return toResult(e); }  // AppError → error; resto → INTERNAL + log
+    catch (e) { return toResult(e); }  // AppError → error; everything else → INTERNAL + log
   });
 }
 

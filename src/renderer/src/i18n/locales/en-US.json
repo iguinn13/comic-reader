@@ -1,0 +1,243 @@
+{
+  "app": {
+    "title": "Comic Reader",
+    "tagline": "Your comic shelf, offline and distraction-free."
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "skipToContent": "Skip to content"
+  },
+  "nav": {
+    "home": "Home",
+    "library": "Library",
+    "favorites": "Favorites",
+    "settings": "Settings",
+    "collapse": "Collapse menu",
+    "expand": "Expand menu",
+    "main": "Main navigation"
+  },
+  "library": {
+    "title": "Library",
+    "searchPlaceholder": "Search…",
+    "clearSearch": "Clear search",
+    "count_one": "{{count}} comic",
+    "count_other": "{{count}} comics",
+    "countFiltered_one": "{{count}} result for \"{{search}}\"",
+    "countFiltered_other": "{{count}} results for \"{{search}}\"",
+    "status": {
+      "all": "All",
+      "unread": "Unread",
+      "reading": "Reading",
+      "read": "Read"
+    },
+    "favoritesOnly": "Favorites",
+    "sort": {
+      "createdAt": "Recently added",
+      "lastReadAt": "Recently read",
+      "titleAsc": "Title A–Z",
+      "titleDesc": "Title Z–A"
+    },
+    "sortLabel": "Sort",
+    "readBadge": "Read",
+    "unreadBadge": "Unread",
+    "pageOf": "p. {{current}} of {{total}}",
+    "contextMenu": {
+      "favorite": "Favorite",
+      "unfavorite": "Unfavorite",
+      "markRead": "Mark as read",
+      "markUnread": "Mark as unread",
+      "resetProgress": "Reset progress",
+      "rename": "Rename",
+      "delete": "Delete"
+    },
+    "rename": {
+      "title": "Rename comic",
+      "label": "Title",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "delete": {
+      "title_one": "Delete {{count}} comic?",
+      "title_other": "Delete {{count}} comics?",
+      "description": "Reading progress, the cover and the cache will be deleted. The original file is only deleted if the option below is checked — this action cannot be undone.",
+      "alsoDeleteFile": "Also delete the file from disk",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "selectionBar": {
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "markRead": "Mark as read",
+      "markUnread": "Mark as unread",
+      "favorite": "Favorite",
+      "delete": "Delete",
+      "clear": "Clear selection"
+    },
+    "scan": {
+      "action": "Refresh library",
+      "scanning": "Refreshing…"
+    },
+    "browseMode": {
+      "folders": "Folders",
+      "flat": "All comics"
+    },
+    "folders": {
+      "breadcrumb": "Folder path",
+      "root": "Library",
+      "emptyFolder": "This folder has no comics or subfolders",
+      "setCover": "Choose cover image…",
+      "removeCover": "Remove cover image",
+      "comicCount_one": "{{count}} comic",
+      "comicCount_other": "{{count}} comics"
+    }
+  },
+  "home": {
+    "greeting": "Welcome back",
+    "continueReading": "Continue reading",
+    "recentlyAdded": "Recently added",
+    "viewAll": "View all →"
+  },
+  "reader": {
+    "back": "Back",
+    "mode": {
+      "single": "Single page",
+      "double": "Double page",
+      "vertical": "Vertical"
+    },
+    "fit": {
+      "height": "Height",
+      "width": "Width",
+      "original": "Original"
+    },
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomReset": "Reset zoom",
+    "favorite": "Favorite",
+    "moreActions": "More actions",
+    "fullscreen": "Fullscreen",
+    "menu": {
+      "markUnread": "Mark as unread",
+      "resetPrefs": "Restore reading defaults",
+      "doubleOffsetOn": "Offset pairs",
+      "doubleOffsetOff": "Don't offset pairs"
+    },
+    "goToPage": {
+      "title": "Go to page",
+      "label": "Page (1–{{total}})",
+      "go": "Go"
+    },
+    "pageIndicator": "{{current}} / {{total}}",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "error": {
+      "back": "Back",
+      "delete": "Delete from library"
+    },
+    "endPanel": {
+      "title": "You finished \"{{title}}\"",
+      "backToLibrary": "Back to library",
+      "stayHere": "Stay here",
+      "nextInFolder": "Next file in this folder:",
+      "read": "Read →"
+    },
+    "pageLabel": "Page {{page}}"
+  },
+  "emptyState": {
+    "library": {
+      "title": "Your shelf is empty",
+      "description": "Point to a folder where you already keep your comics (CBZ, CBR, PDF or ZIP) — the app scans subfolders automatically.",
+      "action": "Add folder"
+    },
+    "search": {
+      "title": "Nothing found for \"{{search}}\"",
+      "titleGeneric": "Nothing found with the current filters",
+      "action": "Clear search"
+    },
+    "favorites": {
+      "title": "Tap the ♡ on a comic for it to show up here."
+    }
+  },
+  "errors": {
+    "unsupportedFormat": "Unsupported format",
+    "corruptedFile": "Corrupted file",
+    "io": "Error accessing the file",
+    "validation": "Invalid data",
+    "cancelled": "Cancelled",
+    "internal": "Unexpected error",
+    "comicNotFound": "Comic not found",
+    "fileMissing": "Couldn't open this comic. The file may have been removed or is corrupted.",
+    "folderAlreadyAdded": "This folder is already in the library",
+    "folderNotFound": "Folder not found"
+  },
+  "settings": {
+    "folders": {
+      "title": "Library folders",
+      "empty": "No folder added yet.",
+      "add": "Add folder",
+      "remove": "Remove folder"
+    },
+    "reading": {
+      "title": "Reading",
+      "mode": "Default mode",
+      "fit": "Default fit",
+      "verticalWidth": "Default vertical width",
+      "applyAll": "Apply defaults to all comics",
+      "applyAllTitle": "Apply defaults to all comics?",
+      "applyAllDescription": "Per-comic reading preferences will be erased and all of them will switch to these defaults.",
+      "applyAllConfirm": "Apply"
+    },
+    "storage": {
+      "title": "Storage",
+      "library_one": "Library: {{count}} comic · {{size}}",
+      "library_other": "Library: {{count}} comics · {{size}}",
+      "cache": "Cache: {{used}} of {{max}}",
+      "limit": "Cache limit",
+      "clearCache": "Clear cache",
+      "openFolder": "Open data folder",
+      "cleared": "Cache cleared: {{size}} freed."
+    },
+    "shortcuts": {
+      "title": "Shortcuts"
+    },
+    "language": {
+      "title": "Language"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version {{version}}",
+      "dataPath": "Data folder: {{path}}"
+    }
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "next": "Next",
+    "prev": "Back",
+    "space": "Scroll and advance / reverse",
+    "scroll": "Scroll the page",
+    "firstLast": "First / last page",
+    "goToPage": "Go to page",
+    "modes": "Single / double / vertical mode",
+    "toggleFit": "Toggle height / width fit",
+    "zoom": "Zoom in / out",
+    "zoomReset": "Reset zoom",
+    "doubleOffset": "Offset pairs (double page)",
+    "fullscreen": "Fullscreen",
+    "focusMode": "Focus mode",
+    "favorite": "Favorite / unfavorite",
+    "escape": "Close / exit fullscreen, focus and the reader",
+    "exit": "Exit the reader",
+    "help": "Show this panel"
+  },
+  "toast": {
+    "undo": "Undo",
+    "markedRead": "Marked as read",
+    "markedUnread": "Marked as unread",
+    "selectionRead_one": "{{count}} comic marked as read",
+    "selectionRead_other": "{{count}} comics marked as read",
+    "selectionUnread_one": "{{count}} comic marked as unread",
+    "selectionUnread_other": "{{count}} comics marked as unread",
+    "addedTo": "Added to {{name}}",
+    "removedFrom": "Removed from {{name}}"
+  }
+}

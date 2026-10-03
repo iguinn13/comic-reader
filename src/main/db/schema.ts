@@ -1,13 +1,4 @@
 import { sqliteTable, text, integer, primaryKey, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
-
-/**
- * Schema Drizzle das 5 tabelas de docs/03-modelo-de-dados.md §2.
- *
- * Convenções (doc §1): ids são UUID v4 em TEXT, datas são epoch em
- * milissegundos em INTEGER, booleanos são INTEGER 0/1 (`mode: 'boolean'`).
- */
-
-/** Uma pasta-raiz escolhida pelo usuário, escaneada recursivamente (docs/05-importacao.md). */
 export const libraryFolders = sqliteTable(
   'library_folders',
   {
@@ -17,7 +8,6 @@ export const libraryFolders = sqliteTable(
   },
   (t) => [uniqueIndex('idx_folders_path').on(t.path)],
 )
-
 export const comics = sqliteTable(
   'comics',
   {
@@ -25,9 +15,7 @@ export const comics = sqliteTable(
     title: text('title').notNull(),
     titleNormalized: text('title_normalized').notNull(),
     format: text('format').notNull().$type<'zip' | 'rar' | 'pdf'>(),
-    /** Caminho absoluto do arquivo original — a HQ é lida in-place, nunca copiada (docs/10 ADR). */
     filePath: text('file_path').notNull(),
-    /** Pasta-pai de `filePath`, usada para achar o "próximo arquivo da pasta" (docs/06 RF-42). */
     dirPath: text('dir_path').notNull(),
     folderId: text('folder_id')
       .notNull()
@@ -50,11 +38,6 @@ export const comics = sqliteTable(
     uniqueIndex('idx_comics_file_path').on(t.filePath),
   ],
 )
-
-/**
- * Ordem canônica das páginas de CBZ/CBR (doc §2.2). PDF não gera linhas aqui:
- * o `page_count` da HQ vem do `pdf-lib` e as páginas são lidas pelo pdf.js.
- */
 export const comicPages = sqliteTable(
   'comic_pages',
   {
@@ -68,8 +51,6 @@ export const comicPages = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.comicId, t.pageIndex] })],
 )
-
-/** Uma linha por HQ, criada junto com a HQ (doc §2.3). */
 export const readingProgress = sqliteTable(
   'reading_progress',
   {
@@ -79,7 +60,6 @@ export const readingProgress = sqliteTable(
     currentPage: integer('current_page').notNull().default(0),
     lastReadAt: integer('last_read_at'),
     completedAt: integer('completed_at'),
-    /** JSON `ReaderPrefs` (RF-41); nulo = usa os padrões globais. */
     readerPrefs: text('reader_prefs'),
   },
   (t) => [
@@ -87,8 +67,6 @@ export const readingProgress = sqliteTable(
     index('idx_progress_completed').on(t.completedAt),
   ],
 )
-
-/** Chave/valor com `value` em JSON (doc §2.6); chaves e defaults em src/shared/constants.ts. */
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),

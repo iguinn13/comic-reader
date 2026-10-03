@@ -1,14 +1,4 @@
 import { useEffect } from 'react'
-
-/**
- * Ações do leitor mapeadas a partir do teclado (docs/06-leitor.md §5). A
- * tabela vive só em `mapKeyToAction` (pura, testável); `useReaderKeyboard`
- * cuida só do listener e de ignorar teclas com o foco num input.
- *
- * Os modos double/vertical (`doubleOffset`, largura da coluna) e o painel de
- * atalhos (`?`) chegam junto dos próprios modos — a ação já existe aqui pra
- * não precisar mexer no mapeamento de novo depois.
- */
 export type ReaderKeyAction =
   | 'next'
   | 'prev'
@@ -30,7 +20,6 @@ export type ReaderKeyAction =
   | 'escape'
   | 'exit'
   | 'showShortcuts'
-
 export function mapKeyToAction(
   event: Pick<KeyboardEvent, 'key' | 'shiftKey'>,
 ): ReaderKeyAction | null {
@@ -90,13 +79,10 @@ export function mapKeyToAction(
       return null
   }
 }
-
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
 }
-
-/** Ativo só na rota do leitor (docs §5): quem monta este hook decide isso montando/desmontando o componente. */
 export function useReaderKeyboard(onAction: (action: ReaderKeyAction) => void): void {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {

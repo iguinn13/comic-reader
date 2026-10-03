@@ -7,9 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@renderer/components/ui/dialog'
-
-/** docs/06-leitor.md §5: teclas exibidas e a chave i18n da ação. */
-const SHORTCUTS: { keys: string; action: string }[] = [
+const SHORTCUTS: {
+  keys: string
+  action: string
+}[] = [
   { keys: '→ / PageDown', action: 'next' },
   { keys: '← / PageUp', action: 'prev' },
   { keys: 'Espaço / Shift+Espaço', action: 'space' },
@@ -27,8 +28,6 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: 'Backspace', action: 'exit' },
   { keys: '?', action: 'help' },
 ]
-
-/** Tabela somente leitura de atalhos (Configurações e painel `?` do leitor). */
 export function ShortcutsTable(): React.JSX.Element {
   const { t } = useTranslation()
   return (
@@ -46,8 +45,6 @@ export function ShortcutsTable(): React.JSX.Element {
     </dl>
   )
 }
-
-/** Painel de atalhos do leitor (`?`, RF-35). */
 export function ShortcutsDialog({
   open,
   onOpenChange,

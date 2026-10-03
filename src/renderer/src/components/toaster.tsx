@@ -1,10 +1,7 @@
 import { useToastStore } from '@renderer/stores/toast-store'
-
-/** Toasts no canto inferior esquerdo (docs/07-ui-ux.md §5). */
 export function Toaster(): React.JSX.Element {
   const toasts = useToastStore((state) => state.toasts)
   const dismiss = useToastStore((state) => state.dismiss)
-
   return (
     <div
       role="status"

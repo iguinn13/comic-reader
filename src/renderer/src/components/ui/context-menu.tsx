@@ -1,14 +1,8 @@
 import * as React from 'react'
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu'
 import { cn } from '@renderer/lib/utils'
-
-/**
- * Componente na convenção shadcn/ui (wrapping de @radix-ui/react-context-menu),
- * temado com os tokens de docs/07-ui-ux.md §5 ("Menus: Radix DropdownMenu/ContextMenu").
- */
 export const ContextMenu = ContextMenuPrimitive.Root
 export const ContextMenuTrigger = ContextMenuPrimitive.Trigger
-
 export const ContextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
@@ -25,10 +19,11 @@ export const ContextMenuContent = React.forwardRef<
   </ContextMenuPrimitive.Portal>
 ))
 ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName
-
 export const ContextMenuItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & { danger?: boolean }
+  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
+    danger?: boolean
+  }
 >(({ className, danger, ...props }, ref) => (
   <ContextMenuPrimitive.Item
     ref={ref}
@@ -42,7 +37,6 @@ export const ContextMenuItem = React.forwardRef<
   />
 ))
 ContextMenuItem.displayName = ContextMenuPrimitive.Item.displayName
-
 export const ContextMenuSeparator = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Separator>

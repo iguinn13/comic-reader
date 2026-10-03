@@ -1,191 +1,192 @@
 # 07 — UI/UX
 
-## 1. Princípios
+## 1. Principles
 
-1. **A capa é a protagonista.** A interface é neutra e escura, e a cor vem das HQs.
-2. **Um clique para ler.** Clicar num card abre a HQ. As ações secundárias ficam no hover e no menu de contexto.
-3. **Silencioso.** Não há modais desnecessários, o feedback vem por toasts discretos e a confirmação só aparece em ações destrutivas.
-4. **Previsível.** Os mesmos controles (busca, ordenação, filtros, seleção) funcionam igual em todas as grades de HQs.
-5. **Só escuro.** Não existe light mode. `color-scheme: dark` fica fixo.
+1. **The cover is the protagonist.** The interface is neutral and dark, and the color comes from the comics.
+2. **One click to read.** Clicking a card opens the comic. Secondary actions live in hover and the context menu.
+3. **Quiet.** There are no unnecessary modals, feedback comes through discreet toasts, and confirmation only appears for destructive actions.
+4. **Predictable.** The same controls (search, sort, filters, selection) work the same way across all comic grids.
+5. **Dark only.** There is no light mode. `color-scheme: dark` is fixed.
 
 ## 2. Design tokens
 
-Definidos em `src/renderer/src/styles/globals.css` via `@theme` do Tailwind v4 e usados só pelos tokens (sem hex solto nos componentes).
+Defined in `src/renderer/src/styles/globals.css` via Tailwind v4's `@theme`, and used only through the tokens (no loose hex values in components).
 
-### 2.1 Cores
+### 2.1 Colors
 
-| Token | Valor | Uso |
+| Token | Value | Use |
 |---|---|---|
-| `--color-bg` | `#0C0C0F` | Fundo do app |
-| `--color-surface` | `#141418` | Sidebar, cards de coleção, painéis |
-| `--color-surface-2` | `#1C1C22` | Hover, inputs, menus, diálogos |
-| `--color-border` | `#26262E` | Divisores, bordas sutis |
-| `--color-text` | `#ECECEF` | Texto principal |
-| `--color-text-muted` | `#9A9AA6` | Metadados, legendas |
-| `--color-text-subtle` | `#8A8A97` | Placeholders, desabilitado (≥ 4,5:1 sobre `bg`, RNF-10) |
-| `--color-accent` | `#F2A93B` | Âmbar "papel velho": item ativo, progresso, botão primário, foco |
-| `--color-accent-fg` | `#1A1203` | Texto sobre o accent |
-| `--color-success` | `#4CC38A` | Selo "Lida", scan concluído |
-| `--color-danger` | `#EF5B5B` | Excluir, erros |
-| `--color-reader-bg` | `#08080A` | Fundo do leitor |
+| `--color-bg` | `#0C0C0F` | App background |
+| `--color-surface` | `#141418` | Sidebar, collection cards, panels |
+| `--color-surface-2` | `#1C1C22` | Hover, inputs, menus, dialogs |
+| `--color-border` | `#26262E` | Dividers, subtle borders |
+| `--color-text` | `#ECECEF` | Primary text |
+| `--color-text-muted` | `#9A9AA6` | Metadata, captions |
+| `--color-text-subtle` | `#8A8A97` | Placeholders, disabled (≥ 4.5:1 over `bg`, RNF-10) |
+| `--color-accent` | `#F2A93B` | "Old paper" amber: active item, progress, primary button, focus |
+| `--color-accent-fg` | `#1A1203` | Text over the accent |
+| `--color-success` | `#4CC38A` | "Read" badge, scan complete |
+| `--color-danger` | `#EF5B5B` | Delete, errors |
+| `--color-reader-bg` | `#08080A` | Reader background |
 
-O contraste de `--color-text-muted` sobre `--color-bg` deve ser ≥ 4.5:1 (RNF-10), e esse valor precisa ser validado na implementação.
+The contrast of `--color-text-muted` over `--color-bg` must be ≥ 4.5:1 (RNF-10), and this value needs to be validated during implementation.
 
-### 2.2 Tipografia
-- Fonte: **Inter** (variável, empacotada em `assets/fonts`, `font-display: swap`), com fallback `system-ui, "Segoe UI", sans-serif`.
-- Escala: `12 / 13 / 14 (base) / 16 / 20 / 24 / 32` px. Títulos de página em 24 px/600 e títulos de card em 13 px/500 com no máximo 2 linhas (`line-clamp-2`).
-- Números tabulares (`tabular-nums`) em contadores e indicadores de página.
+### 2.2 Typography
+- Font: **Inter** (variable, bundled in `assets/fonts`, `font-display: swap`), with fallback `system-ui, "Segoe UI", sans-serif`.
+- Scale: `12 / 13 / 14 (base) / 16 / 20 / 24 / 32` px. Page titles at 24 px/600 and card titles at 13 px/500 with a maximum of 2 lines (`line-clamp-2`).
+- Tabular numbers (`tabular-nums`) in counters and page indicators.
 
-### 2.3 Espaço, forma e movimento
-- Espaçamento em múltiplos de 4 px. Padding das páginas: 32 px (24 px abaixo de 1280 px de largura).
-- Raio: 6 px (inputs/botões), 8 px (capas), 12 px (diálogos/painéis).
-- Sombras quase inexistentes. A elevação vem da diferença de superfície.
-- Transições de 150 ms `ease-out` (hover, menus) e 200 ms nas barras do leitor. Com `prefers-reduced-motion`, as transições são desligadas.
-- Foco: anel de 2 px `--color-accent` com offset de 2 px (`focus-visible`).
+### 2.3 Space, shape, and motion
+- Spacing in multiples of 4 px. Page padding: 32 px (24 px below 1280 px width).
+- Radius: 6 px (inputs/buttons), 8 px (covers), 12 px (dialogs/panels).
+- Shadows are almost nonexistent. Elevation comes from the surface difference.
+- 150 ms `ease-out` transitions (hover, menus) and 200 ms for the reader bars. With `prefers-reduced-motion`, transitions are turned off.
+- Focus: 2 px `--color-accent` ring with a 2 px offset (`focus-visible`).
 
-## 3. Shell do app
+## 3. App shell
 
 ```
 ┌────────────┬──────────────────────────────────────────────────────┐
-│ ◧ Comic    │  Biblioteca                        🔍 Buscar…         │
-│   Reader   │  [Todas▾] [☆ Favoritas]   Ordenar: Adicionadas ▾      │
+│ ◧ Comic    │  Library                           🔍 Search…         │
+│   Reader   │  [All▾] [☆ Favorites]      Sort: Added ▾              │
 │            │                                                      │
-│ ⌂ Início   │  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐            │
-│ ▦ Bibliot. │  │capa│ │capa│ │capa│ │capa│ │capa│ │capa│            │
-│ ♡ Favoritas│  │    │ │    │ │    │ │    │ │    │ │    │            │
+│ ⌂ Home     │  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐            │
+│ ▦ Library  │  │cover│ │cover│ │cover│ │cover│ │cover│ │cover│       │
+│ ♡ Favorites│  │    │ │    │ │    │ │    │ │    │ │    │            │
 │            │  └────┘ └────┘ └────┘ └────┘ └────┘ └────┘            │
-│            │  Título   Título  Título  ...                         │
+│            │  Title    Title   Title  ...                          │
 │            │  ▬▬▬──                                                │
 │            │                                                      │
-│ [↻ Atualizar]│                                                    │
+│ [↻ Refresh]│                                                      │
 │            │                                                      │
-│ ⚙ Config.  │                                                      │
+│ ⚙ Settings │                                                      │
 │ «          │                                                      │
 └────────────┴──────────────────────────────────────────────────────┘
 ```
 
 **Sidebar (RF-60)**
-- Largura de 232 px expandida e 64 px recolhida (só ícones, com tooltip ao passar). O botão `«` e `Ctrl+B` alternam, e abaixo de 1100 px de largura ela recolhe automaticamente (sem sobrescrever a preferência salva).
-- Itens: Início, Biblioteca, Favoritas. O botão **↻ Atualizar biblioteca** (re-escaneia as pastas-raiz) e **Configurações** no rodapé, onde ficam as pastas-raiz (§4.8).
-- Item ativo: fundo `surface-2`, texto `text` e barra de 3 px accent à esquerda.
-- Contadores discretos à direita de Biblioteca e Favoritas (`text-subtle`, só no modo expandido).
+- 232 px wide when expanded and 64 px when collapsed (icons only, with tooltip on hover). The `«` button and `Ctrl+B` toggle it, and below 1100 px width it collapses automatically (without overwriting the saved preference).
+- Items: Home, Library, Favorites. The **↻ Refresh library** button (re-scans the root folders) and **Settings** at the bottom, where the root folders live (§4.8).
+- Active item: `surface-2` background, `text` color, and a 3 px accent bar on the left.
+- Discreet counters to the right of Library and Favorites (`text-subtle`, only in expanded mode).
 
-**Barra de título:** `titleBarStyle: 'hidden'` + `titleBarOverlay` na cor `--color-bg`, aplicado igual nos três SOs (Windows, macOS e Linux) — API suportada oficialmente pelo Electron nas três plataformas (ADR-021), para que a área superior se funda ao app. No Windows, substitui a moldura padrão pelos controles customizados min/max/fechar na cor do app. No macOS, mantém os "traffic lights" nativos reposicionados dentro da área do overlay (pendente validação visual manual num Mac real). No Linux, o resultado pode variar entre window managers (GNOME/KDE/outros).
+**Title bar:** `titleBarStyle: 'hidden'` + `titleBarOverlay` in the `--color-bg` color, applied the same way on all three OSes (Windows, macOS, and Linux) — an API officially supported by Electron on all three platforms (ADR-021), so the top area blends into the app. On Windows, it replaces the default frame with custom min/max/close controls in the app's color. On macOS, it keeps the native "traffic lights" repositioned within the overlay area (pending manual visual validation on a real Mac). On Linux, the result may vary between window managers (GNOME/KDE/others).
 
-## 4. Telas
+## 4. Screens
 
-### 4.1 Início (`#/`) — RF-63
+### 4.1 Home (`#/`) — RF-63
 ```
-Olá de volta                                        (título 24px)
+Welcome back                                        (24px title)
 
-Continuar lendo                                  Ver tudo →
-┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐   ← faixa horizontal com scroll,
-│ capa │ │ capa │ │ capa │ │ capa │ │ capa │     cards maiores (180px), com
-│▬▬▬───│ │▬───── │ │▬▬▬▬──│ │      │ │      │     barra de progresso e "p. 12/48"
+Continue reading                                 See all →
+┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐   ← horizontal scrollable strip,
+│ cover│ │ cover│ │ cover│ │      │ │      │     larger cards (180px), with
+│▬▬▬───│ │▬───── │ │▬▬▬▬──│ │      │ │      │     progress bar and "p. 12/48"
 └──────┘ └──────┘ └──────┘ └──────┘ └──────┘
 
-Adicionadas recentemente                          Ver tudo →
-(faixa de cards)
+Recently added                                    See all →
+(card strip)
 ```
-- Uma seção vazia é ocultada. Com a biblioteca inteira vazia, mostra o estado vazio principal (§6).
-- "Ver tudo" em Continuar lendo → Biblioteca com filtro "Em andamento" e ordenação "Lidas recentemente".
+- An empty section is hidden. With the entire library empty, it shows the main empty state (§6).
+- "See all" on Continue reading → Library with the "In progress" filter and "Recently read" sort.
 
-### 4.2 Biblioteca (`#/library`) — RF-10, 12, 13, 18, RF-64
-- **Toggle de visualização:** "Pastas" (padrão) · "Todas as HQs", ao lado do contador — alterna entre a navegação por pastas (§4.2.1) e a lista única abaixo. É estado local da tela, não persiste entre sessões.
-- **Contador:** "248 HQs" (ou "12 resultados para 'batman'"), sempre o total da biblioteca inteira, mesmo em "Pastas".
-- Em **"Todas as HQs"**:
-  - **Toolbar:** busca (com atalho `Ctrl+F` e botão ✕ para limpar), segmented control de status (**Todas · Não lidas · Em andamento · Lidas**), toggle ☆ Favoritas e dropdown de ordenação (Adicionadas recentemente, Lidas recentemente, Título A–Z, Título Z–A).
-  - **Grade virtualizada:** colunas `auto-fill` com largura mínima de 190 px, gap de 20 px e proporção da capa 2:3 (`object-fit: cover`).
-  - **Barra de seleção** (quando há seleção): substitui a toolbar com "3 selecionadas · Marcar como lida · Marcar como não lida · Favoritar · Excluir · ✕".
+### 4.2 Library (`#/library`) — RF-10, 12, 13, 18, RF-64
+- **View toggle:** "Folders" (default) · "All comics", next to the counter — switches between folder navigation (§4.2.1) and the flat list below. This is local screen state and doesn't persist between sessions.
+- **Counter:** "248 comics" (or "12 results for 'batman'"), always the total of the entire library, even in "Folders".
+- In **"All comics"**:
+  - **Toolbar:** search (with `Ctrl+F` shortcut and a ✕ button to clear), status segmented control (**All · Unread · In progress · Read**), ☆ Favorites toggle, and sort dropdown (Recently added, Recently read, Title A–Z, Title Z–A).
+  - **Virtualized grid:** `auto-fill` columns with a 190 px minimum width, 20 px gap, and a 2:3 cover ratio (`object-fit: cover`).
+  - **Selection bar** (when there's a selection): replaces the toolbar with "3 selected · Mark as read · Mark as unread · Favorite · Delete · ✕".
 
-#### 4.2.1 Pastas (dentro da Biblioteca) — RF-64
+#### 4.2.1 Folders (within the Library) — RF-64
 ```
-Biblioteca › DC › Ano Um                    ← breadcrumb, cada segmento clicável
+Library › DC › Year One                     ← breadcrumb, each segment clickable
 
 ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
-│  📁      │ │  📁      │ │  CAPA   │ │  CAPA   │
+│  📁      │ │  📁      │ │  COVER  │ │  COVER  │
 │Elseworlds│ │ Bronze  │ │ #1      │ │ #2      │
 └─────────┘ └─────────┘ └─────────┘ └─────────┘
-  8 HQs        12 HQs     p. 3 de 22   Não lida
+  8 comics    12 comics   p. 3 of 22   Unread
 ```
-- Mesma grade `auto-fill`/190 px/gap 20 px da lista única — as subpastas entram como cards na frente das HQs, sem uma coluna lateral dedicada (estilo do app "Cover": clicar entra na pasta, o breadcrumb volta).
-- Card de subpasta: ícone de pasta + nome (2 linhas máx.) + contagem de HQs (recursiva); sem menu de contexto (é só navegação, criar/mover pastas é feito fora do app).
-- Nível-topo (antes de entrar em qualquer pasta): uma "pasta" por pasta-raiz configurada (RF-01/03), nomeada pelo nome real da pasta no disco.
-- Pasta sem subpastas nem HQs: estado vazio simples ("Esta pasta não tem HQs nem subpastas"), sem ação — a pasta existe no disco, só está vazia.
-- Card de HQ é o mesmo `ComicCard` de §4.3, com o mesmo menu de contexto/seleção.
+- The same `auto-fill`/190 px/20 px gap grid as the flat list — subfolders appear as cards alongside the comics, with no dedicated side column (in the style of the "Cover" app: clicking enters the folder, the breadcrumb goes back).
+- Subfolder card: folder icon + name (max 2 lines) + comic count (recursive); no context menu (it's navigation only — creating/moving folders happens outside the app).
+- Top level (before entering any folder): one "folder" per configured root folder (RF-01/03), named after the actual folder name on disk.
+- Folder with no subfolders or comics: a simple empty state ("This folder has no comics or subfolders"), with no action — the folder exists on disk, it's just empty.
+- A comic card is the same `ComicCard` from §4.3, with the same context menu/selection.
 
-### 4.3 Card de HQ (componente `ComicCard`)
+### 4.3 Comic card (`ComicCard` component)
 ```
 ┌─────────────┐
-│☐          ♥ │ ← checkbox (hover/seleção) · coração se favorita
+│☐          ♥ │ ← checkbox (hover/selection) · heart if favorited
 │             │
-│    CAPA     │   hover: leve zoom (1.03) na capa + botão central ▶ "Ler"
-│             │         + botão ⋯ no canto
-│ ✓ Lida      │ ← selo (verde) se lida
-│▬▬▬▬▬────────│ ← barra de progresso 3px (accent) se em andamento
+│    COVER    │   hover: slight zoom (1.03) on the cover + centered ▶ "Read"
+│             │         button + ⋯ button in the corner
+│ ✓ Read      │ ← badge (green) if read
+│▬▬▬▬▬────────│ ← 3px progress bar (accent) if in progress
 └─────────────┘
-Batman: Ano Um #1          ← 13px, 2 linhas máx
-p. 12 de 48                ← 12px (ou "Não lida" / "Lida"); o formato do arquivo não é exibido
+Batman: Year One #1        ← 13px, max 2 lines
+p. 12 of 48                ← 12px (or "Unread" / "Read"); the file format isn't shown
 ```
-- Clique → lê. `Ctrl/Shift+clique` → seleção. Clique direito → menu de contexto (RF-19). `Enter` com foco → lê.
-- A capa ainda não gerada mostra um placeholder com o título sobre um gradiente de `surface`.
-- Imagem com `loading="lazy"`, e o fade-in só acontece depois de carregada.
+- Click → read. `Ctrl/Shift+click` → selection. Right click → context menu (RF-19). `Enter` while focused → read.
+- A cover not yet generated shows a placeholder with the title over a `surface` gradient.
+- Images use `loading="lazy"`, and the fade-in only happens after loading.
 
-### 4.4 Pastas da biblioteca (Configurações) — RF-01, RF-03
-Seção "Pastas da biblioteca" no topo de Configurações (§4.6):
+### 4.4 Library folders (Settings) — RF-01, RF-03
+"Library folders" section at the top of Settings (§4.6):
 ```
-Pastas da biblioteca
+Library folders
 
 ┌──────────────────────────────────────────────────┐
-│ C:\Users\ana\HQs                              🗑  │
-│ D:\Backup\Gibis                               🗑  │
+│ C:\Users\ana\Comics                           🗑  │
+│ D:\Backup\Comics                              🗑  │
 └──────────────────────────────────────────────────┘
-[ + Adicionar pasta ]
+[ + Add folder ]
 ```
-- **Adicionar pasta:** abre o diálogo nativo de escolha de pasta (`openDirectory`). Ao confirmar, a pasta entra na lista e um scan roda imediatamente.
-- **Remover** (🗑 por linha): tira a pasta da lista; as HQs indexadas sob ela somem da biblioteca (nunca os arquivos).
-- Sem nenhuma pasta configurada, a Biblioteca e o Início mostram o estado vazio principal (§6) com a mesma ação de adicionar pasta.
-- O botão **↻ Atualizar biblioteca** da sidebar dispara um novo scan de todas as pastas a qualquer momento; o ícone gira enquanto o scan está em andamento (`library:scanProgress`).
+- **Add folder:** opens the native folder picker dialog (`openDirectory`). On confirmation, the folder is added to the list and a scan runs immediately.
+- **Remove** (🗑 per row): removes the folder from the list; comics indexed under it disappear from the library (the files themselves are never touched).
+- With no folder configured, the Library and Home show the main empty state (§6) with the same add-folder action.
+- The sidebar's **↻ Refresh library** button triggers a new scan of all folders at any time; the icon spins while the scan is in progress (`library:scanProgress`).
 
-### 4.5 Leitor (`#/read/:id`)
-Especificado em [06-leitor.md](06-leitor.md). Visualmente, as barras usam `surface` com 85% de opacidade e `backdrop-blur`, os ícones têm 20 px e a altura é de 48 px (superior) e 44 px (inferior).
+### 4.5 Reader (`#/read/:id`)
+Specified in [06-leitor.md](06-leitor.md). Visually, the bars use `surface` at 85% opacity and `backdrop-blur`, icons are 20 px, and the height is 48 px (top) and 44 px (bottom).
 
-### 4.6 Configurações (`#/settings`)
-Seções em coluna única (máx. 720 px):
-1. **Pastas da biblioteca:** lista de pastas-raiz com remoção e botão "Adicionar pasta" (§4.4).
-2. **Leitura:** modo padrão (segmented), ajuste padrão, largura padrão do vertical (slider com preview) e botão "Aplicar padrões a todas as HQs" (com confirmação).
-3. **Armazenamento:** "Biblioteca: 248 HQs · 12,4 GB", "Cache: 1,1 GB de 2 GB" (barra), slider de limite, botão **Limpar cache** e botão **Abrir pasta de dados**.
-4. **Atalhos:** a tabela de [06 §5](06-leitor.md#5-atalhos-de-teclado) (somente leitura na v1).
-5. **Sobre:** versão e caminho da pasta de dados.
+### 4.6 Settings (`#/settings`)
+Single-column sections (max 720 px):
+1. **Library folders:** list of root folders with removal and an "Add folder" button (§4.4).
+2. **Reading:** default mode (segmented), default fit, default vertical width (slider with preview), and an "Apply defaults to all comics" button (with confirmation).
+3. **Storage:** "Library: 248 comics · 12.4 GB", "Cache: 1.1 GB of 2 GB" (bar), limit slider, **Clear cache** button, and **Open data folder** button.
+4. **Shortcuts:** the table from [06 §5](06-leitor.md#5-keyboard-shortcuts) (read-only in v1).
+5. **Language:** selector (segmented) between Português and English; switching applies immediately, without restarting the app (ADR-022).
+6. **About:** version and data folder path.
 
-## 5. Diálogos e feedback
+## 5. Dialogs and feedback
 
-- **Confirmação destrutiva** (excluir HQs): título claro ("Excluir 3 HQs?"), texto explicando a consequência, um checkbox opcional "Apagar também o arquivo do disco" (desmarcado por padrão) e o botão de confirmar em `danger`. O foco inicial fica em **Cancelar**.
-- **Toasts** (canto inferior esquerdo, 4 s): "3 HQs marcadas como lidas". Ações reversíveis simples (marcar como lida) oferecem **Desfazer** no toast. A exclusão de HQ não tem desfazer, por isso a confirmação.
-- **Menus:** Radix `DropdownMenu`/`ContextMenu` para as ações de HQ (favoritar, marcar lida/não lida, renomear, excluir).
+- **Destructive confirmation** (deleting comics): clear title ("Delete 3 comics?"), text explaining the consequence, an optional "Also delete the file from disk" checkbox (unchecked by default), and a `danger`-styled confirm button. Initial focus is on **Cancel**.
+- **Toasts** (bottom-left corner, 4 s): "3 comics marked as read". Simple reversible actions (mark as read) offer **Undo** in the toast. Deleting a comic has no undo, which is why it requires confirmation.
+- **Menus:** Radix `DropdownMenu`/`ContextMenu` for comic actions (favorite, mark read/unread, rename, delete).
 
-## 6. Estados vazios e de erro (RF-62)
+## 6. Empty and error states (RF-62)
 
-| Onde | Mensagem | Ação |
+| Where | Message | Action |
 |---|---|---|
-| Biblioteca vazia (e Início) | Ilustração minimalista (linha) + "Sua estante está vazia" / "Aponte para uma pasta onde já ficam suas HQs (CBZ, CBR, PDF ou ZIP) — o app escaneia as subpastas automaticamente." | **Adicionar pasta** |
-| Busca sem resultado | "Nada encontrado para '…'" | Limpar busca/filtros |
-| Favoritas vazia | "Toque no ♡ de uma HQ para ela aparecer aqui." | — |
-| Nenhuma pasta configurada | Mesma mensagem da Biblioteca vazia | **Adicionar pasta** |
-| Pasta vazia (navegação por pastas) | "Esta pasta não tem HQs nem subpastas" | — |
-| HQ com arquivo ausente/corrompido | "Não foi possível abrir esta HQ. O arquivo pode ter sido removido ou estar corrompido." | Voltar · Excluir da biblioteca |
+| Empty library (and Home) | Minimalist line illustration + "Your shelf is empty" / "Point to a folder where you already keep your comics (CBZ, CBR, PDF, or ZIP) — the app scans subfolders automatically." | **Add folder** |
+| Search with no results | "Nothing found for '…'" | Clear search/filters |
+| Empty favorites | "Tap the ♡ on a comic for it to show up here." | — |
+| No folder configured | Same message as empty library | **Add folder** |
+| Empty folder (folder navigation) | "This folder has no comics or subfolders" | — |
+| Comic with missing/corrupted file | "Couldn't open this comic. The file may have been removed or is corrupted." | Back · Remove from library |
 
-## 7. Responsividade (RNF-08)
+## 7. Responsiveness (RNF-08)
 
-| Largura da janela | Comportamento |
+| Window width | Behavior |
 |---|---|
-| < 1100 px | Sidebar recolhida automaticamente; padding de página de 24 px |
-| 1100–1600 px | Layout padrão |
-| > 1600 px | Grade ganha mais colunas (cards não crescem além de 200 px). O conteúdo de Configurações fica centralizado |
-| Qualquer | O leitor sempre usa 100% da janela. As barras do leitor quebram controles secundários no menu `⋯` abaixo de 1000 px |
+| < 1100 px | Sidebar collapses automatically; 24 px page padding |
+| 1100–1600 px | Default layout |
+| > 1600 px | The grid gains more columns (cards don't grow beyond 200 px). Settings content stays centered |
+| Any | The reader always uses 100% of the window. The reader bars collapse secondary controls into the `⋯` menu below 1000 px |
 
-## 8. Acessibilidade (RNF-10)
-- Todos os botões só com ícone têm `aria-label` (i18n) e tooltip.
-- Navegação por teclado nas grades: `Tab` entra na grade e as setas movem entre os cards (roving tabindex).
-- As barras de progresso usam `role="progressbar"` com `aria-valuenow`.
-- Nenhuma informação é transmitida só por cor (o selo "Lida" tem ícone + texto).
+## 8. Accessibility (RNF-10)
+- All icon-only buttons have an `aria-label` (i18n) and a tooltip.
+- Keyboard navigation in grids: `Tab` enters the grid and the arrow keys move between cards (roving tabindex).
+- Progress bars use `role="progressbar"` with `aria-valuenow`.
+- No information is conveyed by color alone (the "Read" badge has an icon + text).

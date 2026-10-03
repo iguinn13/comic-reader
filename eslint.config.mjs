@@ -5,7 +5,6 @@ import eslintPluginReact from 'eslint-plugin-react'
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
 import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y'
-
 export default defineConfig(
   {
     ignores: [
@@ -15,8 +14,6 @@ export default defineConfig(
       'tests/e2e/**',
       'playwright.config.ts',
       '**/*.config.{js,mjs,ts}',
-      // Worktrees de agentes ficam dentro do próprio repo (.claude/worktrees/*)
-      // enquanto rodam; não são o código deste checkout.
       '.claude/worktrees',
     ],
   },
@@ -50,23 +47,16 @@ export default defineConfig(
       ...eslintPluginReactRefresh.configs.vite.rules,
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      // Tipos do TypeScript já cobrem isto; o eslint-plugin-react não entende
-      // genéricos (ex.: React.InputHTMLAttributes) e gera falsos positivos.
       'react/prop-types': 'off',
     },
   },
   {
-    // src/shared não pode depender de Node nem do DOM: é importado por main,
-    // preload e renderer ao mesmo tempo (docs/02-arquitetura.md §4).
     files: ['src/shared/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', { patterns: ['electron', 'electron/*', 'node:*'] }],
     },
   },
   {
-    // O renderer só fala com o main pela ponte de window.api — nunca importa
-    // electron ou módulos do Node diretamente (checklist de segurança em
-    // docs/02-arquitetura.md §6).
     files: ['src/renderer/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [

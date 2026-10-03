@@ -4,19 +4,13 @@ import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
 import type { ComicSummary, LibraryQuery } from '@shared/types'
 import { sortOptionToQuery, type LibrarySortOption } from './library-sort'
-
 const PAGE_SIZE = 60
-/** Debounce da busca (RF-10): evita uma consulta a cada tecla. */
 const SEARCH_DEBOUNCE_MS = 250
-
 export interface UseLibraryComicsOptions {
-  /** Favoritas (docs/07 §4.2) força `favoritesOnly` e some com os filtros de status/favoritas na toolbar. */
   forceFavoritesOnly?: boolean
-  /** "Ver tudo" da Início (docs/07 §4.1): entra na Biblioteca já com um filtro/ordenação aplicados. */
   initialStatus?: LibraryQuery['status']
   initialSortOption?: LibrarySortOption
 }
-
 export interface UseLibraryComicsResult {
   items: ComicSummary[]
   total: number
@@ -31,12 +25,6 @@ export interface UseLibraryComicsResult {
   isLoading: boolean
   fetchNextPage: () => void
 }
-
-/**
- * Estado + dados da grade de HQs (RF-10, 12, 13), compartilhado por
- * Biblioteca e Favoritas. Pagina via `useInfiniteQuery` em vez de carregar
- * tudo de uma vez, para não estourar RNF-02/04 com bibliotecas grandes.
- */
 export function useLibraryComics(options: UseLibraryComicsOptions = {}): UseLibraryComicsResult {
   const [searchInput, setSearchInput] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -46,15 +34,12 @@ export function useLibraryComics(options: UseLibraryComicsOptions = {}): UseLibr
     options.initialSortOption ?? 'createdAt',
   )
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
   function handleSearchChange(value: string): void {
     setSearchInput(value)
     clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = setTimeout(() => setDebouncedSearch(value), SEARCH_DEBOUNCE_MS)
   }
-
   const effectiveFavoritesOnly = options.forceFavoritesOnly ?? favoritesOnly
-
   const baseQuery = useMemo<LibraryQuery>(
     () => ({
       search: debouncedSearch || undefined,
@@ -66,7 +51,6 @@ export function useLibraryComics(options: UseLibraryComicsOptions = {}): UseLibr
     }),
     [debouncedSearch, status, effectiveFavoritesOnly, sortOption],
   )
-
   const query = useInfiniteQuery({
     queryKey: queryKeys.library.list(baseQuery),
     queryFn: ({ pageParam }) => api.library.list({ ...baseQuery, offset: pageParam }),
@@ -76,10 +60,8 @@ export function useLibraryComics(options: UseLibraryComicsOptions = {}): UseLibr
       return loaded < lastPage.total ? loaded : undefined
     },
   })
-
   const items = query.data?.pages.flatMap((page) => page.items) ?? []
   const total = query.data?.pages[0]?.total ?? 0
-
   return {
     items,
     total,

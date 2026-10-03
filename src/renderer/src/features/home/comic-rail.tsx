@@ -2,12 +2,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ComicCard } from '@renderer/features/library/comic-card'
 import type { ComicSummary } from '@shared/types'
-
-/**
- * Faixa horizontal com scroll (docs/07-ui-ux.md §4.1). Reusa o `ComicCard` da
- * Biblioteca em vez de um card dedicado maior (180px na spec) — simplificação
- * aceita nesta v1, sem mudar a leitura visual do conteúdo.
- */
 export function ComicRail({
   title,
   viewAllHref,
@@ -18,9 +12,7 @@ export function ComicRail({
   comics: ComicSummary[]
 }): React.JSX.Element | null {
   const { t } = useTranslation()
-
   if (comics.length === 0) return null
-
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">

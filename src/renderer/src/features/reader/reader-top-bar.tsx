@@ -22,7 +22,6 @@ import { cn } from '@renderer/lib/utils'
 import { DEFAULT_READER_PREFS } from '@shared/constants'
 import type { FitMode, ReaderMode } from '@shared/types'
 import { stepVerticalWidth, stepZoom } from './zoom'
-
 interface ReaderTopBarProps {
   title: string
   mode: ReaderMode
@@ -43,14 +42,11 @@ interface ReaderTopBarProps {
   onMarkUnread: () => void
   onResetPrefs: () => void
 }
-
 const MODE_ICONS: Record<ReaderMode, typeof RectangleVertical> = {
   single: RectangleVertical,
   double: BookOpen,
   vertical: GalleryVerticalEnd,
 }
-
-/** Barra superior do leitor (docs/06-leitor.md §2). O modo vertical chega em M4.7. */
 export function ReaderTopBar({
   title,
   mode,
@@ -72,12 +68,10 @@ export function ReaderTopBar({
   onResetPrefs,
 }: ReaderTopBarProps): React.JSX.Element {
   const { t } = useTranslation()
-
   return (
     <div
       className={cn(
         'app-drag flex h-12 shrink-0 items-center gap-2 border-b border-border bg-surface/85 pl-3 backdrop-blur',
-        // Deixa livre a área dos botões nativos da janela (titleBarOverlay), exceto em tela cheia.
         isFullscreen ? 'pr-3' : 'pr-36',
       )}
     >

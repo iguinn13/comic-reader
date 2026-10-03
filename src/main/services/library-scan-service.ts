@@ -20,42 +20,27 @@ import { titleFromFileName } from '../utils/title'
 import { walkDirectory } from '../utils/walk-directory'
 import type { CoverService } from './cover-service'
 import type { LibraryService } from './library-service'
-
 export interface LibraryScanCallbacks {
   onProgress: (state: LibraryScanState) => void
   onChanged: (reason: 'scan') => void
 }
-
-/**
- * Escaneia recursivamente as pastas-raiz configuradas pelo usuário
- * (docs/05-importacao.md), indexando as HQs encontradas in-place — nunca
- * copiando para uma pasta interna (docs/10 ADR). Roda uma vez no boot e sob
- * demanda ("Atualizar biblioteca"). Duplicatas (mesmo hash em pastas
- * sobrepostas) e arquivos que sumiram do disco são resolvidos
- * silenciosamente, sem interação do usuário — o scan é automático.
- */
 export class LibraryScanService {
   private scanning = false
-
   constructor(
     private readonly db: Db,
     private readonly coverService: CoverService,
     private readonly libraryService: LibraryService,
     private readonly callbacks: LibraryScanCallbacks,
   ) {}
-
   async scan(): Promise<void> {
     if (this.scanning) return
     this.scanning = true
-
     let scanned = 0
     let added = 0
     let removed = 0
     this.emit({ scanning: true, scanned, added, removed })
-
     try {
       const folders = listLibraryFolders(this.db)
-
       for (const folder of folders) {
         for await (const filePath of walkDirectory(folder.path)) {
           scanned++
@@ -65,11 +50,9 @@ export class LibraryScanService {
           }
           this.emit({ scanning: true, scanned, added, removed })
         }
-
         const missingIds = listComicsInFolder(this.db, folder.id)
           .filter((comic) => !existsSync(comic.filePath))
           .map((comic) => comic.id)
-
         if (missingIds.length > 0) {
           await this.libraryService.delete(missingIds, { deleteFile: false })
           removed += missingIds.length
@@ -82,8 +65,6 @@ export class LibraryScanService {
       this.callbacks.onChanged('scan')
     }
   }
-
-  /** Devolve `true` se a HQ foi indexada; `false` se foi pulada (inválida ou duplicata). */
   private async importFile(filePath: string, folderId: string): Promise<boolean> {
     let archive: ComicArchive | null = null
     try {
@@ -93,7 +74,6 @@ export class LibraryScanService {
         logger.warn(`[scan] formato não reconhecido, ignorado: "${filePath}"`)
         return false
       }
-
       let pages: InsertComicPageInput[] = []
       if (detected === 'zip' || detected === 'rar') {
         archive = await openArchive(buffer, detected)
@@ -110,7 +90,6 @@ export class LibraryScanService {
           return false
         }
       }
-
       const hash = createHash('sha1').update(buffer).digest('hex')
       const duplicates = getComicsByHash(this.db, hash)
       const firstDuplicate = duplicates[0]
@@ -118,7 +97,6 @@ export class LibraryScanService {
         logger.warn(`[scan] "${filePath}" é duplicata de "${firstDuplicate.title}"; ignorado`)
         return false
       }
-
       const comicId = randomUUID()
       let firstPageBuffer: Buffer | null = null
       const firstPage = pages[0]
@@ -130,7 +108,6 @@ export class LibraryScanService {
         }
       }
       const cover = await this.coverService.generateComicCover(comicId, firstPageBuffer)
-
       const originalFileName = basename(filePath)
       const title = titleFromFileName(originalFileName)
       const now = Date.now()
@@ -159,7 +136,6 @@ export class LibraryScanService {
       if (archive) await archive.close().catch(() => undefined)
     }
   }
-
   private async getPdfPageCount(buffer: Buffer): Promise<number> {
     try {
       const doc = await PDFDocument.load(buffer)
@@ -168,7 +144,6 @@ export class LibraryScanService {
       return 0
     }
   }
-
   private emit(state: LibraryScanState): void {
     this.callbacks.onProgress(state)
   }

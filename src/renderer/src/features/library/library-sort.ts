@@ -1,7 +1,5 @@
 import type { LibraryQuery } from '@shared/types'
-
 export type LibrarySortOption = 'createdAt' | 'lastReadAt' | 'titleAsc' | 'titleDesc'
-
 export function sortOptionToQuery(option: LibrarySortOption): Pick<LibraryQuery, 'sort' | 'order'> {
   switch (option) {
     case 'lastReadAt':

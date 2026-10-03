@@ -11,9 +11,7 @@ import { getProgress, setCurrentPage } from '../db/repositories/progress'
 import { createAppPaths, type AppPaths } from '../utils/paths'
 import { PageCacheService } from './page-cache-service'
 import { ReaderService } from './reader-service'
-
 const FIXTURES_DIR = join(__dirname, '../../../tests/fixtures')
-
 let root: string
 let comicsDir: string
 let paths: AppPaths
@@ -21,7 +19,6 @@ let db: Db
 let pageCache: PageCacheService
 let service: ReaderService
 let folderId: string
-
 function seedComic(overrides: Partial<InsertComicInput> = {}): string {
   const id = overrides.id ?? 'c1'
   const filePath = overrides.filePath ?? join(comicsDir, `${id}.cbz`)
@@ -46,7 +43,6 @@ function seedComic(overrides: Partial<InsertComicInput> = {}): string {
   insertComic(db, input)
   return id
 }
-
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'comic-reader-reader-service-'))
   comicsDir = join(root, 'comics')
@@ -59,17 +55,14 @@ beforeEach(() => {
   pageCache = new PageCacheService(db, paths)
   service = new ReaderService(db, pageCache)
 })
-
 afterEach(() => {
   vi.useRealTimers()
   rmSync(root, { recursive: true, force: true })
 })
-
 describe('ReaderService.open', () => {
   it('lança NOT_FOUND para uma HQ inexistente', () => {
     expect(() => service.open('nope')).toThrowError(AppError)
   })
-
   it('lança FILE_MISSING quando o arquivo sumiu da pasta do usuário', () => {
     const id = seedComic()
     rmSync(join(comicsDir, `${id}.cbz`))
@@ -81,11 +74,9 @@ describe('ReaderService.open', () => {
       expect((error as AppError).code).toBe('FILE_MISSING')
     }
   })
-
   it('monta a fonte "images" com as URLs comic://page/{id}/{n} em ordem', () => {
     const id = seedComic()
     const session = service.open(id)
-
     expect(session.source.kind).toBe('images')
     if (session.source.kind !== 'images') throw new Error('esperava images')
     expect(session.source.pages.map((p) => p.url)).toEqual([
@@ -96,39 +87,32 @@ describe('ReaderService.open', () => {
       `comic://page/${id}/4`,
     ])
   })
-
   it('usa os padrões globais quando a HQ não tem preferências próprias', () => {
     const id = seedComic()
     const session = service.open(id)
     expect(session.prefs).toEqual(DEFAULT_READER_PREFS)
     expect(session.hasCustomPrefs).toBe(false)
   })
-
   it('nextInFolder é null quando é a única HQ da pasta', () => {
     const id = seedComic()
     expect(service.open(id).nextInFolder).toBeNull()
   })
 })
-
 describe('ReaderService.setPage / flush', () => {
   it('faz debounce da escrita e grava só depois do flush', () => {
     vi.useFakeTimers()
     const id = seedComic()
-
     service.setPage(id, 3)
     expect(getProgress(db, id)?.currentPage).toBe(0)
-
     vi.advanceTimersByTime(500)
     expect(getProgress(db, id)?.currentPage).toBe(3)
   })
-
   it('close() força o flush imediatamente, sem esperar o debounce', () => {
     const id = seedComic()
     service.setPage(id, 2)
     service.close(id)
     expect(getProgress(db, id)?.currentPage).toBe(2)
   })
-
   it('flush() sem argumento grava todas as HQs pendentes', () => {
     const a = seedComic({ id: 'a' })
     const b = seedComic({ id: 'b' })
@@ -139,7 +123,6 @@ describe('ReaderService.setPage / flush', () => {
     expect(getProgress(db, b)?.currentPage).toBe(4)
   })
 })
-
 describe('ReaderService prefs/complete', () => {
   it('savePrefs grava e o próximo open devolve hasCustomPrefs true', () => {
     const id = seedComic()
@@ -148,7 +131,6 @@ describe('ReaderService prefs/complete', () => {
     expect(session.prefs.mode).toBe('vertical')
     expect(session.hasCustomPrefs).toBe(true)
   })
-
   it('resetPrefs volta aos padrões globais', () => {
     const id = seedComic()
     service.savePrefs(id, { ...DEFAULT_READER_PREFS, mode: 'double' })
@@ -156,7 +138,6 @@ describe('ReaderService prefs/complete', () => {
     expect(prefs).toEqual(DEFAULT_READER_PREFS)
     expect(service.open(id).hasCustomPrefs).toBe(false)
   })
-
   it('complete marca a HQ como lida', () => {
     const id = seedComic()
     setCurrentPage(db, id, 4)
@@ -164,7 +145,6 @@ describe('ReaderService prefs/complete', () => {
     expect(getProgress(db, id)?.completedAt).not.toBeNull()
   })
 })
-
 describe('ReaderService.open — nextInFolder (RF-42)', () => {
   it('aponta pro próximo arquivo da mesma pasta, em ordem natural (01, 02, 10)', () => {
     const a = seedComic({
@@ -185,18 +165,14 @@ describe('ReaderService.open — nextInFolder (RF-42)', () => {
       filePath: join(comicsDir, '10.cbz'),
       fileHash: 'hash-c',
     })
-
     expect(service.open(a).nextInFolder?.id).toBe(b)
     expect(service.open(b).nextInFolder?.id).toBe('c')
   })
-
   it('é null para o último arquivo da pasta', () => {
     seedComic({ id: 'a', filePath: join(comicsDir, '01.cbz'), fileHash: 'hash-a' })
     const b = seedComic({ id: 'b', filePath: join(comicsDir, '02.cbz'), fileHash: 'hash-b' })
-
     expect(service.open(b).nextInFolder).toBeNull()
   })
-
   it('não considera HQs de outras pastas', () => {
     const otherDir = join(root, 'outra-pasta')
     mkdirSync(otherDir, { recursive: true })
@@ -207,7 +183,6 @@ describe('ReaderService.open — nextInFolder (RF-42)', () => {
       dirPath: otherDir,
       fileHash: 'hash-b',
     })
-
     expect(service.open(a).nextInFolder).toBeNull()
   })
 })

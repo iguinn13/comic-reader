@@ -10,13 +10,6 @@ import {
 import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
 import type { FolderEntry } from '@shared/types'
-
-/**
- * Card de subpasta na navegação por pastas (RF-64, docs/07-ui-ux.md §4.2):
- * mesma proporção 2:3 do `ComicCard`, pra ficar na mesma grade sem quebrar o
- * layout. Clicar entra na pasta. Pastas sem HQs diretas ganham um menu de
- * contexto para escolher/remover uma imagem de capa (ADR-020).
- */
 export function FolderCard({
   entry,
   onOpen,
@@ -26,13 +19,10 @@ export function FolderCard({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-
   const location = { folderId: entry.folderId, relativePath: entry.relativePath }
-
   function refresh(): void {
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
   }
-
   const card = (
     <div className="flex flex-col gap-2">
       <button
@@ -65,9 +55,7 @@ export function FolderCard({
       </p>
     </div>
   )
-
   if (entry.hasDirectComics) return card
-
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{card}</ContextMenuTrigger>

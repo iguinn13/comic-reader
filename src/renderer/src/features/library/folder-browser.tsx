@@ -9,32 +9,19 @@ import { cn } from '@renderer/lib/utils'
 import type { FolderEntry, FolderLocation } from '@shared/types'
 import { ComicCard } from './comic-card'
 import { FolderCard } from './folder-card'
-
 const ROOT_LOCATION: FolderLocation = { folderId: null, relativePath: '' }
-
 interface BreadcrumbSegment {
   name: string
   location: FolderLocation
 }
-
-/**
- * Navegação por pastas da Biblioteca (RF-64, docs/07-ui-ux.md §4.2): clicar
- * numa pasta entra nela (breadcrumb no topo pra voltar), no estilo do
- * aplicativo "Cover" — sem uma árvore lateral fixa. O estado do "onde estou"
- * é só local (não sobrevive a sair da tela), como o resto dos filtros da
- * Biblioteca (`use-library-comics.ts`).
- */
 export function FolderBrowser(): React.JSX.Element {
   const { t } = useTranslation()
   const [path, setPath] = useState<BreadcrumbSegment[]>([])
-
   const location = path.length > 0 ? path[path.length - 1].location : ROOT_LOCATION
-
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.library.folder(location),
     queryFn: () => api.library.browseFolder(location),
   })
-
   function enter(entry: FolderEntry): void {
     setPath((prev) => [
       ...prev,
@@ -44,11 +31,9 @@ export function FolderBrowser(): React.JSX.Element {
       },
     ])
   }
-
   const subfolders = data?.subfolders ?? []
   const comics = data?.comics ?? []
   const isEmptyHere = !isLoading && subfolders.length === 0 && comics.length === 0
-
   return (
     <div className="flex h-full flex-col gap-4">
       <nav

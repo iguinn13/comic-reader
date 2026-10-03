@@ -21,17 +21,14 @@ import { DoubleView } from './double-view'
 import { VerticalView } from './vertical-view'
 import { SingleView } from './single-view'
 import { stepVerticalWidth, stepZoom } from './zoom'
-
-/** docs/06-leitor.md §2: as barras somem depois de 1,5 s sem movimento do mouse. */
 const CHROME_AUTO_HIDE_MS = 1500
-
-/** RF-30..44: monta a sessão de leitura e a tela real do leitor (docs/06-leitor.md). */
 export function ReaderPage(): React.JSX.Element | null {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { comicId } = useParams<{ comicId: string }>()
-
+  const { comicId } = useParams<{
+    comicId: string
+  }>()
   const session = useReaderStore((s) => s.session)
   const currentPage = useReaderStore((s) => s.currentPage)
   const prefs = useReaderStore((s) => s.prefs)
@@ -48,30 +45,21 @@ export function ReaderPage(): React.JSX.Element | null {
   const setFullscreen = useReaderStore((s) => s.setFullscreen)
   const setEndPanelOpen = useReaderStore((s) => s.setEndPanelOpen)
   const reset = useReaderStore((s) => s.reset)
-
   const [goToPageOpen, setGoToPageOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.reader.session(comicId ?? ''),
     queryFn: () => api.reader.open(comicId!),
     enabled: !!comicId,
     staleTime: Infinity,
-    // Sem cache entre aberturas: a sessão traz a `currentPage` salva no disco, e
-    // reaproveitar a de uma leitura anterior faria a HQ voltar para a página velha.
     gcTime: 0,
     refetchOnWindowFocus: false,
     retry: false,
   })
-
   useEffect(() => {
     if (data) loadSession(data)
   }, [data, loadSession])
-
-  // Entra no leitor já em tela cheia (com as barras em modo ocioso). Ao sair da
-  // tela: fecha a sessão no main (flush do progresso), sai da tela cheia (ela é
-  // exclusiva do leitor; `force` evita alternar errado, ex.: StrictMode) e limpa o estado local.
   useEffect(() => {
     void api.app.toggleFullscreen(true)
     return () => {
@@ -79,14 +67,11 @@ export function ReaderPage(): React.JSX.Element | null {
       void api.app.toggleFullscreen(false)
       reset()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- só deve rodar na desmontagem, com o comicId da última sessão
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on unmount, with the last session's comicId
   }, [comicId])
-
   useEffect(() => {
     return api.app.onFullscreenChanged(setFullscreen)
   }, [setFullscreen])
-
-  // Auto-ocultar as barras (docs §2): só em tela cheia, após 1,5 s parado.
   useEffect(() => {
     if (!isFullscreen) {
       setChromeVisible(true)
@@ -105,23 +90,19 @@ export function ReaderPage(): React.JSX.Element | null {
       window.removeEventListener('mousemove', resetTimer)
     }
   }, [isFullscreen, setChromeVisible])
-
   function handleExit(): void {
     void navigate(-1)
   }
-
   function toggleFavorite(value: boolean): void {
     if (!session) return
     void api.library.setFavorite([session.comic.id], value).then(() => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
     })
   }
-
   function handleResetPrefs(): void {
     if (!session) return
     void api.reader.resetPrefs(session.comic.id).then(applyPrefsFromMain)
   }
-
   function handleKeyAction(action: ReaderKeyAction): void {
     if (!session) return
     switch (action) {
@@ -195,11 +176,8 @@ export function ReaderPage(): React.JSX.Element | null {
         break
     }
   }
-
   useReaderKeyboard(handleKeyAction)
-
   if (!comicId) return null
-
   if (isLoading) {
     return (
       <div className="flex size-full items-center justify-center bg-reader-bg text-text-muted">
@@ -207,7 +185,6 @@ export function ReaderPage(): React.JSX.Element | null {
       </div>
     )
   }
-
   if (error) {
     const code = error instanceof AppError ? error.code : 'INTERNAL'
     return (
@@ -234,9 +211,7 @@ export function ReaderPage(): React.JSX.Element | null {
       </div>
     )
   }
-
   if (!session) return null
-
   return (
     <div
       className={cn(

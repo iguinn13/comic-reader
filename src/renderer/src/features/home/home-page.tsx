@@ -5,28 +5,19 @@ import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
 import { queryKeys } from '@renderer/lib/query-keys'
 import { ComicRail } from './comic-rail'
-
-/**
- * Tela Início (RF-11, RF-63, docs/07-ui-ux.md §4.1).
- */
 export function HomePage(): React.JSX.Element {
   const { t } = useTranslation()
-
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.library.home(),
     queryFn: api.library.home,
   })
-
   const isEmpty =
     !isLoading && data && data.continueReading.length === 0 && data.recentlyAdded.length === 0
-
   async function handleAddFolder(): Promise<void> {
     const folder = await api.libraryFolders.add()
     if (folder) await api.library.scan()
   }
-
   if (isLoading || !data) return <div className="h-full p-8" />
-
   if (isEmpty) {
     return (
       <div className="h-full p-8">
@@ -40,7 +31,6 @@ export function HomePage(): React.JSX.Element {
       </div>
     )
   }
-
   return (
     <div className="flex h-full flex-col gap-8 overflow-y-auto p-8 mt-4">
       <h1 className="text-2xl font-semibold text-text">{t('home.greeting')}</h1>

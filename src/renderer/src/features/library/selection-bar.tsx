@@ -8,23 +8,15 @@ import { queryKeys } from '@renderer/lib/query-keys'
 import { toast } from '@renderer/stores/toast-store'
 import { useSelectionStore } from '@renderer/stores/selection-store'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
-
-/**
- * Substitui a toolbar quando há seleção (RF-18, docs/07-ui-ux.md §4.2):
- * "N selecionadas · Marcar como lida · Marcar como não lida · Favoritar ·
- * Excluir · ✕".
- */
 export function SelectionBar(): React.JSX.Element {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const selectedIds = useSelectionStore((state) => Array.from(state.selectedIds))
   const clearSelection = useSelectionStore((state) => state.clear)
   const [deleteOpen, setDeleteOpen] = useState(false)
-
   const invalidateLibrary = (): void => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
   }
-
   const { mutate: setReadStatus } = useMutation({
     mutationFn: (status: 'read' | 'unread') => api.library.setReadStatus(selectedIds, status),
     onSuccess: (_result, status) => {
@@ -36,12 +28,10 @@ export function SelectionBar(): React.JSX.Element {
       )
     },
   })
-
   const { mutate: favoriteSelected } = useMutation({
     mutationFn: () => api.library.setFavorite(selectedIds, true),
     onSuccess: invalidateLibrary,
   })
-
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-surface px-3 py-2">
       <span className="text-sm font-medium text-text">

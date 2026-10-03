@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { mapKeyToAction } from './reader-keyboard'
-
 describe('mapKeyToAction', () => {
   it.each([
     ['ArrowRight', 'next'],
@@ -27,12 +26,10 @@ describe('mapKeyToAction', () => {
   ] as const)('%s → %s', (key, action) => {
     expect(mapKeyToAction({ key, shiftKey: false })).toBe(action)
   })
-
   it('Espaço avança e Shift+Espaço volta (docs/06 §5)', () => {
     expect(mapKeyToAction({ key: ' ', shiftKey: false })).toBe('scrollDown')
     expect(mapKeyToAction({ key: ' ', shiftKey: true })).toBe('scrollUp')
   })
-
   it('devolve null para teclas sem atalho', () => {
     expect(mapKeyToAction({ key: 'x', shiftKey: false })).toBeNull()
   })

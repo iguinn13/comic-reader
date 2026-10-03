@@ -6,23 +6,17 @@ import { LibraryToolbar } from '@renderer/features/library/library-toolbar'
 import { SelectionBar } from '@renderer/features/library/selection-bar'
 import { useLibraryComics } from '@renderer/features/library/use-library-comics'
 import { useSelectionStore } from '@renderer/stores/selection-store'
-
-/** Tela Favoritas (RF-15, docs/07-ui-ux.md §4.4): reusa a grade da Biblioteca com `favoritesOnly` fixo. */
 export function FavoritesPage(): React.JSX.Element {
   const { t } = useTranslation()
   const { items, total, search, setSearch, sortOption, setSortOption, isLoading, fetchNextPage } =
     useLibraryComics({ forceFavoritesOnly: true })
-
   const hasSelection = useSelectionStore((state) => state.selectedIds.size > 0)
   const clearSelection = useSelectionStore((state) => state.clear)
-
   useEffect(() => clearSelection, [clearSelection])
   useEffect(() => {
     clearSelection()
   }, [search, sortOption, clearSelection])
-
   const isEmpty = !isLoading && total === 0 && !search
-
   return (
     <div className="flex h-full flex-col gap-4 p-8 mt-4">
       <div className="flex items-center justify-between">

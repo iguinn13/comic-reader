@@ -3,34 +3,28 @@ import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 import { RefreshLibraryButton } from '@renderer/features/library-folders/refresh-library-button'
 import { cn } from '@renderer/lib/utils'
-
 interface SidebarProps {
   collapsed: boolean
   onToggleCollapsed: () => void
 }
-
 interface NavItem {
   to: string
   labelKey: string
   icon: typeof Home
 }
-
 const NAV_ITEMS: NavItem[] = [
   { to: '/', labelKey: 'nav.home', icon: Home },
   { to: '/library', labelKey: 'nav.library', icon: LayoutGrid },
   { to: '/favorites', labelKey: 'nav.favorites', icon: Heart },
 ]
-
 export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps): React.JSX.Element {
   const { t } = useTranslation()
-
   const linkClassName = ({ isActive }: { isActive: boolean }): string =>
     cn(
       'group relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150 ease-out',
       isActive ? 'bg-surface-2 text-text' : 'text-text-muted hover:bg-surface-2 hover:text-text',
       collapsed && 'justify-center px-0',
     )
-
   return (
     <nav
       aria-label={t('nav.main')}

@@ -4,26 +4,10 @@ import { CH } from '@shared/channels'
 import type { Result } from '@shared/errors'
 import type { ComicReaderApi } from '@shared/api'
 
-/**
- * Só o preload roda com acesso ao Node, então ele é o único lugar autorizado
- * a construir `window.api`. Nada além de funções de domínio explícitas passa
- * daqui para o renderer — nunca `ipcRenderer`, `require` ou `process` crus
- * (checklist de segurança em docs/02-arquitetura.md §6).
- *
- * Cada método chama `ipcRenderer.invoke` num canal de `src/shared/channels.ts`
- * e devolve `Result<T>` (docs/04-contratos-ipc.md §1). Duas exceções ao
- * padrão request/response, documentadas em `src/shared/api.ts`:
- * - `reader.setPage`/`reader.reportPageSize`: fire-and-forget, sem `Promise`.
- * - Os métodos `on*`: registram um listener de evento e devolvem a função de
- *   unsubscribe.
- */
-
-/** `ipcRenderer.invoke` tipado: único ponto que "confia" no retorno do main. */
 function invoke<T>(channel: string, ...args: unknown[]): Promise<Result<T>> {
   return ipcRenderer.invoke(channel, ...args) as Promise<Result<T>>
 }
 
-/** Registra um listener de evento main → renderer e devolve o unsubscribe. */
 function on<T>(channel: string, callback: (payload: T) => void): () => void {
   const listener = (_event: IpcRendererEvent, payload: T): void => callback(payload)
   ipcRenderer.on(channel, listener)

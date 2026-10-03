@@ -1,4 +1,4 @@
-/** Bytes → "12,4 GB" (pt-BR). */
+import i18n from '@renderer/i18n'
 export function formatBytes(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   let value = bytes
@@ -8,5 +8,5 @@ export function formatBytes(bytes: number): string {
     unit++
   }
   const digits = unit === 0 || value >= 100 ? 0 : 1
-  return `${value.toLocaleString('pt-BR', { maximumFractionDigits: digits })} ${units[unit]}`
+  return `${value.toLocaleString(i18n.language, { maximumFractionDigits: digits })} ${units[unit]}`
 }

@@ -7,18 +7,9 @@ import { computeSpreads, type SpreadDims } from './compute-spreads'
 import { PdfPage } from './pdf-page'
 import { usePdfDocument } from './pdf-document'
 import { stepZoom } from './zoom'
-
 const WHEEL_PAGE_COOLDOWN_MS = 250
-/** Preload (docs/06 §7, adaptado a spreads): 3 próximos spreads + 1 anterior. Só se aplica a imagens. */
 const PRELOAD_AHEAD = 3
 const PRELOAD_BEHIND = 1
-
-/**
- * Modo página dupla (docs/06-leitor.md §3.2, RF-32): monta os spreads com
- * `computeSpreads` e mostra as duas páginas lado a lado, sem gap, na mesma
- * altura. A navegação (avançar/voltar por spread) já está em
- * `reader-store.next/prev`; este componente só cuida do fit/zoom/zonas.
- */
 export function DoubleView({
   source,
   pageCount,
@@ -39,12 +30,9 @@ export function DoubleView({
   const setPrefs = useReaderStore((s) => s.setPrefs)
   const pdfPageSizes = useReaderStore((s) => s.pdfPageSizes)
   const reportPdfPageSize = useReaderStore((s) => s.reportPdfPageSize)
-
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastWheelPageChangeRef = useRef(0)
-
   const pdfDoc = usePdfDocument(source.kind === 'pdf' ? source.fileUrl : null)
-
   const dims: SpreadDims[] =
     source.kind === 'images'
       ? source.pages
@@ -52,25 +40,16 @@ export function DoubleView({
           width: pdfPageSizes[index]?.width ?? null,
           height: pdfPageSizes[index]?.height ?? null,
         }))
-
   const spreads = computeSpreads(dims, doubleOffset)
   const spreadIndex = spreads.findIndex((spread) => spread.includes(currentPage))
   const spread = spreads[spreadIndex] ?? spreads[0]
-
-  // Mesma ideia de single-view.tsx: sem isso, a extração sob demanda deixa a
-  // tela em branco por um tempo sem indicar que algo está acontecendo. A
-  // chave inclui o spread pra não precisar de um Effect só pra "zerar" o
-  // carregado ao trocar de spread — uma página com o mesmo índice num spread
-  // diferente não existe aqui, mas a chave deixa a intenção explícita.
   const [loadedKeys, setLoadedKeys] = useState<Set<string>>(new Set())
   const isLoaded = (pageIndex: number): boolean => loadedKeys.has(`${spreadIndex}:${pageIndex}`)
   const markLoaded = (pageIndex: number): void =>
     setLoadedKeys((prev) => new Set(prev).add(`${spreadIndex}:${pageIndex}`))
-
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, left: 0 })
   }, [currentPage])
-
   useEffect(() => {
     if (source.kind !== 'images') return
     const pages = source.pages
@@ -78,7 +57,6 @@ export function DoubleView({
       ...Array.from({ length: PRELOAD_AHEAD }, (_, i) => spreadIndex + 1 + i),
       ...Array.from({ length: PRELOAD_BEHIND }, (_, i) => spreadIndex - 1 - i),
     ].filter((i) => i >= 0 && i < spreads.length)
-
     for (const i of spreadsToPreload) {
       for (const pageIndex of spreads[i]) {
         const image = new Image()
@@ -86,7 +64,6 @@ export function DoubleView({
       }
     }
   }, [spreadIndex, spreads, source])
-
   function handleWheel(event: React.WheelEvent<HTMLDivElement>): void {
     if (event.ctrlKey) {
       event.preventDefault()
@@ -98,7 +75,6 @@ export function DoubleView({
     const overflowsVertically = el.scrollHeight > el.clientHeight + 1
     const now = Date.now()
     if (now - lastWheelPageChangeRef.current < WHEEL_PAGE_COOLDOWN_MS) return
-
     if (!overflowsVertically) {
       lastWheelPageChangeRef.current = now
       if (event.deltaY > 0) next()
@@ -115,7 +91,6 @@ export function DoubleView({
       prev()
     }
   }
-
   function handleClick(event: React.MouseEvent<HTMLDivElement>): void {
     const rect = event.currentTarget.getBoundingClientRect()
     const xRatio = (event.clientX - rect.left) / rect.width
@@ -123,25 +98,17 @@ export function DoubleView({
     else if (xRatio > 2 / 3) next()
     else if (isFullscreen) setChromeVisible(!chromeVisible)
   }
-
   function handleDoubleClick(): void {
     setPrefs({ zoom: zoom === 1 ? 2 : 1 })
   }
-
   if (!spread) return null
-
-  // Estilo por imagem: precisa ser inline (não classe Tailwind) porque a
-  // largura no fit "largura" depende de quantas páginas o spread tem (1 ou
-  // 2), um valor calculado em runtime que o JIT do Tailwind não consegue ver.
   const imageStyle: React.CSSProperties =
     fit === 'height'
       ? { height: '100%', width: 'auto' }
       : fit === 'width'
         ? { height: 'auto', width: spread.length === 2 ? '50%' : '100%' }
         : { height: 'auto', width: 'auto', maxWidth: 'none' }
-
   return (
-    // Ver justificativa em single-view.tsx: zonas de mouse, não de teclado.
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       ref={scrollRef}

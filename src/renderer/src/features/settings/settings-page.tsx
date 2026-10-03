@@ -17,18 +17,19 @@ import { formatBytes } from '@renderer/lib/format'
 import { queryKeys } from '@renderer/lib/query-keys'
 import { cn } from '@renderer/lib/utils'
 import { CACHE_MAX_BYTES, CACHE_MIN_BYTES } from '@shared/constants'
-import type { FitMode, ReaderMode, ReaderPrefs } from '@shared/types'
-
+import type { FitMode, ReaderMode, ReaderPrefs, UiLanguage } from '@shared/types'
 const GB = 1024 * 1024 * 1024
 const MODES: ReaderMode[] = ['single', 'double', 'vertical']
 const FITS: FitMode[] = ['height', 'width', 'original']
-
-/** Tela Configurações (RF-50..53, docs/07-ui-ux.md §4.8): coluna única, máx. 720 px. */
+const LANGUAGES: UiLanguage[] = ['pt-BR', 'en-US']
+const LANGUAGE_LABELS: Record<UiLanguage, string> = {
+  'pt-BR': 'Português',
+  'en-US': 'English',
+}
 export function SettingsPage(): React.JSX.Element {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [confirmApplyAll, setConfirmApplyAll] = useState(false)
-
   const { data: settings } = useQuery({
     queryKey: queryKeys.settings.all(),
     queryFn: api.settings.get,
@@ -38,12 +39,10 @@ export function SettingsPage(): React.JSX.Element {
     queryFn: api.library.stats,
   })
   const { data: info } = useQuery({ queryKey: queryKeys.app.info(), queryFn: api.app.info })
-
   const refresh = (): void => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.settings.all() })
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.stats() })
   }
-
   const update = useMutation({
     mutationFn: api.settings.update,
     onSuccess: refresh,
@@ -53,15 +52,12 @@ export function SettingsPage(): React.JSX.Element {
     onSuccess: () => setConfirmApplyAll(false),
   })
   const clearCache = useMutation({ mutationFn: api.app.clearCache, onSuccess: refresh })
-
   if (!settings) return <div className="h-full p-8" />
-
   const defaults = settings['reader.defaults']
   const setDefaults = (patch: Partial<ReaderPrefs>): void =>
     update.mutate({ 'reader.defaults': { ...defaults, ...patch } })
   const maxBytes = settings['cache.maxBytes']
   const cachePercent = stats ? Math.min(100, (stats.cacheBytes / maxBytes) * 100) : 0
-
   return (
     <div className="h-full overflow-y-auto p-8">
       <div className="mx-auto flex max-w-180 flex-col gap-10">
@@ -178,6 +174,15 @@ export function SettingsPage(): React.JSX.Element {
           <ShortcutsTable />
         </Section>
 
+        <Section title={t('settings.language.title')}>
+          <Segmented
+            options={LANGUAGES}
+            value={settings['ui.language']}
+            label={(option) => LANGUAGE_LABELS[option]}
+            onChange={(language) => update.mutate({ 'ui.language': language })}
+          />
+        </Section>
+
         <Section title={t('settings.about.title')}>
           <p className="text-sm text-text-muted">
             {t('settings.about.version', { version: info?.version ?? '' })}
@@ -207,7 +212,6 @@ export function SettingsPage(): React.JSX.Element {
     </div>
   )
 }
-
 function Section({
   title,
   children,
@@ -222,7 +226,6 @@ function Section({
     </section>
   )
 }
-
 function Field({
   label,
   children,
@@ -237,7 +240,6 @@ function Field({
     </div>
   )
 }
-
 function Segmented<T extends string>({
   options,
   value,

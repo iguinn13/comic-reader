@@ -19,39 +19,27 @@ import { useSelectionStore } from '@renderer/stores/selection-store'
 import type { ComicSummary } from '@shared/types'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
 import { RenameDialog } from './rename-dialog'
-
-/**
- * Card de HQ (docs/07-ui-ux.md §4.3): capa, favoritar (RF-15), seleção
- * múltipla via checkbox/Ctrl-Shift+clique (RF-18), e o menu de contexto com
- * marcar lida/não lida (RF-14), renomear (RF-16) e excluir (RF-17).
- */
 export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-
   const isSelected = useSelectionStore((state) => state.selectedIds.has(comic.id))
   const selectedCount = useSelectionStore((state) => state.selectedIds.size)
   const hasSelection = selectedCount > 0
-  // Menu de contexto num card que faz parte de uma seleção múltipla age em todos os selecionados.
   const isMultiTarget = isSelected && selectedCount > 1
   const targetIds = (): string[] =>
     isMultiTarget ? Array.from(useSelectionStore.getState().selectedIds) : [comic.id]
   const toggleSelected = useSelectionStore((state) => state.toggle)
-
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteIds, setDeleteIds] = useState<string[]>([comic.id])
-
   const invalidateLibrary = (): void => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.library.all() })
   }
-
   const { mutate: toggleFavorite, isPending: isTogglingFavorite } = useMutation({
     mutationFn: (value: boolean) => api.library.setFavorite(targetIds(), value),
     onSuccess: invalidateLibrary,
   })
-
   const { mutate: setReadStatus } = useMutation({
     mutationFn: (status: 'read' | 'unread') => api.library.setReadStatus(targetIds(), status),
     onSuccess: (_result, status) => {
@@ -64,7 +52,6 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
         )
         return
       }
-      // Guarda o estado anterior para o Desfazer devolver também a página.
       const previous = { status: comic.status, page: comic.currentPage }
       toast(t(status === 'read' ? 'toast.markedRead' : 'toast.markedUnread'), {
         label: t('toast.undo'),
@@ -79,14 +66,12 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
       })
     },
   })
-
   const statusLabel =
     comic.status === 'read'
       ? t('library.readBadge')
       : comic.status === 'reading'
         ? t('library.pageOf', { current: comic.currentPage + 1, total: comic.pageCount })
         : t('library.unreadBadge')
-
   function handleActivate(event: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }): void {
     if (event.ctrlKey || event.metaKey || event.shiftKey || hasSelection) {
       toggleSelected(comic.id)
@@ -94,7 +79,6 @@ export function ComicCard({ comic }: { comic: ComicSummary }): React.JSX.Element
     }
     void navigate(`/read/${comic.id}`)
   }
-
   return (
     <div className="flex flex-col gap-2">
       <ContextMenu>
