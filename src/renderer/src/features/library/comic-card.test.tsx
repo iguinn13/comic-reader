@@ -74,7 +74,8 @@ describe('ComicCard', () => {
 
   it('mostra "Lida" para status read', () => {
     renderCard(makeComic({ status: 'read' }))
-    expect(screen.getByText(/Lida/)).toBeInTheDocument()
+    // Aparece duas vezes: no selo sobre a capa e na legenda abaixo do card.
+    expect(screen.getAllByText(/Lida/)).toHaveLength(2)
   })
 
   it('mostra a barra de progresso só quando em andamento', () => {

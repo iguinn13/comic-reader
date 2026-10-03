@@ -174,7 +174,14 @@ describe('LibraryService.browseFolder', () => {
   it('sem folderId, lista as pastas-raiz configuradas como subpastas do nível-topo', () => {
     const contents = service.browseFolder({ folderId: null, relativePath: '' })
     expect(contents.subfolders).toEqual([
-      { name: basename(root), folderId, relativePath: '', comicCount: 0 },
+      {
+        name: basename(root),
+        folderId,
+        relativePath: '',
+        comicCount: 0,
+        coverUrl: null,
+        hasDirectComics: false,
+      },
     ])
     expect(contents.comics).toEqual([])
   })
@@ -191,13 +198,36 @@ describe('LibraryService.browseFolder', () => {
 
     const top = service.browseFolder({ folderId, relativePath: '' })
     expect(top.comics.map((c) => c.id)).toEqual([direct.id])
-    expect(top.subfolders).toEqual([{ name: 'DC', folderId, relativePath: 'DC', comicCount: 3 }])
+    expect(top.subfolders).toEqual([
+      {
+        name: 'DC',
+        folderId,
+        relativePath: 'DC',
+        comicCount: 3,
+        coverUrl: null,
+        hasDirectComics: false,
+      },
+    ])
 
     const insideDC = service.browseFolder({ folderId, relativePath: 'DC' })
     expect(insideDC.comics).toEqual([])
     expect(insideDC.subfolders).toEqual([
-      { name: 'Ano Um', folderId, relativePath: 'DC/Ano Um', comicCount: 2 },
-      { name: 'Elseworlds', folderId, relativePath: 'DC/Elseworlds', comicCount: 1 },
+      {
+        name: 'Ano Um',
+        folderId,
+        relativePath: 'DC/Ano Um',
+        comicCount: 2,
+        coverUrl: null,
+        hasDirectComics: true,
+      },
+      {
+        name: 'Elseworlds',
+        folderId,
+        relativePath: 'DC/Elseworlds',
+        comicCount: 1,
+        coverUrl: null,
+        hasDirectComics: true,
+      },
     ])
 
     const insideAnoUm = service.browseFolder({ folderId, relativePath: 'DC/Ano Um' })

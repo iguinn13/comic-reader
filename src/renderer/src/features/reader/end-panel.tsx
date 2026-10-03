@@ -70,6 +70,9 @@ export function EndPanel({
             {t('reader.endPanel.backToLibrary')}
           </Button>
           {nextInFolder && (
+            // Foco intencional na ação principal deste diálogo modal (Enter/Space lê a
+            // próxima HQ direto); o foco já fica contido no diálogo pelo Radix.
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             <Button autoFocus onClick={() => onReadNext(nextInFolder.id)}>
               {t('reader.endPanel.read')}
             </Button>

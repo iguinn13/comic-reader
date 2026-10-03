@@ -32,6 +32,7 @@ describe('createAppPaths', () => {
   it('lista todos os diretórios que precisam existir antes do boot', () => {
     expect(paths.allDirectories).toEqual([
       paths.coversComicsDir,
+      paths.coversFoldersDir,
       paths.cachePagesDir,
       paths.logsDir,
     ])

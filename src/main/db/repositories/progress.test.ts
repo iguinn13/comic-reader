@@ -145,8 +145,8 @@ describe('getContinueReading', () => {
     insertComic(db, older)
     insertComic(db, newer)
 
-    markRead(db, finished.id)
     setCurrentPage(db, finished.id, 3)
+    markRead(db, finished.id)
 
     setCurrentPage(db, older.id, 1)
     await new Promise((resolve) => setTimeout(resolve, 5))
