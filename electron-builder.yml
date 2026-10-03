@@ -58,7 +58,6 @@ dmg:
   artifactName: ${name}-${version}-${arch}.${ext}
 linux:
   executableName: comic-reader
-  desktopName: comic-reader.desktop
   category: Graphics
   # PNG único (>= 512x512); o electron-builder gera o conjunto de tamanhos
   # necessário para o AppImage/deb automaticamente.
